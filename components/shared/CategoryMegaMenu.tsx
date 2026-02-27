@@ -63,7 +63,7 @@ export default function CategoryMegaMenu({ categories }: CategoryMegaMenuProps) 
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-foreground">Browse Categories</h3>
                         <Link
-                            href="/categories"
+                            href="/olongapo/categories"
                             className="text-xs font-medium text-secondary hover:underline"
                             onClick={() => setIsOpen(false)}
                         >
@@ -74,7 +74,7 @@ export default function CategoryMegaMenu({ categories }: CategoryMegaMenuProps) 
                         {categories.map((cat) => (
                             <Link
                                 key={cat.id}
-                                href={`/categories/${cat.slug}`}
+                                href={`/olongapo/${cat.slug}`}
                                 onClick={() => setIsOpen(false)}
                                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                             >

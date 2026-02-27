@@ -102,3 +102,362 @@ export function getActiveAdsForLocation(supabase: SupabaseClient, location: stri
         .range(position - 1, position - 1)
         .maybeSingle();
 }
+
+// ──────────────────────────────────────────────────────────
+// Category Browsing Queries
+// ──────────────────────────────────────────────────────────
+
+/**
+ * Fetch a category by slug with its subcategories.
+ */
+export async function getCategoryBySlug(supabase: SupabaseClient, slug: string) {
+    const { data: category } = await supabase
+        .from("categories")
+        .select("id, name, slug, icon, parent_id, description")
+        .eq("slug", slug)
+        .eq("is_active", true)
+        .maybeSingle();
+
+    if (!category) return null;
+
+    // Fetch subcategories if this is a parent
+    const { data: subcategories } = await supabase
+        .from("categories")
+        .select("id, name, slug")
+        .eq("parent_id", category.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+
+    return { ...category, subcategories: subcategories || [] };
+}
+
+export type CategorySort = "featured" | "newest" | "name_asc" | "name_desc";
+
+interface CategoryListingFilters {
+    categoryId: string;
+    subcategoryId?: string;
+    barangaySlugs?: string[];
+    featuredOnly?: boolean;
+    sort?: CategorySort;
+    page?: number;
+    perPage?: number;
+}
+
+/**
+ * Fetch paginated listings for a category/subcategory with filters and sorting.
+ * Returns { listings, total }.
+ */
+export async function getCategoryListings(supabase: SupabaseClient, filters: CategoryListingFilters) {
+    const perPage = filters.perPage || 20;
+    const page = filters.page || 1;
+    const from = (page - 1) * perPage;
+    const to = from + perPage - 1;
+
+    let query = supabase
+        .from("listings")
+        .select(`
+            id, slug, business_name, short_description, phone, logo_url,
+            is_featured, is_premium, created_at, address, operating_hours, lat, lng,
+            categories!listings_category_id_fkey ( name, slug ),
+            barangays ( name, slug )
+        `, { count: "exact" })
+        .eq("is_active", true)
+        .eq("status", "approved");
+
+    // Category or subcategory filter
+    if (filters.subcategoryId) {
+        query = query.eq("subcategory_id", filters.subcategoryId);
+    } else {
+        // Match either category_id directly, or subcategory_id in the children list
+        const { data: subs } = await supabase
+            .from("categories")
+            .select("id")
+            .eq("parent_id", filters.categoryId);
+
+        const childIds = subs?.map(s => s.id) || [];
+
+        if (childIds.length > 0) {
+            query = query.or(`category_id.eq.${filters.categoryId},subcategory_id.in.(${childIds.join(',')})`);
+        } else {
+            query = query.eq("category_id", filters.categoryId);
+        }
+    }
+
+    // Barangay filter
+    if (filters.barangaySlugs && filters.barangaySlugs.length > 0) {
+        // Resolve slugs to IDs for reliable filtering
+        const barangayIds = await resolveBarangaySlugs(supabase, filters.barangaySlugs);
+        if (barangayIds.length > 0) {
+            query = query.in("barangay_id", barangayIds);
+        } else {
+            // No matching barangays found, should return empty
+            query = query.eq("barangay_id", "00000000-0000-0000-0000-000000000000");
+        }
+    }
+
+    // Featured only
+    if (filters.featuredOnly) {
+        query = query.eq("is_featured", true);
+    }
+
+    // Sorting
+    switch (filters.sort) {
+        case "newest":
+            query = query.order("created_at", { ascending: false });
+            break;
+        case "name_asc":
+            query = query.order("business_name", { ascending: true });
+            break;
+        case "name_desc":
+            query = query.order("business_name", { ascending: false });
+            break;
+        case "featured":
+        default:
+            query = query
+                .order("is_featured", { ascending: false })
+                .order("is_premium", { ascending: false })
+                .order("created_at", { ascending: false });
+            break;
+    }
+
+    query = query.range(from, to);
+
+    const { data, count, error } = await query;
+
+    return {
+        listings: data || [],
+        total: count || 0,
+        error,
+    };
+}
+
+/**
+ * Fetch barangays grouped by area for filtering.
+ */
+export async function getBarangaysGrouped(supabase: SupabaseClient) {
+    const { data: barangays } = await supabase
+        .from("barangays")
+        .select("id, name, slug, sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+
+    if (!barangays) return [];
+
+    // Simple grouping: first batch as "Olongapo City", rest based on sort_order
+    return [
+        {
+            header: "Olongapo City",
+            items: barangays.map((b) => ({ id: b.id, name: b.name, slug: b.slug })),
+        },
+    ];
+}
+
+/**
+ * Fetch listing counts for all subcategories of a parent category in one query.
+ */
+export async function getSubcategoryCounts(supabase: SupabaseClient, categoryId: string) {
+    const { data } = await supabase
+        .from("listings")
+        .select("subcategory_id")
+        .eq("category_id", categoryId)
+        .eq("is_active", true)
+        .eq("status", "approved");
+
+    const counts: Record<string, number> = {};
+    data?.forEach((l) => {
+        if (l.subcategory_id) {
+            counts[l.subcategory_id] = (counts[l.subcategory_id] || 0) + 1;
+        }
+    });
+    return counts;
+}
+
+/**
+ * Fetch listing counts for all barangays, respecting category and subcategory filters.
+ */
+export async function getBarangayCounts(
+    supabase: SupabaseClient,
+    categoryId: string,
+    subcategoryId?: string
+) {
+    let query = supabase
+        .from("listings")
+        .select("barangay_id")
+        .eq("category_id", categoryId)
+        .eq("is_active", true)
+        .eq("status", "approved");
+
+    if (subcategoryId) {
+        query = query.eq("subcategory_id", subcategoryId);
+    }
+
+    const { data } = await query;
+
+    const counts: Record<string, number> = {};
+    data?.forEach((l) => {
+        if (l.barangay_id) {
+            counts[l.barangay_id] = (counts[l.barangay_id] || 0) + 1;
+        }
+    });
+    return counts;
+}
+
+// ──────────────────────────────────────────────────────────
+// Comprehensive Listings Query Builder (Module 4.2)
+// ──────────────────────────────────────────────────────────
+
+import { getActiveDay, getPhTime } from "@/lib/search-helpers";
+import type { ParsedSearchParams } from "@/lib/search-helpers";
+
+/** Full select string for rich listing data. */
+const LISTING_FULL_SELECT = `
+    id, slug, business_name, short_description, phone, address,
+    logo_url, is_featured, is_premium, created_at, updated_at,
+    operating_hours, lat, lng, tags, status, is_active,
+    categories!listings_category_id_fkey ( id, name, slug ),
+    subcategories:categories!listings_subcategory_id_fkey ( id, name, slug ),
+    barangays ( id, name, slug ),
+    listing_images ( image_url, sort_order, is_primary ),
+    deals ( id ),
+    subscriptions ( plan_type, status, end_date )
+`;
+
+/** Minimal select for map pins. */
+const LISTING_MAP_SELECT = `
+    id, business_name, slug, lat, lng,
+    is_featured, is_premium,
+    categories!listings_category_id_fkey ( name, slug ),
+    subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
+    listing_images ( image_url, is_primary )
+`;
+
+interface BuildListingsOptions {
+    filters: ParsedSearchParams;
+    categoryId?: string;
+    subcategoryId?: string;
+    barangayIds?: string[];
+    forMap?: boolean;
+}
+
+/**
+ * Build a comprehensive Supabase listings query with dynamic filters and sorting.
+ * Returns { query, countQuery } for paginated use.
+ */
+export async function buildListingsQuery(supabase: SupabaseClient, options: BuildListingsOptions) {
+    const { filters, categoryId, subcategoryId, barangayIds, forMap = false } = options;
+    const selectStr = forMap ? LISTING_MAP_SELECT : LISTING_FULL_SELECT;
+
+    let query = supabase
+        .from("listings")
+        .select(selectStr, { count: forMap ? undefined : "exact" })
+        .eq("is_active", true)
+        .eq("status", "approved");
+
+    // Category filter
+    // If we only have categoryId, we need to fetch listings that belong directly
+    // to to this category OR belong to any of its subcategories.
+    if (subcategoryId) {
+        query = query.eq("subcategory_id", subcategoryId);
+    } else if (categoryId) {
+        // Resolve child categories first because .or() with .in(select...) is not supported
+        const { data: subs } = await supabase
+            .from("categories")
+            .select("id")
+            .eq("parent_id", categoryId);
+
+        const childIds = subs?.map(s => s.id) || [];
+
+        if (childIds.length > 0) {
+            query = query.or(`category_id.eq.${categoryId},subcategory_id.in.(${childIds.join(',')})`);
+        } else {
+            query = query.eq("category_id", categoryId);
+        }
+    }
+
+    // Barangay filter (multi-select by IDs)
+    if (barangayIds && barangayIds.length > 0) {
+        query = query.in("barangay_id", barangayIds);
+    }
+
+    // Featured only
+    if (filters.featuredOnly) {
+        query = query.eq("is_featured", true);
+    }
+
+    // Text search
+    if (filters.q) {
+        query = query.or(
+            `business_name.ilike.%${filters.q}%,short_description.ilike.%${filters.q}%,tags.cs.{${filters.q}}`
+        );
+    }
+
+    // Sorting
+    if (!forMap) {
+        switch (filters.sort) {
+            case "newest":
+                query = query.order("created_at", { ascending: false });
+                break;
+            case "name_asc":
+                query = query.order("business_name", { ascending: true });
+                break;
+            case "name_desc":
+                query = query.order("business_name", { ascending: false });
+                break;
+            case "featured":
+            default:
+                query = query
+                    .order("is_premium", { ascending: false })
+                    .order("is_featured", { ascending: false })
+                    .order("updated_at", { ascending: false });
+                break;
+        }
+
+        // Pagination
+        const from = (filters.page - 1) * filters.limit;
+        const to = from + filters.limit - 1;
+        query = query.range(from, to);
+    } else {
+        // Map view: limit to 500, no pagination
+        query = query.limit(500);
+    }
+
+    return query;
+}
+
+/**
+ * Get the current day & time info for "open now" filtering in PH timezone.
+ */
+export function getOpenNowFilter() {
+    return {
+        day: getActiveDay(),
+        time: getPhTime(),
+    };
+}
+
+/**
+ * Resolve barangay slugs to IDs.
+ */
+export async function resolveBarangaySlugs(supabase: SupabaseClient, slugs: string[]) {
+    if (slugs.length === 0) return [];
+    const { data } = await supabase
+        .from("barangays")
+        .select("id, slug")
+        .in("slug", slugs)
+        .eq("is_active", true);
+    return data?.map((b) => b.id) || [];
+}
+
+/**
+ * Resolve a category slug to its ID.
+ */
+export async function resolveCategorySlug(supabase: SupabaseClient, slug: string) {
+    const { data } = await supabase
+        .from("categories")
+        .select("id, parent_id")
+        .eq("slug", slug)
+        .eq("is_active", true)
+        .maybeSingle();
+    return data;
+}

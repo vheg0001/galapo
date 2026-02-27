@@ -84,7 +84,7 @@ function MapInner({ pins, className, zoom }: MapViewProps) {
         <MapContainer
             center={[MAP_CENTER.lat, MAP_CENTER.lng]}
             zoom={zoom || MAP_CENTER.zoom}
-            scrollWheelZoom={false}
+            scrollWheelZoom={true}
             className={`rounded-xl z-0 ${className}`}
             style={{ minHeight: 400 }}
         >

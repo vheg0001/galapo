@@ -29,7 +29,12 @@ export default function Pagination({ currentPage, totalPages, basePath, classNam
         pages.push(totalPages);
     }
 
-    const getHref = (page: number) => `${basePath}?page=${page}`;
+    const getHref = (page: number) => {
+        const separator = basePath.includes("?") ? "&" : "?";
+        // Remove existing page param if present
+        const cleanBase = basePath.replace(/[?&]page=\d+/g, "").replace(/\?$/, "");
+        return `${cleanBase}${separator}page=${page}`;
+    };
 
     return (
         <nav className={cn("flex items-center justify-center gap-1", className)} aria-label="Pagination">
