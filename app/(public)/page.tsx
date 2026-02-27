@@ -33,95 +33,106 @@ export const metadata: Metadata = {
 export default async function HomePage() {
     const supabase = await createServerSupabaseClient();
 
-    // Fetch categories (parent only)
-    const { data: categories } = await supabase
-        .from("categories")
-        .select("id, name, slug, icon")
-        .is("parent_id", null)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true })
-        .limit(14);
-
-    // Fetch featured listings
-    const { data: featuredListings } = await supabase
-        .from("listings")
-        .select(`
-            id, slug, business_name, short_description, phone, logo_url,
-            is_featured, is_premium,
-            categories!listings_category_id_fkey ( name ),
-            barangays ( name )
-        `)
-        .eq("status", "approved")
-        .eq("is_active", true)
-        .eq("is_featured", true)
-        .order("created_at", { ascending: false })
-        .limit(8);
-
-    // Fetch latest listings
-    const { data: latestListings } = await supabase
-        .from("listings")
-        .select(`
-            id, slug, business_name, short_description, phone, logo_url,
-            is_featured, is_premium,
-            categories!listings_category_id_fkey ( name ),
-            barangays ( name )
-        `)
-        .eq("status", "approved")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(6);
-
-    // Fetch upcoming events
-    const { data: events } = await supabase
-        .from("events")
-        .select("id, slug, title, image_url, event_date, start_time, end_time, venue")
-        .eq("is_active", true)
-        .gte("event_date", new Date().toISOString().split("T")[0])
-        .order("event_date", { ascending: true })
-        .limit(4);
-
-    // Fetch active deals
-    const { data: deals } = await supabase
-        .from("deals")
-        .select(`
-            id, title, description, image_url, discount_text, end_date,
-            listings ( slug, business_name )
-        `)
-        .eq("is_active", true)
-        .gte("end_date", new Date().toISOString())
-        .order("end_date", { ascending: true })
-        .limit(6);
-
-    // Fetch blog posts
-    const { data: blogPosts } = await supabase
-        .from("blog_posts")
-        .select("id, slug, title, excerpt, featured_image_url, published_at")
-        .eq("is_published", true)
-        .order("published_at", { ascending: false })
-        .limit(3);
-
-    // Fetch map pins (featured/premium only)
-    const { data: mapListings } = await supabase
-        .from("listings")
-        .select("id, slug, business_name, lat, lng, categories!listings_category_id_fkey ( name )")
-        .eq("status", "approved")
-        .eq("is_active", true)
-        .or("is_featured.eq.true,is_premium.eq.true")
-        .not("lat", "is", null)
-        .not("lng", "is", null)
-        .limit(50);
-
-    // Category listing counts
-    const { data: categoryCounts } = await supabase
-        .from("listings")
-        .select("category_id")
-        .eq("status", "approved")
-        .eq("is_active", true);
+    // Parallelize all data fetching to reduce TTFB and LCP
+    const [
+        { data: categories },
+        { data: barangays },
+        { data: featuredListings },
+        { data: latestListings },
+        { data: events },
+        { data: deals },
+        { data: blogPosts },
+        { data: mapListings },
+        { data: categoryCounts },
+    ] = await Promise.all([
+        supabase
+            .from("categories")
+            .select("id, name, slug, icon, parent_id")
+            .eq("is_active", true)
+            .order("sort_order", { ascending: true }),
+        supabase
+            .from("barangays")
+            .select("name")
+            .eq("is_active", true)
+            .order("name", { ascending: true }),
+        supabase
+            .from("listings")
+            .select(`
+                id, slug, business_name, short_description, phone, logo_url,
+                is_featured, is_premium,
+                categories!listings_category_id_fkey ( name ),
+                barangays ( name )
+            `)
+            .eq("status", "approved")
+            .eq("is_active", true)
+            .eq("is_featured", true)
+            .order("created_at", { ascending: false })
+            .limit(8),
+        supabase
+            .from("listings")
+            .select(`
+                id, slug, business_name, short_description, phone, logo_url,
+                is_featured, is_premium,
+                categories!listings_category_id_fkey ( name ),
+                barangays ( name )
+            `)
+            .eq("status", "approved")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(6),
+        supabase
+            .from("events")
+            .select("id, slug, title, image_url, event_date, start_time, end_time, venue")
+            .eq("is_active", true)
+            .gte("event_date", new Date().toISOString().split("T")[0])
+            .order("event_date", { ascending: true })
+            .limit(4),
+        supabase
+            .from("deals")
+            .select(`
+                id, title, description, image_url, discount_text, end_date,
+                listings ( slug, business_name )
+            `)
+            .eq("is_active", true)
+            .gte("end_date", new Date().toISOString())
+            .order("end_date", { ascending: true })
+            .limit(6),
+        supabase
+            .from("blog_posts")
+            .select("id, slug, title, excerpt, featured_image_url, published_at")
+            .eq("is_published", true)
+            .order("published_at", { ascending: false })
+            .limit(3),
+        supabase
+            .from("listings")
+            .select("id, slug, business_name, lat, lng, categories!listings_category_id_fkey ( name )")
+            .eq("status", "approved")
+            .eq("is_active", true)
+            .or("is_featured.eq.true,is_premium.eq.true")
+            .not("lat", "is", null)
+            .not("lng", "is", null)
+            .limit(50),
+        supabase
+            .from("listings")
+            .select("category_id")
+            .eq("status", "approved")
+            .eq("is_active", true),
+    ]);
 
     const countMap: Record<string, number> = {};
     categoryCounts?.forEach((l) => {
         countMap[l.category_id] = (countMap[l.category_id] || 0) + 1;
     });
+
+    // Aggregate sub-category counts into parents (supporting one level of nesting)
+    if (categories) {
+        const subCategories = categories.filter((c) => c.parent_id !== null);
+        subCategories.forEach((sub) => {
+            if (sub.parent_id) {
+                countMap[sub.parent_id] = (countMap[sub.parent_id] || 0) + (countMap[sub.id] || 0);
+            }
+        });
+    }
 
     const mapPins = (mapListings || [])
         .filter((l) => l.lat && l.lng)
@@ -151,13 +162,13 @@ export default async function HomePage() {
                         Find restaurants, services, shops, and more in your city
                     </p>
                     <div className="mt-10">
-                        <SearchBar categories={categories || []} />
+                        <SearchBar categories={categories || []} barangays={barangays || []} />
                     </div>
                 </div>
             </section>
 
             {/* ──── SECTION 2: Ad Slot (Top) ──── */}
-            <AdSlot location="homepage_banner" className="py-6 px-4" />
+            <AdSlot location="homepage_banner" className="py-6 px-4" priority />
 
             {/* ──── SECTION 3: Featured Listings ──── */}
             {featuredListings && featuredListings.length > 0 && (
@@ -188,6 +199,7 @@ export default async function HomePage() {
                                         logoUrl={listing.logo_url}
                                         isFeatured={listing.is_featured}
                                         isPremium={listing.is_premium}
+                                        priority
                                     />
                                 </div>
                             ))}
@@ -211,21 +223,24 @@ export default async function HomePage() {
                         </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                        {(categories || []).slice(0, 12).map((cat) => (
-                            <Link
-                                key={cat.id}
-                                href={`/categories/${cat.slug}`}
-                                className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-secondary hover:shadow-lg hover:-translate-y-1"
-                            >
-                                <span className="text-3xl">{cat.icon || "📁"}</span>
-                                <span className="text-sm font-medium text-foreground group-hover:text-secondary transition-colors">
-                                    {cat.name}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                    {countMap[cat.id] || 0} listings
-                                </span>
-                            </Link>
-                        ))}
+                        {(categories || [])
+                            .filter((cat) => cat.parent_id === null)
+                            .slice(0, 12)
+                            .map((cat) => (
+                                <Link
+                                    key={cat.id}
+                                    href={`/categories/${cat.slug}`}
+                                    className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-secondary hover:shadow-lg hover:-translate-y-1"
+                                >
+                                    <span className="text-3xl">{cat.icon || "📁"}</span>
+                                    <span className="text-sm font-medium text-foreground group-hover:text-secondary transition-colors">
+                                        {cat.name}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {countMap[cat.id] || 0} listings
+                                    </span>
+                                </Link>
+                            ))}
                     </div>
                     <div className="mt-8 text-center">
                         <Link

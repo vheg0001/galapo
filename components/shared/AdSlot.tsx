@@ -1,14 +1,16 @@
 import { createServerSupabaseClient } from "@/lib/supabase";
-import Image from "next/image";
+import LazyImage from "./LazyImage";
 import Link from "next/link";
+import AdTracker from "./AdTracker";
 
 interface AdSlotProps {
     location: string;
     position?: number;
     className?: string;
+    priority?: boolean;
 }
 
-export default async function AdSlot({ location, position = 1, className }: AdSlotProps) {
+export default async function AdSlot({ location, position = 1, className, priority }: AdSlotProps) {
     const supabase = await createServerSupabaseClient();
 
     // Find an active internal ad for this placement
@@ -30,21 +32,23 @@ export default async function AdSlot({ location, position = 1, className }: AdSl
         // Track impression (fire and forget via edge function in production)
         return (
             <div className={className}>
-                <Link
-                    href={ad.target_url}
-                    target="_blank"
-                    rel="noopener noreferrer sponsored"
-                    className="block overflow-hidden rounded-xl"
-                >
-                    <Image
-                        src={ad.image_url}
-                        alt={ad.title || "Advertisement"}
-                        width={728}
-                        height={90}
-                        className="mx-auto w-full max-w-3xl"
-                        sizes="(max-width: 768px) 100vw, 728px"
-                    />
-                </Link>
+                <AdTracker adId={ad.id}>
+                    <Link
+                        href={ad.target_url}
+                        target="_blank"
+                        rel="noopener noreferrer sponsored"
+                        className="block overflow-hidden rounded-xl"
+                    >
+                        <LazyImage
+                            src={ad.image_url}
+                            alt={ad.title || "Advertisement"}
+                            width={728}
+                            height={90}
+                            className="mx-auto w-full max-w-3xl aspect-[728/90]"
+                            priority={priority}
+                        />
+                    </Link>
+                </AdTracker>
             </div>
         );
     }

@@ -9,6 +9,7 @@ interface Category {
     name: string;
     slug: string;
     icon?: string | null;
+    listing_count?: number;
 }
 
 interface CategoryMegaMenuProps {
@@ -78,7 +79,12 @@ export default function CategoryMegaMenu({ categories }: CategoryMegaMenuProps) 
                                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                             >
                                 <span className="text-lg">{cat.icon || "📁"}</span>
-                                <span className="font-medium">{cat.name}</span>
+                                <div className="flex flex-col">
+                                    <span className="font-medium">{cat.name}</span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                        {cat.listing_count || 0} listings
+                                    </span>
+                                </div>
                             </Link>
                         ))}
                     </div>

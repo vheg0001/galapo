@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import LazyImage from "./LazyImage";
 import { formatDate } from "@/lib/utils";
 
 interface BlogCardProps {
@@ -24,17 +24,11 @@ export default function BlogCard({
         >
             {/* Image */}
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
-                {featuredImageUrl ? (
-                    <Image
-                        src={featuredImageUrl}
-                        alt={title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    />
-                ) : (
-                    <div className="flex h-full items-center justify-center text-4xl">📝</div>
-                )}
+                <LazyImage
+                    src={featuredImageUrl || "/placeholder-business.svg"}
+                    alt={title}
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
             </div>
 
             {/* Content */}

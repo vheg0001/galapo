@@ -9,7 +9,7 @@ import MobileMenu from "./MobileMenu";
 import CategoryMegaMenu from "./CategoryMegaMenu";
 
 interface HeaderProps {
-    categories?: { id: string; name: string; slug: string; icon?: string | null }[];
+    categories?: { id: string; name: string; slug: string; icon?: string | null; listing_count?: number }[];
 }
 
 export default function Header({ categories = [] }: HeaderProps) {

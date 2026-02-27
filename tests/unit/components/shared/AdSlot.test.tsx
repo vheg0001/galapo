@@ -8,6 +8,14 @@ vi.mock("@/lib/supabase", () => ({
     createServerSupabaseClient: vi.fn(),
 }));
 
+// Mock IntersectionObserver
+class MockIntersectionObserver {
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+}
+(global as any).IntersectionObserver = MockIntersectionObserver;
+
 describe("AdSlot Server Component", () => {
     let mockSupabase: any;
 

@@ -5,7 +5,8 @@ import { GET as getCategories } from "@/app/api/categories/route";
 import { GET as getEvents } from "@/app/api/events/upcoming/route";
 import { GET as getDeals } from "@/app/api/deals/active/route";
 import { GET as getBlog } from "@/app/api/blog/latest/route";
-import { GET as getAds, POST as postAdClick } from "@/app/api/ads/route";
+import { POST as postAdImpression } from "@/app/api/ads/route";
+import { POST as postAdClick } from "@/app/api/ads/click/route";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
 // Mock Supabase Client
@@ -120,6 +121,21 @@ describe("Homepage API Routes Integration", () => {
         });
     });
 
+    describe("POST /api/ads", () => {
+        it("tracks ad impression via RPC", async () => {
+            const { POST: postImpression } = await import("@/app/api/ads/route");
+            mockSupabase.rpc.mockResolvedValue({ error: null });
+
+            const req = mockRequest("http://localhost:3000/api/ads", "POST", { ad_id: "ad-123" });
+            const res = await postImpression(req);
+            const json = await res.json();
+
+            expect(res.status).toBe(200);
+            expect(json.success).toBe(true);
+            expect(mockSupabase.rpc).toHaveBeenCalledWith("increment_ad_impression", { ad_id: "ad-123" });
+        });
+    });
+
     describe("POST /api/ads/click", () => {
         it("tracks ad click via RPC", async () => {
             const { POST: postClick } = await import("@/app/api/ads/click/route");
@@ -131,7 +147,7 @@ describe("Homepage API Routes Integration", () => {
 
             expect(res.status).toBe(200);
             expect(json.success).toBe(true);
-            expect(mockSupabase.rpc).toHaveBeenCalledWith("increment_ad_click", { target_ad_id: "ad-123" });
+            expect(mockSupabase.rpc).toHaveBeenCalledWith("increment_ad_click", { ad_id: "ad-123" });
         });
 
         it("fails on missing ad_id", async () => {
@@ -141,8 +157,7 @@ describe("Homepage API Routes Integration", () => {
             const json = await res.json();
 
             expect(res.status).toBe(400);
-            expect(json.success).toBe(false);
-            expect(json.error).toContain("Missing ad_id");
+            expect(json.error).toContain("ad_id is required");
         });
     });
 });

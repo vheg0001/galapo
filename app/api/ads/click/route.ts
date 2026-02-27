@@ -1,36 +1,31 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { successResponse, errorResponse } from "@/lib/api-helpers";
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { ad_id } = body;
+        const { ad_id } = await request.json();
 
         if (!ad_id) {
-            return errorResponse("Missing ad_id in request body", 400);
+            return NextResponse.json({ error: "ad_id is required" }, { status: 400 });
         }
 
         const supabase = await createServerSupabaseClient();
 
-        // Assuming you have an RPC function 'increment_ad_click' in your database.
-        // If not, a direct update could work (but is subject to race conditions without RPC).
-        // Let's use RPC if available, otherwise direct update.
-        const { error } = await supabase.rpc("increment_ad_click", { target_ad_id: ad_id });
+        // Call the RPC function to increment the click count
+        const { error } = await supabase.rpc("increment_ad_click", { ad_id });
 
         if (error) {
-            console.error("RPC increment_ad_click failed or missing, trying direct update:", error.message);
-
-            // Fallback strategy if RPC doesn't exist (less safe against race conditions but functional)
-            // fetch current -> +1 -> update
-            const { data: ad } = await supabase.from("ad_placements").select("clicks").eq("id", ad_id).single();
-            if (ad) {
-                await supabase.from("ad_placements").update({ clicks: (ad.clicks || 0) + 1 }).eq("id", ad_id);
+            console.error("Failed to increment ad click:", error);
+            // Try updating directly if RPC fails for some reason
+            const { error: updateErr } = await supabase.rpc("increment_ad_click", { target_ad_id: ad_id });
+            if (updateErr) {
+                return NextResponse.json({ error: "Failed to increment click" }, { status: 500 });
             }
         }
 
-        return successResponse({ success: true });
-    } catch (error: any) {
-        return errorResponse(error.message || "Failed to record ad click", 500);
+        return NextResponse.json({ success: true });
+    } catch (err) {
+        console.error("Error in /api/ads/click POST:", err);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

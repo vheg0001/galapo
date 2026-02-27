@@ -40,7 +40,7 @@ describe("SearchBar Component", () => {
         render(<SearchBar categories={categories} variant="hero" />);
 
         expect(screen.getByPlaceholderText(/What are you looking for/i)).toBeInTheDocument();
-        expect(screen.getByRole("combobox")).toBeInTheDocument();
+        expect(screen.getByText("All Categories")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
     });
 
@@ -63,8 +63,13 @@ describe("SearchBar Component", () => {
     it("updates global state on category select", () => {
         render(<SearchBar categories={categories} variant="hero" />);
 
-        const select = screen.getByRole("combobox");
-        fireEvent.change(select, { target: { value: "food" } });
+        // Open custom select
+        const trigger = screen.getByText("All Categories");
+        fireEvent.click(trigger);
+
+        // Click the option
+        const option = screen.getByText("Food");
+        fireEvent.click(option);
 
         expect(mockStore.setCategoryId).toHaveBeenCalledWith("food");
     });

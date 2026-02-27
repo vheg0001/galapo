@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import LazyImage from "./LazyImage";
 import { MapPin, Clock } from "lucide-react";
 
 interface EventCardProps {
@@ -32,17 +32,11 @@ export default function EventCard({
         >
             {/* Image */}
             <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
-                {imageUrl ? (
-                    <Image
-                        src={imageUrl}
-                        alt={title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    />
-                ) : (
-                    <div className="flex h-full items-center justify-center text-4xl">🎉</div>
-                )}
+                <LazyImage
+                    src={imageUrl || "/placeholder-business.svg"}
+                    alt={title}
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
 
                 {/* Date badge */}
                 <div className="absolute left-3 top-3 flex flex-col items-center rounded-lg bg-white px-3 py-1.5 shadow-md">

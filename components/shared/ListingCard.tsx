@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import Image from "next/image";
+import LazyImage from "./LazyImage";
 import { MapPin, Phone } from "lucide-react";
 import Badge from "./Badge";
 import { truncateText } from "@/lib/utils";
@@ -17,6 +19,7 @@ interface ListingCardProps {
     isFeatured?: boolean;
     isPremium?: boolean;
     isNew?: boolean;
+    priority?: boolean;
 }
 
 export default function ListingCard({
@@ -31,6 +34,7 @@ export default function ListingCard({
     isFeatured,
     isPremium,
     isNew,
+    priority,
 }: ListingCardProps) {
     const displayImage = imageUrl || logoUrl || "/placeholder-business.svg";
 
@@ -41,12 +45,11 @@ export default function ListingCard({
         >
             {/* Image */}
             <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
-                <Image
+                <LazyImage
                     src={displayImage}
                     alt={businessName}
-                    fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    priority={priority}
                 />
                 {/* Badges */}
                 <div className="absolute left-3 top-3 flex flex-col gap-1.5">

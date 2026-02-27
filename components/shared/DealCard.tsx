@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import LazyImage from "./LazyImage";
 import { Clock } from "lucide-react";
 import Badge from "./Badge";
 
@@ -34,12 +34,10 @@ export default function DealCard({
             {/* Image */}
             <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
                 {imageUrl ? (
-                    <Image
+                    <LazyImage
                         src={imageUrl}
                         alt={title}
-                        fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="288px"
                     />
                 ) : (
                     <div className="flex h-full items-center justify-center text-4xl">🏷️</div>

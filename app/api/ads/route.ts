@@ -1,43 +1,27 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { getActiveAdsForLocation } from "@/lib/queries";
-import { successResponse, errorResponse } from "@/lib/api-helpers";
 
-export const dynamic = "force-dynamic";
-
-export async function GET(request: Request) {
+export async function POST(request: Request) {
     try {
-        const { searchParams } = new URL(request.url);
-        const location = searchParams.get("location");
-        const positionParam = searchParams.get("position");
-        const position = positionParam ? parseInt(positionParam, 10) : 1;
+        const { ad_id } = await request.json();
 
-        if (!location) {
-            return errorResponse("Missing placement location parameter", 400);
+        if (!ad_id) {
+            return NextResponse.json({ error: "ad_id is required" }, { status: 400 });
         }
 
         const supabase = await createServerSupabaseClient();
-        const { data: ad, error } = await getActiveAdsForLocation(supabase, location, position);
+
+        // Call the RPC function to increment the impression count
+        const { error } = await supabase.rpc("increment_ad_impression", { ad_id });
 
         if (error) {
-            throw error;
+            console.error("Failed to increment ad impression:", error);
+            return NextResponse.json({ error: "Failed to increment impression" }, { status: 500 });
         }
 
-        if (!ad) {
-            return successResponse(null); // No active ad for this slot
-        }
-
-        // Fire-and-forget an impression tracking request
-        // In a real high-traffic app, this might be better handled via Edge Functions or batched
-        supabase.rpc("increment_ad_impression", { ad_id: ad.id }).then();
-
-        // Format response returning AdSense ID if appropriate, otherwise direct image/url
-        const formattedAd = ad.is_adsense
-            ? { id: ad.id, is_adsense: true, adsense_slot_id: ad.adsense_slot_id }
-            : { id: ad.id, is_adsense: false, image_url: ad.image_url, target_url: ad.target_url, title: ad.title };
-
-        return successResponse(formattedAd);
-    } catch (error: any) {
-        return errorResponse(error.message || "Failed to fetch ad placement", 500);
+        return NextResponse.json({ success: true });
+    } catch (err) {
+        console.error("Error in /api/ads POST:", err);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
