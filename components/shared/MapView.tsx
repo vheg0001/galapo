@@ -10,6 +10,8 @@ interface MapPin {
     name: string;
     category?: string;
     slug: string;
+    is_featured?: boolean;
+    is_premium?: boolean;
 }
 
 interface MapViewProps {
@@ -43,6 +45,7 @@ function MapInner({ pins, className, zoom }: MapViewProps) {
         TileLayer: any;
         Marker: any;
         Popup: any;
+        L: any;
     } | null>(null);
 
     useEffect(() => {
@@ -53,19 +56,12 @@ function MapInner({ pins, className, zoom }: MapViewProps) {
             // @ts-ignore
             import("leaflet/dist/leaflet.css"),
         ]).then(([rl, L]) => {
-            // Fix default marker icons
-            delete (L.Icon.Default.prototype as any)._getIconUrl;
-            L.Icon.Default.mergeOptions({
-                iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-                iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-                shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-            });
-
             setMapComponents({
                 MapContainer: rl.MapContainer,
                 TileLayer: rl.TileLayer,
                 Marker: rl.Marker,
                 Popup: rl.Popup,
+                L: L.default ?? L,
             });
         });
     }, []);
@@ -78,7 +74,25 @@ function MapInner({ pins, className, zoom }: MapViewProps) {
         );
     }
 
-    const { MapContainer, TileLayer, Marker, Popup } = MapComponents;
+    const { MapContainer, TileLayer, Marker, Popup, L } = MapComponents;
+
+    const createIcon = (pin: MapPin) => {
+        // Colors: Gold (Premium), Orange (Featured), Blue (Regular)
+        const color = pin.is_premium ? "#F59E0B" : pin.is_featured ? "#FF6B35" : "#3B82F6";
+        const size = 32;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="${color}" stroke="white" stroke-width="1.5"/>
+            <circle cx="12" cy="9" r="2.5" fill="white"/>
+        </svg>`;
+
+        return L.divIcon({
+            html: svg,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size],
+            popupAnchor: [0, -size],
+            className: "leaflet-custom-pin",
+        });
+    };
 
     return (
         <MapContainer
@@ -93,7 +107,11 @@ function MapInner({ pins, className, zoom }: MapViewProps) {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {pins?.map((pin) => (
-                <Marker key={pin.id} position={[pin.lat, pin.lng]}>
+                <Marker
+                    key={pin.id}
+                    position={[pin.lat, pin.lng]}
+                    icon={createIcon(pin)}
+                >
                     <Popup>
                         <div className="text-sm">
                             <strong>{pin.name}</strong>

@@ -52,7 +52,7 @@ export default async function HomePage() {
             .order("sort_order", { ascending: true }),
         supabase
             .from("barangays")
-            .select("name")
+            .select("name, slug")
             .eq("is_active", true)
             .order("name", { ascending: true }),
         supabase
@@ -105,7 +105,7 @@ export default async function HomePage() {
             .limit(3),
         supabase
             .from("listings")
-            .select("id, slug, business_name, lat, lng, categories!listings_category_id_fkey ( name )")
+            .select("id, slug, business_name, lat, lng, is_featured, is_premium, categories!listings_category_id_fkey ( name )")
             .eq("status", "approved")
             .eq("is_active", true)
             .or("is_featured.eq.true,is_premium.eq.true")
@@ -143,6 +143,8 @@ export default async function HomePage() {
             name: l.business_name,
             category: (l.categories as any)?.name,
             slug: l.slug,
+            is_featured: l.is_featured,
+            is_premium: l.is_premium,
         }));
 
     return (

@@ -24,6 +24,8 @@ export default function ListingMapView({ listings }: ListingMapViewProps) {
                 name: l.business_name,
                 category: cat?.name,
                 slug: l.slug,
+                is_featured: l.is_featured,
+                is_premium: l.is_premium || l.isSponsored,
             };
         });
 

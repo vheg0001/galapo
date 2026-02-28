@@ -201,7 +201,11 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
         query = query.eq("is_featured", true);
     }
 
-    // Sorting
+    // Sorting - Always prioritize premium and featured
+    query = query
+        .order("is_premium", { ascending: false })
+        .order("is_featured", { ascending: false });
+
     switch (filters.sort) {
         case "newest":
             query = query.order("created_at", { ascending: false });
@@ -214,10 +218,7 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
             break;
         case "featured":
         default:
-            query = query
-                .order("is_featured", { ascending: false })
-                .order("is_premium", { ascending: false })
-                .order("created_at", { ascending: false });
+            query = query.order("created_at", { ascending: false });
             break;
     }
 
@@ -395,6 +396,11 @@ export async function buildListingsQuery(supabase: SupabaseClient, options: Buil
 
     // Sorting
     if (!forMap) {
+        // Always prioritize premium and featured
+        query = query
+            .order("is_premium", { ascending: false })
+            .order("is_featured", { ascending: false });
+
         switch (filters.sort) {
             case "newest":
                 query = query.order("created_at", { ascending: false });
@@ -407,10 +413,7 @@ export async function buildListingsQuery(supabase: SupabaseClient, options: Buil
                 break;
             case "featured":
             default:
-                query = query
-                    .order("is_premium", { ascending: false })
-                    .order("is_featured", { ascending: false })
-                    .order("updated_at", { ascending: false });
+                query = query.order("updated_at", { ascending: false });
                 break;
         }
 
@@ -569,4 +572,118 @@ export async function getRelatedListings(
 
     const { data } = await query;
     return data || [];
+}
+
+// ──────────────────────────────────────────────────────────
+// Module 6.2 - Search API Enhancements
+// ──────────────────────────────────────────────────────────
+
+export interface SearchListingsParams {
+    search_query?: string | null;
+    category_slug?: string | null;
+    subcategory_slug?: string | null;
+    barangay_slugs?: string[] | null;
+    city_slug?: string | null;
+    is_open_now?: boolean;
+    featured_only?: boolean;
+    user_lat?: number | null;
+    user_lng?: number | null;
+    radius_km?: number;
+    sort_by?: string;
+    page_number?: number;
+    page_size?: number;
+}
+
+/**
+ * Call the Supabase RPC function `search_listings`.
+ */
+export async function searchListings(supabase: SupabaseClient, params: SearchListingsParams) {
+    const { data, error } = await supabase.rpc("search_listings", params);
+
+    if (error) {
+        throw error;
+    }
+
+    return data;
+}
+
+/**
+ * Fetch listings within map geographic bounds.
+ */
+export async function getListingsInBounds(
+    supabase: SupabaseClient,
+    bounds: { north: number; south: number; east: number; west: number }
+) {
+    const { data, error } = await supabase
+        .from("listings")
+        .select(`
+            id, slug, business_name, short_description, phone, 
+            logo_url, is_featured, is_premium, 
+            created_at, updated_at, lat, lng,
+            categories!listings_category_id_fkey ( id, name, slug ),
+            barangays ( id, name, slug ),
+            listing_images ( image_url, sort_order, is_primary )
+        `)
+        .eq("status", "approved")
+        .eq("is_active", true)
+        .gte("lat", bounds.south)
+        .lte("lat", bounds.north)
+        .gte("lng", bounds.west)
+        .lte("lng", bounds.east)
+        .limit(200);
+
+    if (error) throw error;
+
+    return data || [];
+}
+
+/**
+ * Fetch search suggestions based on partial query matching using pg_trgm.
+ */
+export async function searchSuggestions(supabase: SupabaseClient, query: string) {
+    // 1. Business names
+    const { data: businesses } = await supabase
+        .from("listings")
+        .select("business_name, slug")
+        .eq("status", "approved")
+        .eq("is_active", true)
+        .textSearch("business_name", query, { type: "websearch" })
+        .limit(5);
+
+    // Fallback if full-text search doesn't match well for short strings
+    let businessResults = businesses || [];
+    if (businessResults.length === 0) {
+        const { data: fuzzyBiz } = await supabase
+            .from("listings")
+            .select("business_name, slug")
+            .eq("status", "approved")
+            .eq("is_active", true)
+            .ilike("business_name", `%${query}%`)
+            .limit(5);
+        businessResults = fuzzyBiz || [];
+    }
+
+    // 2. Categories
+    const { data: categories } = await supabase
+        .from("categories")
+        .select("name, slug")
+        .eq("is_active", true)
+        .is("parent_id", null)
+        .ilike("name", `%${query}%`)
+        .limit(5);
+
+    // 3. Subcategories
+    const { data: subcategories } = await supabase
+        .from("categories")
+        .select("name, slug, parent_id")
+        .eq("is_active", true)
+        .not("parent_id", "is", null)
+        .ilike("name", `%${query}%`)
+        .limit(5);
+
+    return {
+        businesses: businessResults.map(b => ({ name: b.business_name, slug: b.slug })),
+        categories: categories || [],
+        subcategories: subcategories || []
+    };
 }

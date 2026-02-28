@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase";
 import { errorResponse } from "@/lib/api-helpers";
-import { parseSearchParams, isOpenNow } from "@/lib/search-helpers";
-import { buildListingsQuery, resolveBarangaySlugs, resolveCategorySlug } from "@/lib/queries";
+import { parseSearchParams } from "@/lib/search-helpers";
+import { searchListings, type SearchListingsParams } from "@/lib/queries";
 
 // Dynamic route - no caching for filtered results
 export const dynamic = "force-dynamic";
@@ -12,90 +12,43 @@ export async function GET(request: Request) {
         const filters = parseSearchParams(searchParams);
         const supabase = await createServerSupabaseClient();
 
-        // Resolve category slug → ID
-        let categoryId: string | undefined;
-        let subcategoryId: string | undefined;
+        // Extract geo parameters if available
+        const lat = searchParams.get("lat") ? parseFloat(searchParams.get("lat")!) : null;
+        const lng = searchParams.get("lng") ? parseFloat(searchParams.get("lng")!) : null;
+        const radius = searchParams.get("radius") ? parseFloat(searchParams.get("radius")!) : 10;
 
-        if (filters.subcategory) {
-            const sub = await resolveCategorySlug(supabase, filters.subcategory);
-            if (sub) subcategoryId = sub.id;
-        }
-        if (filters.category) {
-            const cat = await resolveCategorySlug(supabase, filters.category);
-            if (cat) categoryId = cat.id;
-        }
+        const rpcParams: SearchListingsParams = {
+            search_query: filters.q || null,
+            category_slug: filters.category || null,
+            subcategory_slug: filters.subcategory || null,
+            barangay_slugs: filters.barangay.length > 0 ? filters.barangay : null,
+            city_slug: filters.city || 'olongapo',
+            is_open_now: filters.openNow,
+            featured_only: filters.featuredOnly,
+            user_lat: !isNaN(lat!) ? lat : null,
+            user_lng: !isNaN(lng!) ? lng : null,
+            radius_km: !isNaN(radius) ? radius : 10,
+            sort_by: filters.sort,
+            page_number: filters.page,
+            page_size: filters.limit
+        };
 
-        // Resolve barangay slugs → IDs
-        const barangayIds = await resolveBarangaySlugs(supabase, filters.barangay);
+        const result = await searchListings(supabase, rpcParams);
 
-        // --- Fetch sponsored listings (top_search_placements) ---
-        let sponsored: any[] = [];
-        if (categoryId) {
-            const today = new Date().toISOString().split("T")[0];
-            const { data: placements } = await supabase
-                .from("top_search_placements")
-                .select(`
-                    id, position,
-                    listings:listing_id (
-                        id, slug, business_name, short_description, phone, address,
-                        logo_url, is_featured, is_premium, created_at, updated_at,
-                        operating_hours, lat, lng, tags,
-                        categories!listings_category_id_fkey ( id, name, slug ),
-                        subcategories:categories!listings_subcategory_id_fkey ( id, name, slug ),
-                        barangays ( id, name, slug ),
-                        listing_images ( image_url, sort_order, is_primary ),
-                        deals ( id ),
-                        subscriptions ( plan_type, status, end_date )
-                    )
-                `)
-                .eq("category_id", categoryId)
-                .eq("is_active", true)
-                .lte("start_date", today)
-                .gte("end_date", today)
-                .order("position", { ascending: true });
-
-            sponsored = (placements || [])
-                .map((p: any) => {
-                    const listing = Array.isArray(p.listings) ? p.listings[0] : p.listings;
-                    if (!listing || listing.status !== "approved" || !listing.is_active) return null;
-                    return enrichListing(listing, true);
-                })
-                .filter(Boolean);
-        }
-
-        // --- Fetch regular listings ---
-        const query = await buildListingsQuery(supabase, {
-            filters,
-            categoryId,
-            subcategoryId,
-            barangayIds: barangayIds.length > 0 ? barangayIds : undefined,
-        });
-
-        const { data, count, error } = await query;
-        if (error) throw error;
-
-        let listings = (data || []).map((l: any) => enrichListing(l, false));
-
-        // Open now filter (client-side since JSONB comparison is complex)
-        if (filters.openNow) {
-            listings = listings.filter((l: any) => isOpenNow(l.operating_hours));
-        }
-
-        const total = filters.openNow ? listings.length : (count || 0);
-        const totalPages = Math.ceil(total / filters.limit);
+        const totalPages = Math.ceil(result.total / filters.limit);
 
         return Response.json({
             success: true,
-            data: listings,
+            data: result.listings || [],
             pagination: {
                 page: filters.page,
                 limit: filters.limit,
-                total,
+                total: result.total,
                 total_pages: totalPages,
                 has_next: filters.page < totalPages,
                 has_previous: filters.page > 1,
             },
-            sponsored,
+            sponsored: result.sponsored || [],
             filters_applied: {
                 category: filters.category,
                 subcategory: filters.subcategory,
@@ -104,6 +57,9 @@ export async function GET(request: Request) {
                 featured_only: filters.featuredOnly,
                 open_now: filters.openNow,
                 sort: filters.sort,
+                lat: rpcParams.user_lat,
+                lng: rpcParams.user_lng,
+                radius: rpcParams.radius_km
             },
         });
     } catch (error: any) {

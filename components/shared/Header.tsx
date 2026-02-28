@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
 import { APP_NAME, NAV_LINKS } from "@/lib/constants";
 import { MapPin, Menu, X, Search } from "lucide-react";
@@ -16,7 +16,12 @@ interface HeaderProps {
 export default function Header({ categories = [] }: HeaderProps) {
     const { isMobileMenuOpen, toggleMobileMenu, isSearchOpen, toggleSearch } = useAppStore();
     const pathname = usePathname();
+    const router = useRouter();
     const [scrolled, setScrolled] = useState(false);
+    const [headerQuery, setHeaderQuery] = useState("");
+
+    // Hide header search on the search page (it has its own big search bar)
+    const isSearchPage = pathname.startsWith("/olongapo/search");
 
     const handleHomeClick = (e: React.MouseEvent) => {
         if (pathname === "/") {
@@ -68,14 +73,16 @@ export default function Header({ categories = [] }: HeaderProps) {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
-                        {/* Search toggle */}
-                        <button
-                            onClick={toggleSearch}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                            aria-label="Toggle search"
-                        >
-                            <Search className="h-[18px] w-[18px]" />
-                        </button>
+                        {/* Search toggle — hidden on search page */}
+                        {!isSearchPage && (
+                            <button
+                                onClick={toggleSearch}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                aria-label="Toggle search"
+                            >
+                                <Search className="h-[18px] w-[18px]" />
+                            </button>
+                        )}
 
                         {/* CTA - desktop only */}
                         <Link
@@ -100,19 +107,32 @@ export default function Header({ categories = [] }: HeaderProps) {
                     </div>
                 </div>
 
-                {/* Search Bar (expandable) */}
-                {isSearchOpen && (
+                {/* Search Bar (expandable) — hidden on search page */}
+                {isSearchOpen && !isSearchPage && (
                     <div className="border-t border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
                         <div className="mx-auto max-w-7xl">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <input
-                                    type="search"
-                                    placeholder="Search businesses, restaurants, services..."
-                                    className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                    autoFocus
-                                />
-                            </div>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    if (headerQuery.trim()) {
+                                        router.push(`/olongapo/search?q=${encodeURIComponent(headerQuery.trim())}`);
+                                        toggleSearch();
+                                        setHeaderQuery("");
+                                    }
+                                }}
+                            >
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <input
+                                        type="search"
+                                        value={headerQuery}
+                                        onChange={(e) => setHeaderQuery(e.target.value)}
+                                        placeholder="Search businesses, restaurants, services..."
+                                        className="h-10 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                        autoFocus
+                                    />
+                                </div>
+                            </form>
                         </div>
                     </div>
                 )}

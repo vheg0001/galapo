@@ -8,7 +8,7 @@ import { CustomSelect } from "./CustomSelect";
 
 interface SearchBarProps {
     categories?: { id: string; name: string; slug: string }[];
-    barangays?: { name: string }[];
+    barangays?: { name: string; slug: string }[];
     variant?: "hero" | "compact";
 }
 
@@ -22,7 +22,7 @@ export default function SearchBar({ categories = [], barangays = [], variant = "
         if (query) params.set("q", query);
         if (categoryId) params.set("category", categoryId);
         if (barangay) params.set("barangay", barangay);
-        router.push(`/search?${params.toString()}`);
+        router.push(`/olongapo/search?${params.toString()}`);
     };
 
     if (variant === "compact") {
@@ -41,11 +41,11 @@ export default function SearchBar({ categories = [], barangays = [], variant = "
     }
 
     return (
-        <div className="mx-auto w-full max-w-3xl">
+        <div className="mx-auto w-full max-w-5xl">
             <form onSubmit={handleSearch}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-0 sm:rounded-2xl sm:bg-white sm:p-2 sm:shadow-xl">
                     {/* Text input */}
-                    <div className="relative flex-1 min-w-[280px]">
+                    <div className="relative flex-[1.5] min-w-[240px]">
                         <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                         <input
                             type="search"
@@ -58,7 +58,7 @@ export default function SearchBar({ categories = [], barangays = [], variant = "
 
                     {/* Category select */}
                     {categories.length > 0 && (
-                        <div className="relative group min-w-[160px]">
+                        <div className="relative group flex-1 min-w-[180px]">
                             <CustomSelect
                                 value={categoryId || ""}
                                 onChange={(val) => setCategoryId(val || null)}
@@ -71,12 +71,12 @@ export default function SearchBar({ categories = [], barangays = [], variant = "
 
                     {/* Barangay select */}
                     {barangays.length > 0 && (
-                        <div className="relative group min-w-[160px]">
+                        <div className="relative group flex-1 min-w-[180px]">
                             <CustomSelect
                                 value={barangay || ""}
                                 onChange={(val) => setBarangay(val || null)}
                                 placeholder="All Barangays"
-                                options={barangays.map((b) => ({ value: b.name, label: b.name }))}
+                                options={barangays.map((b) => ({ value: b.slug, label: b.name }))}
                                 buttonClassName="h-14 w-full rounded-2xl border-0 bg-white px-4 text-sm text-foreground transition-colors duration-300 hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-secondary/50 sm:h-12 sm:rounded-none sm:border-l sm:border-border cursor-pointer group-hover:bg-slate-50"
                             />
                         </div>
@@ -100,7 +100,7 @@ export default function SearchBar({ categories = [], barangays = [], variant = "
                         key={tag}
                         onClick={() => {
                             setQuery(tag);
-                            router.push(`/search?q=${encodeURIComponent(tag)}`);
+                            router.push(`/olongapo/search?q=${encodeURIComponent(tag)}`);
                         }}
                         className="rounded-full bg-white/10 px-3 py-1 text-xs text-primary-foreground/80 transition-colors hover:bg-white/20 hover:text-white backdrop-blur-sm border border-white/10"
                     >
