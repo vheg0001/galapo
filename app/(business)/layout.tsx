@@ -1,50 +1,66 @@
-import type { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-    title: "Business Dashboard",
-    description: "Manage your business listing on GalaPo.",
-};
+// ──────────────────────────────────────────────────────────
+// GalaPo — Business Owner Layout (Module 7.1)
+// Authenticated layout wrapping all /business/* pages
+// ──────────────────────────────────────────────────────────
+
+import { useState } from "react";
+import AuthGuard from "@/components/auth/AuthGuard";
+import Sidebar from "@/components/business/Sidebar";
+import TopBar from "@/components/business/TopBar";
+import MobileNav from "@/components/business/MobileNav";
+
+// Placeholder unread count — in production, fetch from Supabase
+const UNREAD_NOTIFICATIONS = 0;
 
 export default function BusinessLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    return (
-        <div className="flex min-h-screen">
-            {/* Sidebar placeholder — will be built out later */}
-            <aside className="hidden w-64 shrink-0 border-r border-border bg-sidebar text-sidebar-foreground lg:block">
-                <div className="flex h-16 items-center border-b border-sidebar-border px-6">
-                    <span className="text-lg font-bold">Business</span>
-                </div>
-                <nav className="space-y-1 p-4">
-                    <span className="block rounded-md px-3 py-2 text-sm text-sidebar-foreground/70">
-                        Dashboard
-                    </span>
-                    <span className="block rounded-md px-3 py-2 text-sm text-sidebar-foreground/70">
-                        Listings
-                    </span>
-                    <span className="block rounded-md px-3 py-2 text-sm text-sidebar-foreground/70">
-                        Reviews
-                    </span>
-                    <span className="block rounded-md px-3 py-2 text-sm text-sidebar-foreground/70">
-                        Analytics
-                    </span>
-                    <span className="block rounded-md px-3 py-2 text-sm text-sidebar-foreground/70">
-                        Settings
-                    </span>
-                </nav>
-            </aside>
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-            {/* Main content */}
-            <div className="flex flex-1 flex-col">
-                <header className="flex h-16 items-center border-b border-border bg-background px-6">
-                    <h1 className="text-lg font-semibold text-foreground">
-                        Business Dashboard
-                    </h1>
-                </header>
-                <main className="flex-1 p-6">{children}</main>
+    return (
+        <AuthGuard requireRole="business_owner">
+            <div className="flex min-h-screen bg-[#F5F7FA]">
+                {/* Desktop Sidebar */}
+                <div className="hidden h-screen w-64 shrink-0 sticky top-0 lg:block">
+                    <Sidebar unreadNotifications={UNREAD_NOTIFICATIONS} />
+                </div>
+
+                {/* Mobile Sidebar (slide-in overlay) */}
+                {mobileSidebarOpen && (
+                    <>
+                        <div
+                            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+                            onClick={() => setMobileSidebarOpen(false)}
+                        />
+                        <div className="fixed left-0 top-0 z-50 h-full w-64 lg:hidden">
+                            <Sidebar unreadNotifications={UNREAD_NOTIFICATIONS} />
+                        </div>
+                    </>
+                )}
+
+                {/* Main Content Area */}
+                <div className="flex min-w-0 flex-1 flex-col">
+                    <TopBar
+                        onMobileMenuToggle={() => setMobileSidebarOpen((v) => !v)}
+                        unreadNotifications={UNREAD_NOTIFICATIONS}
+                    />
+
+                    {/* Page Content */}
+                    <main className="flex-1 overflow-auto p-4 pb-20 lg:p-6 lg:pb-6">
+                        {children}
+                    </main>
+                </div>
+
+                {/* Mobile Bottom Navigation */}
+                <MobileNav
+                    unreadNotifications={UNREAD_NOTIFICATIONS}
+                    onMoreClick={() => setMobileSidebarOpen(true)}
+                />
             </div>
-        </div>
+        </AuthGuard>
     );
 }

@@ -44,19 +44,69 @@ export const handlers = [
         });
     }),
 
-    // Auth mock handlers
-    http.post(`${APP_URL}/api/auth/session`, () => {
+    // Auth: Register
+    http.post(`${APP_URL}/api/auth/register`, async ({ request }) => {
+        const { email } = await request.json() as any;
+        if (email === "duplicate@example.com") {
+            return HttpResponse.json({ error: "Email already exists." }, { status: 409 });
+        }
         return HttpResponse.json({
             success: true,
-            data: { user: factories.createMockUser() }
+            user: factories.createMockUser({ email }),
+            profile: { id: "123", email, full_name: "Test User", role: "business_owner" }
+        }, { status: 201 });
+    }),
+
+    // Auth: Login
+    http.post(`${APP_URL}/api/auth/login`, async ({ request }) => {
+        const { email, password } = await request.json() as any;
+        if (password === "wrong") {
+            return HttpResponse.json({ error: "Invalid credentials" }, { status: 401 });
+        }
+        return HttpResponse.json({
+            success: true,
+            user: factories.createMockUser({ email }),
+            profile: { id: "123", email, full_name: "Test User", role: "business_owner", is_active: true }
         });
     }),
 
-    // Ads
-    http.get(`${APP_URL}/api/ads`, () => {
+    // Auth: Logout
+    http.post(`${APP_URL}/api/auth/logout`, () => {
+        return HttpResponse.json({ success: true });
+    }),
+
+    // Auth: Forgot Password
+    http.post(`${APP_URL}/api/auth/forgot-password`, () => {
+        return HttpResponse.json({ success: true });
+    }),
+
+    // Auth: Reset Password
+    http.post(`${APP_URL}/api/auth/reset-password`, () => {
+        return HttpResponse.json({ success: true });
+    }),
+
+    // Auth: Session
+    http.get(`${APP_URL}/api/auth/session`, () => {
         return HttpResponse.json({
-            success: true,
-            data: factories.createMockAdPlacement()
+            user: factories.createMockUser(),
+            profile: { id: "123", email: "user@example.com", role: "business_owner", is_active: true }
         });
+    }),
+
+    // Notifications
+    http.get(`${APP_URL}/api/notifications`, () => {
+        const notifications = Array.from({ length: 5 }).map(() => factories.createMockNotification());
+        return HttpResponse.json({
+            data: notifications,
+            meta: { total: 5, page: 1, limit: 20, totalPages: 1, unread_count: 3 }
+        });
+    }),
+
+    http.patch(`${APP_URL}/api/notifications/:id/read`, () => {
+        return HttpResponse.json({ success: true });
+    }),
+
+    http.patch(`${APP_URL}/api/notifications/read-all`, () => {
+        return HttpResponse.json({ success: true });
     }),
 ];
