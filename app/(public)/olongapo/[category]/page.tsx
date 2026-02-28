@@ -64,6 +64,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
             featuredOnly,
             sort,
             page,
+            searchQuery: typeof sp.q === "string" ? sp.q : undefined,
         }),
         getBarangaysGrouped(supabase),
         getBarangayCounts(supabase, category.id, subcategoryId),

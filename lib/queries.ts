@@ -142,6 +142,7 @@ interface CategoryListingFilters {
     sort?: CategorySort;
     page?: number;
     perPage?: number;
+    searchQuery?: string;
 }
 
 /**
@@ -199,6 +200,13 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
     // Featured only
     if (filters.featuredOnly) {
         query = query.eq("is_featured", true);
+    }
+
+    // Text search
+    if (filters.searchQuery) {
+        query = query.or(
+            `business_name.ilike.%${filters.searchQuery}%,tags.cs.{${filters.searchQuery}}`
+        );
     }
 
     // Sorting - Always prioritize premium and featured
@@ -389,8 +397,10 @@ export async function buildListingsQuery(supabase: SupabaseClient, options: Buil
 
     // Text search
     if (filters.q) {
+        // Use a more precise search: name, specific tags, or prefix matches
+        // Also removed short_description from OR as it causes too many false positives
         query = query.or(
-            `business_name.ilike.%${filters.q}%,short_description.ilike.%${filters.q}%,tags.cs.{${filters.q}}`
+            `business_name.ilike.%${filters.q}%,tags.cs.{${filters.q}}`
         );
     }
 

@@ -152,7 +152,7 @@ BEGIN
           
           -- Location Filter (City defaults to olongapo but currently isn't strictly enforced in db structure; skipping for now unless explicitly modelled)
           
-          -- Category Filter
+          -- Category Filter (Matches explicit slug or search query matching category name)
           AND (v_category_id IS NULL OR (l.category_id = v_category_id OR l.subcategory_id = ANY(COALESCE(v_child_category_ids, '{}'))))
           
           -- Subcategory Filter
@@ -164,13 +164,16 @@ BEGIN
           -- Featured Only Filter
           AND (NOT featured_only OR l.is_featured = true)
           
-          -- Full-text Search Filter (Threshold 0.1 for fuzzy matching)
+          -- Search Filter (Strictly restricts by query if provided)
           AND (search_query IS NULL OR 
                l.business_name ILIKE '%' || search_query || '%' OR
-               l.short_description ILIKE '%' || search_query || '%' OR
-               l.tags::text ILIKE '%' || search_query || '%' OR
-               similarity(l.business_name, search_query) > 0.1 OR
-               similarity(l.tags::text, search_query) > 0.1
+               -- Match category or subcategory name (e.g. 'seafood' subcategory)
+               c.name ILIKE '%' || search_query || '%' OR
+               sc.name ILIKE '%' || search_query || '%' OR
+               -- Exact tag match (case insensitive check for array element)
+               EXISTS (SELECT 1 FROM unnest(l.tags) AS t WHERE t ILIKE search_query) OR
+               -- Fuzzy matches with high threshold
+               similarity(l.business_name, search_query) > 0.4
               )
               
           -- Open Now Filter
