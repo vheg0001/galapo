@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import LazyImage from "@/components/shared/LazyImage";
 import SponsoredBadge from "./SponsoredBadge";
@@ -19,6 +20,12 @@ interface ListingListProps {
 }
 
 export default function ListingList({ listings, currentPage, totalPages, basePath }: ListingListProps) {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -27,7 +34,7 @@ export default function ListingList({ listings, currentPage, totalPages, basePat
             <div className="space-y-4">
                 {listings.map((listing, index) => {
                     const displayImage = listing.image_url || listing.logo_url || "/placeholder-business.svg";
-                    const isNew = new Date(listing.created_at) > sevenDaysAgo;
+                    const isNew = mounted && new Date(listing.created_at) > sevenDaysAgo;
                     const cat = unwrapJoin<{ name: string; slug: string }>(listing.categories);
                     const brgy = unwrapJoin<{ name: string; slug: string }>(listing.barangays);
 
@@ -44,6 +51,7 @@ export default function ListingList({ listings, currentPage, totalPages, basePat
                                             src={displayImage}
                                             alt={listing.business_name}
                                             className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                            priority={index < 4}
                                         />
                                     </div>
                                     {/* Badges */}

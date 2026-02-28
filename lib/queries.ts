@@ -461,3 +461,112 @@ export async function resolveCategorySlug(supabase: SupabaseClient, slug: string
         .maybeSingle();
     return data;
 }
+
+// ──────────────────────────────────────────────────────────
+// Listing Detail Queries (Module 5.1)
+// ──────────────────────────────────────────────────────────
+
+/**
+ * Fetch a full listing detail by slug, including all related data.
+ */
+export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
+    const { data: listing, error } = await supabase
+        .from("listings")
+        .select(`
+            id, slug, owner_id, business_name, short_description, full_description,
+            address, lat, lng, phone, phone_secondary, email, website,
+            social_links, operating_hours, tags, payment_methods,
+            logo_url, is_featured, is_premium, is_active, status,
+            created_at, updated_at,
+            categories!listings_category_id_fkey ( id, name, slug, icon ),
+            subcategories:categories!listings_subcategory_id_fkey ( id, name, slug ),
+            barangays ( id, name, slug ),
+            listing_images ( id, image_url, alt_text, sort_order, is_primary ),
+            listing_field_values (
+                id, value,
+                category_fields (
+                    id, field_name, field_label, field_type, sort_order, options
+                )
+            ),
+            deals ( id, title, description, image_url, discount_text, start_date, end_date, is_active ),
+            events ( id, title, slug, description, image_url, event_date, start_time, end_time, venue, venue_address, is_active )
+        `)
+        .eq("slug", slug)
+        .eq("is_active", true)
+        .eq("status", "approved")
+        .maybeSingle();
+
+    if (error || !listing) return null;
+
+    // Sort images by sort_order, primary first
+    const images = (listing.listing_images || []).sort((a: any, b: any) => {
+        if (a.is_primary && !b.is_primary) return -1;
+        if (!a.is_primary && b.is_primary) return 1;
+        return a.sort_order - b.sort_order;
+    });
+
+    // Filter active deals (not expired)
+    const now = new Date();
+    const activeDeals = (listing.deals || []).filter((d: any) => {
+        return d.is_active && new Date(d.end_date) >= now;
+    });
+
+    // Filter upcoming events
+    const today = new Date().toISOString().split("T")[0];
+    const upcomingEvents = (listing.events || []).filter((e: any) => {
+        return e.is_active && e.event_date >= today;
+    }).sort((a: any, b: any) => a.event_date.localeCompare(b.event_date));
+
+    // Sort field values by field sort_order
+    const fieldValues = (listing.listing_field_values || [])
+        .filter((fv: any) => fv.category_fields)
+        .sort((a: any, b: any) => a.category_fields.sort_order - b.category_fields.sort_order);
+
+    return {
+        ...listing,
+        listing_images: images,
+        deals: activeDeals,
+        events: upcomingEvents,
+        listing_field_values: fieldValues,
+    };
+}
+
+export type ListingDetail = NonNullable<Awaited<ReturnType<typeof getListingBySlug>>>;
+
+/**
+ * Fetch related listings (same subcategory or category, exclude current).
+ */
+export async function getRelatedListings(
+    supabase: SupabaseClient,
+    opts: { categoryId: string; subcategoryId?: string | null; excludeSlug: string; limit?: number }
+) {
+    const { categoryId, subcategoryId, excludeSlug, limit = 4 } = opts;
+
+    let query = supabase
+        .from("listings")
+        .select(`
+            id, slug, business_name, short_description, phone, logo_url,
+            is_featured, is_premium,
+            categories!listings_category_id_fkey ( name, slug ),
+            barangays ( name, slug ),
+            listing_images ( image_url, is_primary )
+        `)
+        .eq("is_active", true)
+        .eq("status", "approved")
+        .neq("slug", excludeSlug)
+        .limit(limit);
+
+    if (subcategoryId) {
+        query = query.eq("subcategory_id", subcategoryId);
+    } else {
+        query = query.eq("category_id", categoryId);
+    }
+
+    query = query
+        .order("is_featured", { ascending: false })
+        .order("is_premium", { ascending: false })
+        .order("created_at", { ascending: false });
+
+    const { data } = await query;
+    return data || [];
+}

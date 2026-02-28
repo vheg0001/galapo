@@ -15,6 +15,7 @@ import {
     City,
     Barangay,
     UserRole,
+    ListingImage,
     ListingStatus,
     PlanType,
     SubscriptionStatus,
@@ -169,6 +170,19 @@ export function createMockDeal(overrides?: Partial<Deal>): Deal {
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         is_active: true,
+        created_at: new Date().toISOString(),
+        ...overrides,
+    };
+}
+
+export function createMockListingImage(overrides?: Partial<ListingImage>): ListingImage {
+    return {
+        id: generateId(),
+        listing_id: generateId(),
+        image_url: "https://placehold.co/800x450/png",
+        alt_text: "Sample listing image",
+        sort_order: 1,
+        is_primary: false,
         created_at: new Date().toISOString(),
         ...overrides,
     };

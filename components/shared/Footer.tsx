@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { MapPin, Facebook, Instagram } from "lucide-react";
 import {
     APP_NAME,
@@ -9,7 +12,15 @@ import {
 } from "@/lib/constants";
 
 export default function Footer() {
+    const pathname = usePathname();
     const currentYear = new Date().getFullYear();
+
+    const handleHomeClick = (e: React.MouseEvent) => {
+        if (pathname === "/") {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
 
     return (
         <footer className="border-t border-border bg-primary text-primary-foreground">
@@ -62,6 +73,7 @@ export default function Footer() {
                                 <li key={link.href}>
                                     <Link
                                         href={link.href}
+                                        onClick={link.href === "/" ? handleHomeClick : undefined}
                                         className="text-sm text-primary-foreground/70 transition-colors hover:text-secondary"
                                     >
                                         {link.label}

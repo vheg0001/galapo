@@ -465,3 +465,52 @@ export type SortOption =
     | "name_asc"
     | "name_desc";
 
+// ──────────────────────────────────────────────────────────
+// ANALYTICS & EXTENDED TYPES (Module 5.2)
+// ──────────────────────────────────────────────────────────
+
+export enum AnalyticsEventType {
+    PAGE_VIEW = "page_view",
+    PHONE_CLICK = "phone_click",
+    EMAIL_CLICK = "email_click",
+    WEBSITE_CLICK = "website_click",
+    DIRECTIONS_CLICK = "directions_click",
+    SOCIAL_CLICK = "social_click",
+    SHARE = "share",
+}
+
+export interface DynamicFieldWithValue {
+    field: {
+        id: string;
+        field_name: string;
+        field_label: string;
+        field_type: FieldType;
+        options: any;
+    };
+    value: any;
+}
+
+export interface ListingDetail extends BusinessListing {
+    category: Category;
+    subcategory: Category | null;
+    barangay: Barangay | null;
+    city: City;
+    owner: { id: string; full_name: string | null } | null;
+    images: ListingImage[];
+    dynamic_fields: DynamicFieldWithValue[];
+    active_deals: Deal[];
+    upcoming_events: Event[];
+    current_plan: PlanType;
+    is_claimed: boolean;
+    has_owner: boolean;
+}
+
+export interface ListingAnalyticsEvent {
+    id: string;
+    listing_id: string;
+    event_type: AnalyticsEventType;
+    event_data: Record<string, any> | null;
+    visitor_id: string | null;
+    created_at: string;
+}
+

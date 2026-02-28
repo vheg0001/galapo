@@ -51,4 +51,12 @@ export const handlers = [
             data: { user: factories.createMockUser() }
         });
     }),
+
+    // Ads
+    http.get(`${APP_URL}/api/ads`, () => {
+        return HttpResponse.json({
+            success: true,
+            data: factories.createMockAdPlacement()
+        });
+    }),
 ];

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import ListingCard from "@/components/shared/ListingCard";
 import AdSlotClient from "@/components/shared/AdSlotClient";
 import Pagination from "@/components/shared/Pagination";
@@ -43,6 +44,12 @@ interface ListingGridProps {
 }
 
 export default function ListingGrid({ listings, currentPage, totalPages, basePath }: ListingGridProps) {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -72,7 +79,8 @@ export default function ListingGrid({ listings, currentPage, totalPages, basePat
                                 imageUrl={listing.image_url}
                                 isFeatured={listing.is_featured}
                                 isPremium={listing.is_premium}
-                                isNew={new Date(listing.created_at) > sevenDaysAgo}
+                                isNew={mounted && new Date(listing.created_at) > sevenDaysAgo}
+                                priority={index < 6}
                             />
                             {/* Inline ad after every 5th listing */}
                             {(index + 1) % 5 === 0 && (

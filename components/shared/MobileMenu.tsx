@@ -1,12 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
 import { X } from "lucide-react";
 import { NAV_LINKS } from "@/lib/constants";
 
 export default function MobileMenu() {
+    const pathname = usePathname();
     const { isMobileMenuOpen, toggleMobileMenu } = useAppStore();
+
+    const handleHomeClick = (e: React.MouseEvent) => {
+        toggleMobileMenu();
+        if (pathname === "/") {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
 
     if (!isMobileMenuOpen) return null;
 
@@ -40,7 +50,7 @@ export default function MobileMenu() {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                onClick={toggleMobileMenu}
+                                onClick={link.href === "/" ? handleHomeClick : toggleMobileMenu}
                                 className="flex items-center rounded-lg px-4 py-3 text-base font-medium text-foreground transition-colors hover:bg-accent/50"
                             >
                                 {link.label}

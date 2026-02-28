@@ -47,12 +47,10 @@ vi.mock("@/components/shared/AdSlot", () => ({
 }));
 
 // Mock the native fetch if needed, though page uses server components
-global.fetch = vi.fn(() =>
-    Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ success: true, data: [] }),
-    })
-) as ReturnType<typeof vi.fn>;
+global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve({ success: true, data: [] }),
+}) as any;
 
 describe("Categories Page (/olongapo/categories)", () => {
     it("renders breadcrumbs correctly", async () => {

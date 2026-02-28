@@ -1,7 +1,7 @@
 "use client";
 
 import { Facebook, Twitter, LinkIcon, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface SocialShareButtonsProps {
     url: string;
@@ -10,6 +10,11 @@ interface SocialShareButtonsProps {
 
 export default function SocialShareButtons({ url, title }: SocialShareButtonsProps) {
     const [copied, setCopied] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const shareLinks = {
         facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
@@ -50,7 +55,7 @@ export default function SocialShareButtons({ url, title }: SocialShareButtonsPro
             <button onClick={handleCopyLink} className={buttonClass} aria-label="Copy link">
                 <LinkIcon className="h-4 w-4" />
             </button>
-            {typeof navigator !== "undefined" && "share" in navigator && (
+            {mounted && typeof navigator !== "undefined" && "share" in navigator && (
                 <button onClick={handleNativeShare} className={buttonClass} aria-label="Share">
                     <Share2 className="h-4 w-4" />
                 </button>
