@@ -15,11 +15,13 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("AuthGuard", () => {
+    const mockReplace = vi.fn();
     const mockPush = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
         (useRouter as any).mockReturnValue({
+            replace: mockReplace,
             push: mockPush,
         });
     });
@@ -52,7 +54,7 @@ describe("AuthGuard", () => {
             </AuthGuard>
         );
 
-        expect(mockPush).toHaveBeenCalledWith("/login");
+        expect(mockReplace).toHaveBeenCalledWith("/login");
     });
 
     it("shows loading spinner when auth is loading", () => {
@@ -83,6 +85,6 @@ describe("AuthGuard", () => {
             </AuthGuard>
         );
 
-        expect(mockPush).toHaveBeenCalledWith("/login");
+        expect(mockReplace).toHaveBeenCalledWith("/login?error=unauthorized");
     });
 });

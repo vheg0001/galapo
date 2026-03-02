@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
+import { useAuthStore } from "@/store/authStore";
 import { X } from "lucide-react";
 import { NAV_LINKS } from "@/lib/constants";
 
 export default function MobileMenu() {
     const pathname = usePathname();
     const { isMobileMenuOpen, toggleMobileMenu } = useAppStore();
+    const { session } = useAuthStore();
 
     const handleHomeClick = (e: React.MouseEvent) => {
         toggleMobileMenu();

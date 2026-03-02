@@ -4,11 +4,12 @@
 // GalaPo — RegisterForm (Module 7.1)
 // ──────────────────────────────────────────────────────────
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { cn } from "@/lib/utils";
 import PasswordStrengthIndicator, { getStrength } from "./PasswordStrengthIndicator";
 
 // ── Philippine phone number validation ──────────────────
@@ -34,10 +35,16 @@ function validateField(name: string, value: string, fields: Record<string, strin
             return "";
     }
 }
-
 export default function RegisterForm() {
     const router = useRouter();
-    const { register } = useAuthStore();
+    const { register, session, isLoading: isAuthLoading } = useAuthStore();
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (session && !isAuthLoading) {
+            router.push("/business/dashboard");
+        }
+    }, [session, isAuthLoading, router]);
 
     const [fields, setFields] = useState({
         fullName: "",
@@ -52,6 +59,7 @@ export default function RegisterForm() {
     const [showConfirm, setShowConfirm] = useState(false);
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
     const [serverError, setServerError] = useState("");
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,16 +100,57 @@ export default function RegisterForm() {
         if (Object.values(newErrors).some((e) => e)) return;
 
         setIsLoading(true);
-        const { error } = await register(fields.email, fields.password, fields.fullName, fields.phone);
-        setIsLoading(false);
+        try {
+            const { error } = await register(fields.email, fields.password, fields.fullName, fields.phone);
 
-        if (error) {
-            setServerError(error);
-            return;
+            if (error) {
+                setServerError(error);
+                setIsLoading(false);
+                return;
+            }
+
+            // Check if registration resulted in a session (auto-login)
+            // We use the store state directly to be sure
+            const currentSession = useAuthStore.getState().session;
+
+            if (currentSession) {
+                // Success + Auto-login -> Redirect to new listing page
+                router.push("/business/dashboard");
+            } else {
+                // Success but no session -> Email confirmation likely required
+                setIsSuccess(true);
+            }
+        } catch (err: any) {
+            setServerError(err.message || "An unexpected error occurred.");
+        } finally {
+            setIsLoading(false);
         }
-
-        router.push("/business/listings/new?welcome=1");
     };
+
+    if (isSuccess) {
+        return (
+            <div className="flex flex-col items-center justify-center space-y-6 py-8 text-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-600">
+                    <CheckCircle size={48} />
+                </div>
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Registration Successful!</h2>
+                    <p className="mt-2 text-gray-600">
+                        We've sent a confirmation email to <span className="font-semibold text-gray-900">{fields.email}</span>.
+                        Please check your inbox and follow the link to activate your account.
+                    </p>
+                </div>
+                <div className="pt-4">
+                    <Link
+                        href="/login"
+                        className="rounded-lg bg-[#1B2A4A] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#2A3B5F]"
+                    >
+                        Back to Login
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
@@ -125,12 +174,12 @@ export default function RegisterForm() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="Juan dela Cruz"
-                    className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition
-                        focus:ring-2 focus:ring-[#1B2A4A]/30
-                        ${errors.fullName && touched.fullName
+                    className={cn(
+                        "w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[#1B2A4A]/30",
+                        errors.fullName && touched.fullName
                             ? "border-red-400 bg-red-50"
                             : "border-gray-300 bg-white focus:border-[#1B2A4A]"
-                        }`}
+                    )}
                 />
                 {errors.fullName && touched.fullName && (
                     <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>
@@ -151,12 +200,12 @@ export default function RegisterForm() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="juan@example.com"
-                    className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition
-                        focus:ring-2 focus:ring-[#1B2A4A]/30
-                        ${errors.email && touched.email
+                    className={cn(
+                        "w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[#1B2A4A]/30",
+                        errors.email && touched.email
                             ? "border-red-400 bg-red-50"
                             : "border-gray-300 bg-white focus:border-[#1B2A4A]"
-                        }`}
+                    )}
                 />
                 {errors.email && touched.email && (
                     <p className="mt-1 text-xs text-red-600">{errors.email}</p>
@@ -177,12 +226,12 @@ export default function RegisterForm() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     placeholder="09XX-XXX-XXXX"
-                    className={`w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition
-                        focus:ring-2 focus:ring-[#1B2A4A]/30
-                        ${errors.phone && touched.phone
+                    className={cn(
+                        "w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[#1B2A4A]/30",
+                        errors.phone && touched.phone
                             ? "border-red-400 bg-red-50"
                             : "border-gray-300 bg-white focus:border-[#1B2A4A]"
-                        }`}
+                    )}
                 />
                 {errors.phone && touched.phone && (
                     <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
@@ -204,12 +253,12 @@ export default function RegisterForm() {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         placeholder="Min. 8 characters"
-                        className={`w-full rounded-lg border px-4 py-2.5 pr-11 text-sm outline-none transition
-                            focus:ring-2 focus:ring-[#1B2A4A]/30
-                            ${errors.password && touched.password
+                        className={cn(
+                            "w-full rounded-lg border px-4 py-2.5 pr-11 text-sm outline-none transition focus:ring-2 focus:ring-[#1B2A4A]/30",
+                            errors.password && touched.password
                                 ? "border-red-400 bg-red-50"
                                 : "border-gray-300 bg-white focus:border-[#1B2A4A]"
-                            }`}
+                        )}
                     />
                     <button
                         type="button"
@@ -241,12 +290,12 @@ export default function RegisterForm() {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         placeholder="Re-enter password"
-                        className={`w-full rounded-lg border px-4 py-2.5 pr-11 text-sm outline-none transition
-                            focus:ring-2 focus:ring-[#1B2A4A]/30
-                            ${errors.confirmPassword && touched.confirmPassword
+                        className={cn(
+                            "w-full rounded-lg border px-4 py-2.5 pr-11 text-sm outline-none transition focus:ring-2 focus:ring-[#1B2A4A]/30",
+                            errors.confirmPassword && touched.confirmPassword
                                 ? "border-red-400 bg-red-50"
                                 : "border-gray-300 bg-white focus:border-[#1B2A4A]"
-                            }`}
+                        )}
                     />
                     <button
                         type="button"
@@ -292,9 +341,9 @@ export default function RegisterForm() {
             <button
                 type="submit"
                 disabled={!isFormValid() || isLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6B35] px-6 py-3 text-sm font-semibold text-white transition
-                    hover:bg-[#e55a25] active:scale-[0.98]
-                    disabled:cursor-not-allowed disabled:opacity-50"
+                className={cn(
+                    "flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6B35] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#e55a25] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                )}
             >
                 {isLoading ? (
                     <>

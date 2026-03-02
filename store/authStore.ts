@@ -70,77 +70,86 @@ export const useAuthStore = create<AuthState>()(
             setLoading: (isLoading) => set({ isLoading }),
 
             login: async (email, password) => {
-                const supabase = createBrowserSupabaseClient();
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
+                try {
+                    const supabase = createBrowserSupabaseClient();
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password,
+                    });
 
-                if (error) return { error: error.message };
-
-                set({
-                    user: data.user,
-                    session: data.session,
-                    isAuthenticated: true,
-                });
-
-                if (data.user) {
-                    await get().loadProfile(data.user.id);
-                }
-
-                return { error: null };
-            },
-
-            register: async (email, password, fullName, phone) => {
-                const supabase = createBrowserSupabaseClient();
-                const { data, error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: {
-                            full_name: fullName,
-                            role: "business_owner",
-                        },
-                    },
-                });
-
-                if (error) return { error: error.message };
-
-                // If email confirmation is disabled, user is returned immediately
-                if (data.user) {
-                    // Update phone in profile
-                    const { error: profileError } = await supabase
-                        .from("profiles")
-                        .update({ phone, full_name: fullName })
-                        .eq("id", data.user.id);
-
-                    if (profileError) {
-                        console.error("Profile update error:", profileError);
-                    }
+                    if (error) return { error: error.message };
 
                     set({
                         user: data.user,
                         session: data.session,
-                        isAuthenticated: !!data.session,
+                        isAuthenticated: true,
                     });
 
-                    if (data.session) {
+                    if (data.user) {
                         await get().loadProfile(data.user.id);
                     }
-                }
 
-                return { error: null };
+                    set({ isLoading: false });
+                    return { error: null };
+                } catch (err: any) {
+                    console.error("Login error:", err);
+                    return { error: err.message || "An unexpected error occurred during login." };
+                }
+            },
+
+            register: async (email, password, fullName, phone) => {
+                try {
+                    const supabase = createBrowserSupabaseClient();
+                    const { data, error } = await supabase.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: {
+                                full_name: fullName,
+                                phone: phone,
+                                role: "business_owner",
+                            },
+                        },
+                    });
+
+                    if (error) return { error: error.message };
+
+                    // If email confirmation is disabled, user is returned immediately
+                    if (data.user) {
+                        set({
+                            user: data.user,
+                            session: data.session,
+                            isAuthenticated: !!data.session,
+                        });
+
+                        if (data.session) {
+                            await get().loadProfile(data.user.id);
+                        }
+                    }
+
+                    return { error: null };
+                } catch (err: any) {
+                    console.error("Registration error:", err);
+                    return { error: err.message || "An unexpected error occurred during registration." };
+                }
             },
 
             logout: async () => {
-                const supabase = createBrowserSupabaseClient();
-                await supabase.auth.signOut();
+                // Clear Zustand state immediately for instant UI response
                 set({
                     user: null,
                     profile: null,
                     session: null,
                     isAuthenticated: false,
+                    isLoading: false,
                 });
+                // Call the server-side logout endpoint to properly clear
+                // httpOnly session cookies that the browser client cannot access
+                try {
+                    await fetch("/api/auth/logout", { method: "POST" });
+                } catch (err) {
+                    console.error("Server-side logout failed:", err);
+                }
             },
 
             resetPassword: async (email) => {
@@ -160,41 +169,54 @@ export const useAuthStore = create<AuthState>()(
             },
 
             loadProfile: async (userId) => {
-                const supabase = createBrowserSupabaseClient();
-                const { data } = await supabase
-                    .from("profiles")
-                    .select("*")
-                    .eq("id", userId)
-                    .single();
+                try {
+                    const supabase = createBrowserSupabaseClient();
+                    const { data, error } = await supabase
+                        .from("profiles")
+                        .select("*")
+                        .eq("id", userId)
+                        .single();
 
-                if (data) {
-                    set({ profile: data as Profile });
+                    if (error) {
+                        console.error("Error loading profile:", error);
+                        return;
+                    }
+
+                    if (data) {
+                        set({ profile: data as Profile });
+                    }
+                } catch (err) {
+                    console.error("Unexpected error loading profile:", err);
                 }
             },
 
             initialize: async () => {
-                const supabase = createBrowserSupabaseClient();
-                set({ isLoading: true });
+                try {
+                    const supabase = createBrowserSupabaseClient();
+                    set({ isLoading: true });
 
-                const { data: { session } } = await supabase.auth.getSession();
+                    const { data: { session } } = await supabase.auth.getSession();
 
-                if (session?.user) {
-                    set({
-                        user: session.user,
-                        session,
-                        isAuthenticated: true,
-                    });
-                    await get().loadProfile(session.user.id);
-                } else {
-                    set({
-                        user: null,
-                        profile: null,
-                        session: null,
-                        isAuthenticated: false,
-                    });
+                    if (session?.user) {
+                        set({
+                            user: session.user,
+                            session,
+                            isAuthenticated: true,
+                        });
+                        await get().loadProfile(session.user.id);
+                    } else {
+                        set({
+                            user: null,
+                            profile: null,
+                            session: null,
+                            isAuthenticated: false,
+                        });
+                    }
+                } catch (err) {
+                    console.error("Auth initialization error:", err);
+                } finally {
+                    set({ isLoading: false });
                 }
-
-                set({ isLoading: false });
             },
         }),
         {

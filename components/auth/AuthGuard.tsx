@@ -19,7 +19,17 @@ export default function AuthGuard({
     requireRole = "business_owner",
 }: AuthGuardProps) {
     const router = useRouter();
-    const { isAuthenticated, isLoading, profile } = useAuthStore();
+    const { isAuthenticated, isLoading, profile, setLoading } = useAuthStore();
+
+    // Safety net: if loading takes more than 5s, force it to false
+    useEffect(() => {
+        if (!isLoading) return;
+        const timer = setTimeout(() => {
+            console.warn("AuthGuard: loading timed out, forcing isLoading to false");
+            setLoading(false);
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [isLoading, setLoading]);
 
     useEffect(() => {
         if (isLoading) return;
@@ -39,7 +49,7 @@ export default function AuthGuard({
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#F5F7FA]">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#1B2A4A] border-t-transparent" />
+                    <div data-testid="loading-spinner" className="h-10 w-10 animate-spin rounded-full border-4 border-[#1B2A4A] border-t-transparent" />
                     <p className="text-sm text-gray-500">Checking authentication…</p>
                 </div>
             </div>

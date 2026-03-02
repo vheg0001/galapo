@@ -25,18 +25,23 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         // Listen for auth state changes (login, logout, token refresh)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-                    if (session?.user) {
-                        setUser(session.user);
-                        setSession(session);
-                        await loadProfile(session.user.id);
+                try {
+                    if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+                        if (session?.user) {
+                            setUser(session.user);
+                            setSession(session);
+                            await loadProfile(session.user.id);
+                        }
+                    } else if (event === "SIGNED_OUT") {
+                        setUser(null);
+                        setSession(null);
+                        useAuthStore.setState({ profile: null, isAuthenticated: false });
                     }
-                } else if (event === "SIGNED_OUT") {
-                    setUser(null);
-                    setSession(null);
-                    useAuthStore.setState({ profile: null, isAuthenticated: false });
+                } catch (err) {
+                    console.error("Auth change error:", err);
+                } finally {
+                    setLoading(false);
                 }
-                setLoading(false);
             }
         );
 

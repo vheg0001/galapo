@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareSupabaseClient } from "@/lib/supabase-middleware";
 
 // Routes that require a business owner role
-const BUSINESS_ROUTES = /^\/(dashboard|business)(\/|$)/;
+const BUSINESS_ROUTES = /^\/business(\/|$)/;
 
 // Routes that require a super admin role
 const ADMIN_ROUTES = /^\/(admin)(\/|$)/;

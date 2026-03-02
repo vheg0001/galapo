@@ -4,15 +4,25 @@
 // GalaPo — LoginForm (Module 7.1)
 // ──────────────────────────────────────────────────────────
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 
 export default function LoginForm() {
     const router = useRouter();
-    const { login } = useAuthStore();
+    const searchParams = useSearchParams();
+    const { login, session, isLoading: isAuthLoading } = useAuthStore();
+
+    const redirectTo = searchParams.get("redirect") || "/business/dashboard";
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (session && !isAuthLoading) {
+            router.push(redirectTo);
+        }
+    }, [session, isAuthLoading, router, redirectTo]);
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -35,7 +45,7 @@ export default function LoginForm() {
             return;
         }
 
-        router.push("/business/dashboard");
+        router.push(redirectTo);
     };
 
     return (
@@ -58,8 +68,7 @@ export default function LoginForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="juan@example.com"
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm outline-none transition
-                        focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/30"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/30"
                 />
             </div>
 
@@ -84,8 +93,7 @@ export default function LoginForm() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter your password"
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-11 text-sm outline-none transition
-                            focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/30"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-11 text-sm outline-none transition focus:border-[#1B2A4A] focus:ring-2 focus:ring-[#1B2A4A]/30"
                     />
                     <button
                         type="button"
@@ -102,9 +110,7 @@ export default function LoginForm() {
             <button
                 type="submit"
                 disabled={!isFormValid || isLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6B35] px-6 py-3 text-sm font-semibold text-white transition
-                    hover:bg-[#e55a25] active:scale-[0.98]
-                    disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6B35] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#e55a25] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {isLoading ? (
                     <>

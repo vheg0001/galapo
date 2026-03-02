@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
             options: {
                 data: {
                     full_name,
+                    phone,
                     role: "business_owner",
                 },
             },
@@ -55,20 +56,7 @@ export async function POST(request: NextRequest) {
 
         // Wait a small bit for DB triggers to complete before querying the profile
         if (data.user) {
-            // The existing trigger in DB should create the profile. Let's update it with specific details.
-            const { error: profileError } = await supabase
-                .from("profiles")
-                .update({
-                    full_name,
-                    phone,
-                    role: "business_owner"
-                })
-                .eq("id", data.user.id);
-
-            if (profileError) {
-                console.error("Error updating newly created profile:", profileError);
-                // Non-fatal, return success anyway but log the issue
-            }
+            // Fetch profile created by DB trigger
 
             // Fetch updated profile
             const { data: profile } = await supabase

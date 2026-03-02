@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import {
     LayoutDashboard,
@@ -46,7 +46,15 @@ interface SidebarProps {
 
 export default function Sidebar({ unreadNotifications = 0 }: SidebarProps) {
     const pathname = usePathname();
+    const router = useRouter();
     const { logout, profile } = useAuthStore();
+
+    const handleLogout = async () => {
+        await logout();
+        // Hard redirect to ensure full page reload — clears in-memory state
+        // and forces a fresh HTTP request through the server-side proxy
+        window.location.href = "/login";
+    };
 
     const isActive = (href: string) =>
         pathname === href || pathname.startsWith(href + "/");
@@ -120,7 +128,7 @@ export default function Sidebar({ unreadNotifications = 0 }: SidebarProps) {
                 </Link>
 
                 <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/60 hover:bg-red-500/20 hover:text-red-300 transition"
                 >
                     <LogOut size={16} />

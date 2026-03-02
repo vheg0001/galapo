@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LayoutDashboard, Store, PlusCircle, TrendingUp } from "lucide-react";
 
+// Prevent caching so the proxy (middleware) always validates the session
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
     title: "Business Dashboard | GalaPo",
     description: "Manage your GalaPo business listing.",

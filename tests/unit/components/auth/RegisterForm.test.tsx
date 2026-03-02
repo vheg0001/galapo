@@ -5,13 +5,16 @@ import { useAuthStore } from "@/store/authStore";
 
 // Mock the auth store
 vi.mock("@/store/authStore", () => ({
-    useAuthStore: vi.fn(),
+    useAuthStore: Object.assign(vi.fn(), {
+        getState: vi.fn(),
+    }),
 }));
 
 // Mock next/navigation
+const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
     useRouter: () => ({
-        push: vi.fn(),
+        push: mockPush,
     }),
 }));
 
@@ -98,6 +101,47 @@ describe("RegisterForm", () => {
                 "Juan Dela Cruz",
                 "09171234567",
             );
+        });
+    });
+
+    it("redirects to /business/listings/new on successful registration with session", async () => {
+        mockRegister.mockResolvedValue({ error: null });
+        (useAuthStore.getState as any).mockReturnValue({ session: { user: { id: "123" } } });
+
+        render(<RegisterForm />);
+
+        fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: "Juan Dela Cruz" } });
+        fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: "juan@example.com" } });
+        fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: "09171234567" } });
+        fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: "StrongPass123!" } });
+        fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "StrongPass123!" } });
+        fireEvent.click(screen.getByRole("checkbox", { name: /i agree/i }));
+
+        fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+
+        await waitFor(() => {
+            expect(mockPush).toHaveBeenCalledWith("/business/listings/new");
+        });
+    });
+
+    it("shows success message on successful registration without session (email confirmation)", async () => {
+        mockRegister.mockResolvedValue({ error: null });
+        (useAuthStore.getState as any).mockReturnValue({ session: null });
+
+        render(<RegisterForm />);
+
+        fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: "Juan Dela Cruz" } });
+        fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: "juan@example.com" } });
+        fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: "09171234567" } });
+        fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: "StrongPass123!" } });
+        fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "StrongPass123!" } });
+        fireEvent.click(screen.getByRole("checkbox", { name: /i agree/i }));
+
+        fireEvent.click(screen.getByRole("button", { name: /create account/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/registration successful/i)).toBeDefined();
+            expect(screen.getByText(/juan@example\.com/i)).toBeDefined();
         });
     });
 });

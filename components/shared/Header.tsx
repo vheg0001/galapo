@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
+import { useAuthStore } from "@/store/authStore";
 import { APP_NAME, NAV_LINKS } from "@/lib/constants";
 import { MapPin, Menu, X, Search } from "lucide-react";
 import MobileMenu from "./MobileMenu";
@@ -15,6 +16,7 @@ interface HeaderProps {
 
 export default function Header({ categories = [] }: HeaderProps) {
     const { isMobileMenuOpen, toggleMobileMenu, isSearchOpen, toggleSearch } = useAppStore();
+    const { session } = useAuthStore();
     const pathname = usePathname();
     const router = useRouter();
     const [scrolled, setScrolled] = useState(false);
@@ -38,10 +40,7 @@ export default function Header({ categories = [] }: HeaderProps) {
 
     return (
         <>
-            <header
-                className={`sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-shadow ${scrolled ? "shadow-md border-border" : "border-transparent"
-                    }`}
-            >
+            <header className={`sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-shadow ${scrolled ? "shadow-md border-border" : "border-transparent"}`}>
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2" onClick={handleHomeClick}>
