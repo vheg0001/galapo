@@ -9,13 +9,14 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const parentOnly = searchParams.get("parent_only") === "true";
+        const includeFields = searchParams.get("include_fields") === "true";
 
         const supabase = await createServerSupabaseClient();
 
         // 1. Fetch categories
         let query = supabase
             .from("categories")
-            .select("id, name, slug, icon, parent_id, sort_order")
+            .select("id, name, slug, icon, parent_id, sort_order, description")
             .eq("is_active", true)
             .order("sort_order", { ascending: true })
             .order("name", { ascending: true });
@@ -44,11 +45,26 @@ export async function GET(request: Request) {
             countMap[listing.category_id] = (countMap[listing.category_id] || 0) + 1;
         });
 
-        // 3. Structure into nested (if not parent_only) and attach counts
+        // 3. Optionally fetch category fields for the wizard
+        let fields: any[] = [];
+        if (includeFields) {
+            const { data: fieldsData, error: fieldsError } = await supabase
+                .from("category_fields")
+                .select("*")
+                .eq("is_active", true)
+                .order("sort_order", { ascending: true });
+            if (fieldsError) throw fieldsError;
+            fields = fieldsData || [];
+        }
+
+        // 4. Structure into nested (if not parent_only) and attach counts
         const enrichedCategories = categories?.map((cat) => ({
             ...cat,
             listing_count: countMap[cat.id] || 0,
-            subcategories: [], // Will populate below if needed
+            subcategories: [],
+            fields: includeFields
+                ? fields.filter((f) => f.category_id === cat.id && !f.subcategory_id)
+                : [],
         }));
 
         let responseData = enrichedCategories;
@@ -59,7 +75,14 @@ export async function GET(request: Request) {
             const subCats = enrichedCategories?.filter((c) => c.parent_id !== null) || [];
 
             parentCats.forEach((parent) => {
-                const children = subCats.filter((child) => child.parent_id === parent.id);
+                const children = subCats
+                    .filter((child) => child.parent_id === parent.id)
+                    .map((sub) => ({
+                        ...sub,
+                        fields: includeFields
+                            ? fields.filter((f) => f.subcategory_id === sub.id)
+                            : [],
+                    }));
                 (parent as any).subcategories = children;
                 // Accumulate parent count = direct count + ALL children counts
                 const childCount = children.reduce((sum, child) => sum + child.listing_count, 0);

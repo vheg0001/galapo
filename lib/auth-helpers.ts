@@ -10,11 +10,18 @@ import { type NextRequest, NextResponse } from "next/server";
  * Retrieves the current authenticated session on the server.
  */
 export async function getServerSession() {
-    const supabase = await createServerSupabaseClient();
-    const {
-        data: { session },
-    } = await supabase.auth.getSession();
-    return session;
+    try {
+        const supabase = await createServerSupabaseClient();
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+            console.error("getServerSession auth error:", error);
+            return null;
+        }
+        return data?.session || null;
+    } catch (error) {
+        console.error("getServerSession exception:", error);
+        return null;
+    }
 }
 
 export async function getServerProfile(): Promise<Profile | null> {
