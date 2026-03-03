@@ -16,7 +16,7 @@ const BUSINESS_ROUTES = /^\/business(\/|$)/;
 // Routes that require a super admin role
 const ADMIN_ROUTES = /^\/(admin)(\/|$)/;
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
     const { supabase, response } = createMiddlewareSupabaseClient(request);
 
     const { pathname } = request.nextUrl;

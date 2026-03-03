@@ -170,32 +170,55 @@ export const useAuthStore = create<AuthState>()(
 
             loadProfile: async (userId) => {
                 try {
+                    console.log("authStore: loadProfile starting for userId:", userId);
                     const supabase = createBrowserSupabaseClient();
-                    const { data, error } = await supabase
-                        .from("profiles")
-                        .select("*")
-                        .eq("id", userId)
-                        .single();
+
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error("Supabase profile load timed out internally")), 8000)
+                    );
+
+                    const result = await Promise.race([
+                        supabase.from("profiles").select("*").eq("id", userId).single(),
+                        timeoutPromise
+                    ]) as { data: any, error: any };
+
+                    const { data, error } = result;
 
                     if (error) {
-                        console.error("Error loading profile:", error);
+                        console.error("authStore: Error loading profile:", error);
                         return;
                     }
 
                     if (data) {
+                        console.log("authStore: Profile loaded successfully:", data.role);
                         set({ profile: data as Profile });
                     }
                 } catch (err) {
-                    console.error("Unexpected error loading profile:", err);
+                    console.error("authStore: Unexpected error loading profile (or timeout):", err);
                 }
             },
 
             initialize: async () => {
                 try {
+                    console.log("authStore: initialize starting...");
                     const supabase = createBrowserSupabaseClient();
                     set({ isLoading: true });
 
-                    const { data: { session } } = await supabase.auth.getSession();
+                    console.log("authStore: Calling supabase.auth.getSession()...");
+
+                    // Add a forced timeout to see if getSession() is hanging
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error("Supabase getSession() timed out internally")), 8000)
+                    );
+
+                    const result = await Promise.race([
+                        supabase.auth.getSession(),
+                        timeoutPromise
+                    ]) as { data: { session: Session | null }, error: any };
+
+                    const session = result?.data?.session;
+
+                    console.log("authStore: getSession returned, session exists:", !!session);
 
                     if (session?.user) {
                         set({
@@ -203,8 +226,10 @@ export const useAuthStore = create<AuthState>()(
                             session,
                             isAuthenticated: true,
                         });
+                        console.log("authStore: user authenticated, loading profile...");
                         await get().loadProfile(session.user.id);
                     } else {
+                        console.log("authStore: no active session found.");
                         set({
                             user: null,
                             profile: null,
@@ -213,8 +238,16 @@ export const useAuthStore = create<AuthState>()(
                         });
                     }
                 } catch (err) {
-                    console.error("Auth initialization error:", err);
+                    console.error("authStore: Auth initialization error (or timeout):", err);
+                    // Ensure we clear state on error so app doesn't hang
+                    set({
+                        user: null,
+                        profile: null,
+                        session: null,
+                        isAuthenticated: false,
+                    });
                 } finally {
+                    console.log("authStore: initialize finished, setting isLoading to false.");
                     set({ isLoading: false });
                 }
             },

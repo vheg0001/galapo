@@ -17,35 +17,60 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     const { initialize, setUser, setSession, loadProfile, setLoading } = useAuthStore();
 
     useEffect(() => {
-        // Initialize auth state on mount
-        initialize();
-
+        let isMounted = true;
+        let subscription: any = null;
         const supabase = createBrowserSupabaseClient();
 
-        // Listen for auth state changes (login, logout, token refresh)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
-                try {
-                    if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-                        if (session?.user) {
-                            setUser(session.user);
-                            setSession(session);
-                            await loadProfile(session.user.id);
-                        }
-                    } else if (event === "SIGNED_OUT") {
-                        setUser(null);
-                        setSession(null);
-                        useAuthStore.setState({ profile: null, isAuthenticated: false });
-                    }
-                } catch (err) {
-                    console.error("Auth change error:", err);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        );
+        async function setupAuth() {
+            // 1. Initialize auth state first
+            await initialize();
 
-        return () => subscription.unsubscribe();
+            if (!isMounted) return;
+
+            // 2. Only after initialization is complete, listen for subsequent changes
+            const { data } = supabase.auth.onAuthStateChange(
+                async (event, session) => {
+                    console.log(`AuthProvider: auth state change detected: ${event}, session exists: ${!!session}`);
+
+                    // Ignore INITIAL_SESSION here since initialize() already handled it
+                    if (event === "INITIAL_SESSION") {
+                        return; // We don't need to setLoading(false) here, initialize() did it.
+                    }
+
+                    try {
+                        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+                            if (session?.user) {
+                                console.log("AuthProvider: updating store with user and loading profile...");
+                                setUser(session.user);
+                                setSession(session);
+                                await loadProfile(session.user.id);
+                            }
+                        } else if (event === "SIGNED_OUT") {
+                            console.log("AuthProvider: user signed out, clearing store...");
+                            setUser(null);
+                            setSession(null);
+                            useAuthStore.setState({ profile: null, isAuthenticated: false });
+                        }
+                    } catch (err) {
+                        console.error("AuthProvider: Auth change error:", err);
+                    } finally {
+                        console.log("AuthProvider: updating loading state to false.");
+                        setLoading(false);
+                    }
+                }
+            );
+
+            subscription = data.subscription;
+        }
+
+        setupAuth();
+
+        return () => {
+            isMounted = false;
+            if (subscription) {
+                subscription.unsubscribe();
+            }
+        };
     }, [initialize, setUser, setSession, loadProfile, setLoading]);
 
     return <>{children}</>;
