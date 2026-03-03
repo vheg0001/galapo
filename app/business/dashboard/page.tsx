@@ -1,107 +1,142 @@
-import type { Metadata } from "next";
+"use client";
+
+// ──────────────────────────────────────────────────────────
+// GalaPo — Business Dashboard Page (Module 8.1)
+// ──────────────────────────────────────────────────────────
+
+import { useEffect } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Store, PlusCircle, TrendingUp } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { useBusinessStore } from "@/store/businessStore";
+import StatsCard from "@/components/business/dashboard/StatsCard";
+import QuickActions from "@/components/business/dashboard/QuickActions";
+import ListingsTable from "@/components/business/dashboard/ListingsTable";
+import RecentActivity from "@/components/business/dashboard/RecentActivity";
+import NotificationsPreview from "@/components/business/dashboard/NotificationsPreview";
+import SubscriptionStatus from "@/components/business/dashboard/SubscriptionStatus";
 
-// Prevent caching so the proxy (middleware) always validates the session
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
-export const metadata: Metadata = {
-    title: "Business Dashboard | GalaPo",
-    description: "Manage your GalaPo business listing.",
-};
-
-const QUICK_ACTIONS = [
-    {
-        label: "My Listings",
-        description: "View and manage your business listings",
-        href: "/business/listings",
-        icon: Store,
-        color: "bg-blue-50 text-blue-600",
-    },
-    {
-        label: "Add New Listing",
-        description: "Create a new business listing on GalaPo",
-        href: "/business/listings/new",
-        icon: PlusCircle,
-        color: "bg-green-50 text-green-600",
-    },
-    {
-        label: "View Analytics",
-        description: "See how your listing is performing",
-        href: "/business/analytics",
-        icon: TrendingUp,
-        color: "bg-purple-50 text-purple-600",
-    },
-];
+function getTodayPhilippine(): string {
+    return new Date().toLocaleDateString("en-PH", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "Asia/Manila",
+    });
+}
 
 export default function BusinessDashboardPage() {
+    const { profile, user } = useAuthStore();
+    const {
+        listings,
+        stats,
+        notifications,
+        activeSubscription,
+        isLoading,
+        fetchDashboardData,
+        fetchNotifications,
+    } = useBusinessStore();
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchDashboardData(user.id);
+            fetchNotifications(user.id);
+        }
+    }, [user?.id, fetchDashboardData, fetchNotifications]);
+
+    const firstName = profile?.full_name?.split(" ")[0] ?? "there";
+
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                    Welcome back! Here's a summary of your business presence on GalaPo.
-                </p>
+            {/* Welcome Header */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Welcome back, {firstName}! 👋
+                    </h1>
+                    <p className="mt-1 text-sm text-gray-500">{getTodayPhilippine()}</p>
+                </div>
+                <QuickActions />
             </div>
 
-            {/* Stats Placeholder */}
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                {[
-                    { label: "Total Listings", value: "—" },
-                    { label: "Profile Views", value: "—" },
-                    { label: "Phone Clicks", value: "—" },
-                    { label: "Active Deals", value: "—" },
-                ].map((stat) => (
-                    <div
-                        key={stat.label}
-                        className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-                    >
-                        <p className="text-xs font-medium text-gray-500">{stat.label}</p>
-                        <p className="mt-1 text-2xl font-bold text-gray-900">{stat.value}</p>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <StatsCard
+                    icon="🏪"
+                    label="Total Listings"
+                    value={stats.totalListings}
+                    loading={isLoading}
+                />
+                <StatsCard
+                    icon="👁️"
+                    label="Total Views"
+                    value={stats.totalViews}
+                    change={stats.viewsChange}
+                    loading={isLoading}
+                />
+                <StatsCard
+                    icon="📱"
+                    label="Total Clicks"
+                    value={stats.totalClicks}
+                    change={stats.clicksChange}
+                    loading={isLoading}
+                />
+                <StatsCard
+                    icon="🏷️"
+                    label="Active Deals"
+                    value={stats.activeDeals}
+                    loading={isLoading}
+                />
+            </div>
+
+            {/* Listings + Activity side-by-side on large screens */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                {/* My Listings — takes 2/3 */}
+                <div className="lg:col-span-2">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-base font-semibold text-gray-900">My Listings</h2>
+                        <Link
+                            href="/business/listings"
+                            className="flex items-center gap-0.5 text-xs font-medium text-[#FF6B35] hover:underline"
+                        >
+                            View All <ChevronRight size={13} />
+                        </Link>
                     </div>
-                ))}
-            </div>
+                    <ListingsTable listings={listings} loading={isLoading} />
+                </div>
 
-            {/* Quick Actions */}
-            <div>
-                <h2 className="mb-3 text-base font-semibold text-gray-800">Quick Actions</h2>
-                <div className="grid gap-4 sm:grid-cols-3">
-                    {QUICK_ACTIONS.map((action) => {
-                        const Icon = action.icon;
-                        return (
-                            <Link
-                                key={action.href}
-                                href={action.href}
-                                className="flex items-start gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md hover:border-gray-300"
-                            >
-                                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${action.color}`}>
-                                    <Icon size={20} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-semibold text-gray-900">{action.label}</p>
-                                    <p className="mt-0.5 text-xs text-gray-500">{action.description}</p>
-                                </div>
-                            </Link>
-                        );
-                    })}
+                {/* Recent Activity — takes 1/3 */}
+                <div>
+                    <h2 className="mb-4 text-base font-semibold text-gray-900">Recent Activity</h2>
+                    <div className="rounded-xl border border-gray-100 bg-white p-4">
+                        <RecentActivity notifications={notifications} loading={isLoading} />
+                    </div>
                 </div>
             </div>
 
-            {/* Getting Started */}
-            <div className="rounded-xl border border-[#FF6B35]/20 bg-[#FF6B35]/5 p-6">
-                <h2 className="text-base font-semibold text-gray-900">Getting Started</h2>
-                <p className="mt-1 text-sm text-gray-600">
-                    Your business dashboard is ready. Start by adding your first business listing to appear on GalaPo.
-                </p>
-                <Link
-                    href="/business/listings/new"
-                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#FF6B35] px-4 py-2 text-sm font-semibold text-white hover:bg-[#e55a25] transition"
-                >
-                    <PlusCircle size={16} />
-                    Add Your First Listing
-                </Link>
+            {/* Notifications + Subscription side-by-side */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Notifications Preview */}
+                <div className="rounded-xl border border-gray-100 bg-white p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h2 className="text-base font-semibold text-gray-900">Recent Notifications</h2>
+                        <Link
+                            href="/business/notifications"
+                            className="flex items-center gap-0.5 text-xs font-medium text-[#FF6B35] hover:underline"
+                        >
+                            View All <ChevronRight size={13} />
+                        </Link>
+                    </div>
+                    <NotificationsPreview notifications={notifications} loading={isLoading} />
+                </div>
+
+                {/* Subscription Status */}
+                <div className="flex flex-col gap-3">
+                    <h2 className="text-base font-semibold text-gray-900">Subscription</h2>
+                    <SubscriptionStatus subscription={activeSubscription} loading={isLoading} />
+                </div>
             </div>
         </div>
     );

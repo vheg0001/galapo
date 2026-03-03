@@ -17,19 +17,25 @@ export async function getServerSession() {
     return session;
 }
 
-/**
- * Retrieves the current authenticated user's profile on the server.
- */
 export async function getServerProfile(): Promise<Profile | null> {
     const session = await getServerSession();
     if (!session?.user?.id) return null;
 
-    const supabase = await createServerSupabaseClient();
-    const { data: profile } = await supabase
+    // Use admin client to bypass RLS hangs/recursion on the profiles table
+    // This is safe because we are strictly filtering for the authenticated user's own ID
+    const { createAdminSupabaseClient } = await import("./supabase");
+    const admin = createAdminSupabaseClient();
+
+    const { data: profile, error } = await admin
         .from("profiles")
         .select("*")
         .eq("id", session.user.id)
         .single();
+
+    if (error) {
+        console.error("getServerProfile error:", error);
+        return null;
+    }
 
     return profile as Profile | null;
 }

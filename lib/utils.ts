@@ -47,7 +47,11 @@ export function formatCurrency(amount: number): string {
  * @example formatDate("2026-02-27T14:00:00Z") → "Feb 27, 2026"
  */
 export function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString("en-PH", {
+  if (!date) return "Unknown date";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "Unknown date";
+
+  return d.toLocaleDateString("en-PH", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -59,7 +63,11 @@ export function formatDate(date: string): string {
  * @example formatDateTime("2026-02-27T14:00:00Z") → "Feb 27, 2026, 2:00 PM"
  */
 export function formatDateTime(date: string): string {
-  return new Date(date).toLocaleDateString("en-PH", {
+  if (!date) return "Unknown date";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "Unknown date";
+
+  return d.toLocaleDateString("en-PH", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -133,8 +141,11 @@ export function truncateText(text: string, length: number): string {
  * @example getRelativeTime("2026-02-26T14:00:00Z") → "1 day ago"
  */
 export function getRelativeTime(date: string): string {
-  const now = Date.now();
+  if (!date) return "Unknown date";
   const then = new Date(date).getTime();
+  if (isNaN(then)) return "Unknown date";
+
+  const now = Date.now();
   const diffMs = now - then;
   const diffSec = Math.floor(diffMs / 1000);
   const diffMin = Math.floor(diffSec / 60);

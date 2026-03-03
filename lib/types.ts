@@ -514,3 +514,37 @@ export interface ListingAnalyticsEvent {
     created_at: string;
 }
 
+// ──────────────────────────────────────────────────────────
+// DASHBOARD & ACTIVITY TYPES (Module 8.2)
+// ──────────────────────────────────────────────────────────
+
+export interface NotificationPreferences {
+    email_listing_status: boolean;
+    email_subscription_expiry: boolean;
+    email_annual_check: boolean;
+    email_payment: boolean;
+    [key: string]: boolean;
+}
+
+export interface DashboardStats {
+    total_listings: number;
+    total_views_this_month: number;
+    total_views_last_month: number;
+    views_change_percent: number;
+    total_clicks_this_month: number;
+    total_clicks_last_month: number;
+    clicks_change_percent: number;
+    active_deals: number;
+    active_subscriptions: number;
+}
+
+export interface ActivityItem {
+    id: string;
+    type: string;
+    title: string;
+    message: string;
+    timestamp: string;
+    listing_id?: string | null;
+    listing_name?: string | null;
+}
+

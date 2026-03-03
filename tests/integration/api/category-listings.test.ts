@@ -37,7 +37,7 @@ describe("Category API Routes Integration", () => {
     beforeEach(() => {
         mockSupabase = {
             from: vi.fn(),
-            rpc: vi.fn(),
+            rpc: vi.fn().mockResolvedValue({ data: { listings: [], total: 0 }, error: null }),
         };
         (createServerSupabaseClient as any).mockResolvedValue(mockSupabase);
     });
@@ -162,8 +162,10 @@ describe("Category API Routes Integration", () => {
                 id: String(i), business_name: `Biz ${i}`,
                 listing_images: [], deals: [], subscriptions: [],
             }));
-            const qb = makeQueryBuilder(listings);
-            mockSupabase.from.mockReturnValue(qb);
+            mockSupabase.rpc.mockResolvedValue({
+                data: { listings, total: listings.length },
+                error: null
+            });
 
             const req = mockRequest("http://localhost:3000/api/listings?page=1&limit=5");
             const res = await getListings(req);

@@ -46,3 +46,47 @@ vi.mock('next/navigation', () => ({
     usePathname: () => '/',
     useSearchParams: () => new URLSearchParams(),
 }));
+
+// Global Supabase Mock for Integration Tests
+vi.mock("@/lib/supabase", () => {
+    const queryChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        lte: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        range: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        single: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockReturnThis(),
+        upsert: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+        then: vi.fn((resolve) => resolve({ data: [], error: null, count: 0 })),
+    };
+
+    const mockSupabase = {
+        auth: {
+            getUser: vi.fn(() => Promise.resolve({ data: { user: { id: 'mock-user-id' } }, error: null })),
+            signInWithPassword: vi.fn(),
+            signOut: vi.fn(),
+            updateUser: vi.fn(),
+            getSession: vi.fn(),
+        },
+        from: vi.fn(() => queryChain),
+        storage: {
+            from: vi.fn().mockReturnValue({
+                upload: vi.fn().mockResolvedValue({ data: { path: 'mock-path' }, error: null }),
+                getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'http://example.com/mock.jpg' } }),
+            }),
+        },
+        rpc: vi.fn().mockResolvedValue({ data: { listings: [], total: 0 }, error: null }),
+        _queryChain: queryChain,
+    };
+
+    return {
+        createServerSupabaseClient: vi.fn(() => Promise.resolve(mockSupabase)),
+        createAdminSupabaseClient: vi.fn(() => Promise.resolve(mockSupabase)),
+        mockSupabase,
+    };
+});

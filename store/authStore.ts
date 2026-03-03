@@ -19,6 +19,13 @@ export interface Profile {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+    notification_preferences: {
+        email_listing_status: boolean;
+        email_subscription_expiry: boolean;
+        email_annual_check: boolean;
+        email_payment: boolean;
+        [key: string]: boolean | undefined;
+    } | null;
 }
 
 // ── Auth Store Interface ──────────────────────────────────
@@ -169,32 +176,49 @@ export const useAuthStore = create<AuthState>()(
             },
 
             loadProfile: async (userId) => {
-                try {
-                    console.log("authStore: loadProfile starting for userId:", userId);
-                    const supabase = createBrowserSupabaseClient();
+                const startTime = Date.now();
+                let timeoutId: NodeJS.Timeout | null = null;
 
-                    const timeoutPromise = new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error("Supabase profile load timed out internally")), 8000)
-                    );
+                try {
+                    console.log(`authStore: [${startTime}] loadProfile starting for userId:`, userId);
+
+                    const timeoutPromise = new Promise((_, reject) => {
+                        timeoutId = setTimeout(() => {
+                            const elapsed = Date.now() - startTime;
+                            console.error(`authStore: [${Date.now()}] loadProfile TIMEOUT after ${elapsed}ms`);
+                            reject(new Error("Internal profile load timeout"));
+                        }, 10000);
+                    });
+
+                    console.log(`authStore: [${Date.now()}] Fetching profile from /api/auth/profile...`);
+                    const fetchPromise = fetch("/api/auth/profile").then(res => res.json());
 
                     const result = await Promise.race([
-                        supabase.from("profiles").select("*").eq("id", userId).single(),
+                        fetchPromise,
                         timeoutPromise
-                    ]) as { data: any, error: any };
+                    ]) as any;
 
-                    const { data, error } = result;
+                    // Clear timeout as soon as the race is over (if it was the fetch that won)
+                    if (timeoutId) clearTimeout(timeoutId);
 
-                    if (error) {
-                        console.error("authStore: Error loading profile:", error);
+                    const elapsed = Date.now() - startTime;
+                    console.log(`authStore: [${Date.now()}] Promise resolved in ${elapsed}ms`);
+
+                    if (result.error) {
+                        console.error("authStore: Error loading profile via API:", result.error);
                         return;
                     }
 
-                    if (data) {
-                        console.log("authStore: Profile loaded successfully:", data.role);
-                        set({ profile: data as Profile });
+                    if (result.profile) {
+                        console.log("authStore: Profile data received successfully from API:", result.profile.role);
+                        set({ profile: result.profile as Profile });
+                    } else {
+                        console.warn("authStore: No profile returned in API response", userId);
                     }
                 } catch (err) {
-                    console.error("authStore: Unexpected error loading profile (or timeout):", err);
+                    if (timeoutId) clearTimeout(timeoutId);
+                    const elapsed = Date.now() - startTime;
+                    console.error(`authStore: [${Date.now()}] Unexpected error/timeout loading profile after ${elapsed}ms:`, err);
                 }
             },
 

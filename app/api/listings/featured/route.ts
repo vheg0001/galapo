@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-helpers";
 
-// Revalidate every 5 minutes (300 seconds)
-export const revalidate = 300;
+// Force dynamic for API routes using request.url or cookies
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
     try {

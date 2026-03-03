@@ -12,12 +12,18 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 // ── Browser Client (Client Components) ─────────────────
-/**
- * Use this in client components (`"use client"`).
- * Automatically handles cookie-based auth sessions via `@supabase/ssr`.
- */
+// Singleton instance for browser
+let browserSupabase: ReturnType<typeof createBrowserClient> | null = null;
+
 export function createBrowserSupabaseClient() {
-    return createBrowserClient(supabaseUrl, supabaseAnonKey);
+    if (typeof window === "undefined") {
+        return createBrowserClient(supabaseUrl, supabaseAnonKey);
+    }
+
+    if (!browserSupabase) {
+        browserSupabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+    }
+    return browserSupabase;
 }
 
 // ── Server Client (Server Components & Route Handlers) ──
