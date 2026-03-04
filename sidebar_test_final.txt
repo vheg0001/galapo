@@ -1,0 +1,41 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/Vawn Harvey/Desktop/galapo[39m
+
+ [31m×[39m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mrenders all navigation groups and items when expanded[32m 37[2mms[22m[39m
+[31m   → __vi_import_3__.usePathname.mockReturnValue is not a function[39m
+ [31m×[39m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mshows correct pending count badges[32m 9[2mms[22m[39m
+[31m   → __vi_import_3__.usePathname.mockReturnValue is not a function[39m
+ [31m×[39m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mhighlights the active route[32m 2[2mms[22m[39m
+[31m   → __vi_import_3__.usePathname.mockReturnValue is not a function[39m
+ [31m×[39m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mcollapses to icons-only on toggle[32m 20[2mms[22m[39m
+[31m   → __vi_import_3__.usePathname.mockReturnValue is not a function[39m
+ [31m×[39m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mlogout button calls supabase signOut and redirects[32m 1[2mms[22m[39m
+[31m   → __vi_import_3__.usePathname.mockReturnValue is not a function[39m
+ [31m×[39m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mView Public Site opens in new tab[32m 1[2mms[22m[39m
+[31m   → __vi_import_3__.usePathname.mockReturnValue is not a function[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 6 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mrenders all navigation groups and items when expanded
+[41m[1m FAIL [22m[49m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mshows correct pending count badges
+[41m[1m FAIL [22m[49m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mhighlights the active route
+[41m[1m FAIL [22m[49m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mcollapses to icons-only on toggle
+[41m[1m FAIL [22m[49m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mlogout button calls supabase signOut and redirects
+[41m[1m FAIL [22m[49m tests/unit/components/admin/layout/AdminSidebar.test.tsx[2m > [22mAdminSidebar[2m > [22mView Public Site opens in new tab
+[31m[1mTypeError[22m: __vi_import_3__.usePathname.mockReturnValue is not a function[39m
+[36m [2m❯[22m tests/unit/components/admin/layout/AdminSidebar.test.tsx:[2m35:30[22m[39m
+    [90m 33| [39m        vi[33m.[39m[34mclearAllMocks[39m()[33m;[39m
+    [90m 34| [39m        (useRouter [35mas[39m any)[33m.[39m[34mmockReturnValue[39m({ push[33m:[39m mockRouterPush })[33m;[39m
+    [90m 35| [39m        (usePathname [35mas[39m any)[33m.[39m[34mmockReturnValue[39m([32m"/admin/dashboard"[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m 36| [39m    })[33m;[39m
+    [90m 37| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m6 failed[39m[22m[90m (6)[39m
+[2m   Start at [22m 15:00:50
+[2m   Duration [22m 9.71s[2m (transform 1.57s, setup 2.77s, import 2.27s, tests 130ms, environment 2.92s)[22m
+

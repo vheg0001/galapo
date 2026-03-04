@@ -1,53 +1,104 @@
-import type { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-    title: "Admin Dashboard",
-    description: "GalaPo super admin dashboard.",
-};
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import AdminAuthGuard from "@/components/admin/auth/AdminAuthGuard";
+import AdminSidebar from "@/components/admin/layout/AdminSidebar";
+import AdminTopBar from "@/components/admin/layout/AdminTopBar";
+import AdminMobileNav from "@/components/admin/layout/AdminMobileNav";
+import { createBrowserSupabaseClient } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
-export default function AdminLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+interface AdminStats {
+    pending_listings: number;
+    pending_payments: number;
+    pending_claims: number;
+}
+
+function AdminLayoutInner({ children }: { children: React.ReactNode }) {
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const [adminName, setAdminName] = useState("Admin");
+    const [adminEmail, setAdminEmail] = useState("");
+    const [stats, setStats] = useState<AdminStats>({ pending_listings: 0, pending_payments: 0, pending_claims: 0 });
+
+    useEffect(() => {
+        async function loadProfile() {
+            const supabase = createBrowserSupabaseClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const { data: profile } = await supabase.from("profiles").select("full_name, email").eq("id", session.user.id).single();
+                if (profile) {
+                    setAdminName(profile.full_name || session.user.email?.split("@")[0] || "Admin");
+                    setAdminEmail(session.user.email || "");
+                }
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch("/api/admin/stats");
+                if (res.ok) {
+                    const data = await res.json();
+                    setStats({
+                        pending_listings: data.pending_listings ?? 0,
+                        pending_payments: data.pending_payments ?? 0,
+                        pending_claims: data.pending_claims ?? 0,
+                    });
+                }
+            } catch { /* non-critical */ }
+        }
+
+        loadProfile();
+        loadStats();
+    }, []);
+
     return (
-        <div className="flex min-h-screen">
-            {/* Sidebar placeholder */}
-            <aside className="hidden w-64 shrink-0 border-r border-border bg-primary text-primary-foreground lg:block">
-                <div className="flex h-16 items-center border-b border-primary-foreground/10 px-6">
-                    <span className="text-lg font-bold">Admin</span>
-                </div>
-                <nav className="space-y-1 p-4">
-                    <span className="block rounded-md px-3 py-2 text-sm text-primary-foreground/70">
-                        Dashboard
-                    </span>
-                    <span className="block rounded-md px-3 py-2 text-sm text-primary-foreground/70">
-                        Businesses
-                    </span>
-                    <span className="block rounded-md px-3 py-2 text-sm text-primary-foreground/70">
-                        Users
-                    </span>
-                    <span className="block rounded-md px-3 py-2 text-sm text-primary-foreground/70">
-                        Categories
-                    </span>
-                    <span className="block rounded-md px-3 py-2 text-sm text-primary-foreground/70">
-                        Reports
-                    </span>
-                    <span className="block rounded-md px-3 py-2 text-sm text-primary-foreground/70">
-                        Settings
-                    </span>
-                </nav>
-            </aside>
+        <div className="flex min-h-screen bg-[#F5F7FA]">
+            {/* Desktop Sidebar */}
+            <div className="hidden lg:block">
+                <AdminSidebar
+                    collapsed={sidebarCollapsed}
+                    onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    pendingListings={stats.pending_listings}
+                    pendingPayments={stats.pending_payments}
+                    pendingClaims={stats.pending_claims}
+                    adminName={adminName}
+                />
+            </div>
 
-            {/* Main content */}
-            <div className="flex flex-1 flex-col">
-                <header className="flex h-16 items-center border-b border-border bg-background px-6">
-                    <h1 className="text-lg font-semibold text-foreground">
-                        Admin Dashboard
-                    </h1>
-                </header>
-                <main className="flex-1 p-6">{children}</main>
+            {/* Mobile Nav */}
+            <AdminMobileNav
+                open={mobileNavOpen}
+                onClose={() => setMobileNavOpen(false)}
+                pendingListings={stats.pending_listings}
+                pendingPayments={stats.pending_payments}
+                pendingClaims={stats.pending_claims}
+                adminName={adminName}
+            />
+
+            {/* Main content area */}
+            <div className={cn(
+                "flex flex-1 flex-col transition-all duration-300",
+                sidebarCollapsed ? "lg:pl-16" : "lg:pl-[260px]"
+            )}>
+                <AdminTopBar
+                    onMenuToggle={() => setMobileNavOpen(true)}
+                    adminName={adminName}
+                    adminEmail={adminEmail}
+                />
+                <main className="flex-1 p-4 sm:p-6 lg:p-8">
+                    {children}
+                </main>
             </div>
         </div>
+    );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <AdminAuthGuard>
+            <AdminLayoutInner>{children}</AdminLayoutInner>
+        </AdminAuthGuard>
     );
 }

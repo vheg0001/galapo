@@ -23,8 +23,9 @@ export async function middleware(request: NextRequest) {
     const { supabase, response } = createMiddlewareSupabaseClient(request);
 
     const { pathname } = request.nextUrl;
+    const isAdminLoginRoute = pathname === "/admin/login";
     const isBusinessRoute = BUSINESS_ROUTES.test(pathname);
-    const isAdminRoute = ADMIN_ROUTES.test(pathname);
+    const isAdminRoute = ADMIN_ROUTES.test(pathname) && !isAdminLoginRoute;
     const isClaimRoute = CLAIM_ROUTES.test(pathname);
 
     // ── Only validate session/user for protected routes ─────
@@ -48,7 +49,15 @@ export async function middleware(request: NextRequest) {
                 return NextResponse.redirect(loginUrl);
             }
 
-            const role = user.user_metadata?.role;
+            let role = user.user_metadata?.role as string | undefined;
+            if (!role) {
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("role")
+                    .eq("id", user.id)
+                    .single();
+                role = profile?.role;
+            }
             if (role !== "business_owner" && role !== "super_admin") {
                 const loginUrl = new URL("/login", request.url);
                 loginUrl.searchParams.set("redirect", pathname);
@@ -65,9 +74,18 @@ export async function middleware(request: NextRequest) {
                 return NextResponse.redirect(loginUrl);
             }
 
-            const role = user.user_metadata?.role;
+            let role = user.user_metadata?.role as string | undefined;
+            if (!role) {
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("role")
+                    .eq("id", user.id)
+                    .single();
+                role = profile?.role;
+            }
             if (role !== "super_admin") {
                 const loginUrl = new URL("/admin/login", request.url);
+                loginUrl.searchParams.set("redirect", pathname);
                 loginUrl.searchParams.set("error", "unauthorized");
                 return NextResponse.redirect(loginUrl);
             }

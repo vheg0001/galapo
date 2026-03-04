@@ -41,8 +41,8 @@ vi.mock('next/navigation', () => ({
         refresh: vi.fn(),
         pathname: '/',
     })),
-    usePathname: () => '/',
-    useSearchParams: () => new URLSearchParams(),
+    usePathname: vi.fn(() => "/"),
+    useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
 // Robust Global Supabase Mock
