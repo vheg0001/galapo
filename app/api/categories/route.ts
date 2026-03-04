@@ -35,7 +35,7 @@ export async function GET(request: Request) {
         const { data: listings, error: listError } = await supabase
             .from("listings")
             .select("id, category_id")
-            .eq("status", "approved")
+            .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true);
 
         if (listError) throw listError;

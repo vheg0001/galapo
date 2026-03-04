@@ -71,7 +71,7 @@ export async function PUT(
         }
 
         const body = await req.json();
-        const { dynamic_fields = [], ...updateData } = body;
+        const { is_draft = false, dynamic_fields = [], ...updateData } = body;
         const supabase = await createServerSupabaseClient();
 
         // 1. Fetch current listing to compare
@@ -97,7 +97,7 @@ export async function PUT(
             .eq("is_active", true);
 
         const { isValid, errors } = validateListingData(validationData, categoryFields || []);
-        if (!isValid) {
+        if (!isValid && !is_draft) {
             return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
         }
 
@@ -125,7 +125,9 @@ export async function PUT(
         delete updatePayload.owner_id;
         delete updatePayload.created_at;
 
-        if (criticalChanged && current.status === "approved") {
+        if (is_draft) {
+            updatePayload.status = "draft";
+        } else if (criticalChanged && current.status === "approved") {
             updatePayload.status = "pending";
         }
 
@@ -206,13 +208,40 @@ export async function DELETE(
 
         const supabase = await createServerSupabaseClient();
 
-        const { error } = await supabase
+        // Check if listing is a draft
+        const { data: listing, error: fetchError } = await supabase
             .from("listings")
-            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .select("status")
             .eq("id", id)
-            .eq("owner_id", session.user.id);
+            .eq("owner_id", session.user.id)
+            .single();
 
-        if (error) throw error;
+        if (fetchError || !listing) {
+            console.log("[LISTING_DELETE] Fetch failed or not authorized:", { id, error: fetchError });
+            return NextResponse.json({ error: "Listing not found or not authorized to delete" }, { status: 404 });
+        }
+
+        if (listing.status === "draft") {
+            // Hard delete drafts
+            const { error: deleteError } = await supabase
+                .from("listings")
+                .delete()
+                .eq("id", id)
+                .eq("owner_id", session.user.id);
+
+            console.log("[LISTING_DELETE] Hard delete result:", { id, error: deleteError });
+            if (deleteError) throw deleteError;
+        } else {
+            // Soft delete active/pending listings
+            const { error: updateError } = await supabase
+                .from("listings")
+                .update({ is_active: false, updated_at: new Date().toISOString() })
+                .eq("id", id)
+                .eq("owner_id", session.user.id);
+
+            console.log("[LISTING_DELETE] Soft delete result:", { id, error: updateError });
+            if (updateError) throw updateError;
+        }
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

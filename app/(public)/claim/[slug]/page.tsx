@@ -22,7 +22,7 @@ export default function ClaimListingPage({ params }: { params: Promise<{ slug: s
                 // For now we use the main listing route or a mocked fetch
                 const res = await fetch(`/api/listings/${slug}`);
                 const data = await res.json();
-                setListing(data);
+                setListing(data.listing);
             } catch (err) {
                 console.error("Failed to fetch claim listing", err);
             } finally {

@@ -18,8 +18,16 @@ export default function LocationForm() {
         async function fetchBarangays() {
             try {
                 const res = await fetch("/api/barangays");
-                const data = await res.json();
-                setBarangays(data || []);
+                const json = await res.json();
+
+                // Extract array from standard response format { success, data }
+                if (json && json.data && Array.isArray(json.data)) {
+                    setBarangays(json.data);
+                } else if (Array.isArray(json)) {
+                    setBarangays(json);
+                } else {
+                    setBarangays([]);
+                }
             } catch (err) {
                 console.error("Failed to fetch barangays", err);
             } finally {

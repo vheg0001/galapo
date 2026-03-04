@@ -40,6 +40,12 @@ describe("LocationForm", () => {
 
     it("updates address on change", async () => {
         render(<LocationForm />);
+
+        // Wait for initial render and fetch to complete to avoid act warning
+        await waitFor(() => {
+            expect(screen.getByDisplayValue("initial address")).toBeInTheDocument();
+        });
+
         const input = screen.getByPlaceholderText(/House No., Building Name, Street/i);
 
         fireEvent.change(input, { target: { value: "New Address" } });

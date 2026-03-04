@@ -16,18 +16,29 @@ const BUSINESS_ROUTES = /^\/business(\/|$)/;
 // Routes that require a super admin role
 const ADMIN_ROUTES = /^\/(admin)(\/|$)/;
 
+// Routes that require login but redirect to /register (claims)
+const CLAIM_ROUTES = /^\/(claim)(\/|$)/;
+
 export async function middleware(request: NextRequest) {
     const { supabase, response } = createMiddlewareSupabaseClient(request);
 
     const { pathname } = request.nextUrl;
     const isBusinessRoute = BUSINESS_ROUTES.test(pathname);
     const isAdminRoute = ADMIN_ROUTES.test(pathname);
+    const isClaimRoute = CLAIM_ROUTES.test(pathname);
 
     // ── Only validate session/user for protected routes ─────
-    if (isBusinessRoute || isAdminRoute) {
+    if (isBusinessRoute || isAdminRoute || isClaimRoute) {
         const {
             data: { user },
         } = await supabase.auth.getUser();
+
+        // Protect Claim Routes (Guest -> /register)
+        if (isClaimRoute && !user) {
+            const registerUrl = new URL("/register", request.url);
+            registerUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(registerUrl);
+        }
 
         // Protect Business Routes
         if (isBusinessRoute) {

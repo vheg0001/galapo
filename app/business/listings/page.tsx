@@ -13,6 +13,7 @@ import type { BusinessListing } from "@/lib/types";
 export default function MyListingsPage() {
     const [listings, setListings] = useState<BusinessListing[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("all");
 
@@ -37,14 +38,24 @@ export default function MyListingsPage() {
     );
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this listing? it will be hidden from the public.")) return;
+        if (!confirm("Are you sure you want to delete this listing? It will be hidden from the public and you won't be able to manage it here.")) return;
+
+        setDeletingId(id);
+
         try {
             const res = await fetch(`/api/business/listings/${id}`, { method: "DELETE" });
+            const data = await res.json();
+
             if (res.ok) {
-                setListings(listings.filter(l => l.id !== id));
+                setListings(prev => prev.filter(l => l.id !== id));
+            } else {
+                throw new Error(data.error || "Failed to delete listing");
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Delete failed", err);
+            alert(err.message || "Failed to delete listing. Please try again.");
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -126,6 +137,7 @@ export default function MyListingsPage() {
                             key={listing.id}
                             listing={listing}
                             onDelete={handleDelete}
+                            isDeleting={deletingId === listing.id}
                         />
                     ))}
                 </div>

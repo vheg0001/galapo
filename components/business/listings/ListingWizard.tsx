@@ -37,9 +37,11 @@ export default function ListingWizard({ listingId }: ListingWizardProps) {
         resetForm,
         loadListingData,
         submitListing,
+        saveDraft,
         validateCurrentStep
     } = useListingFormStore();
 
+    const [isSavingDraft, setIsSavingDraft] = useState(false);
     const [unsavedChanges, setUnsavedChanges] = useState(false);
 
     // Initial load
@@ -72,6 +74,20 @@ export default function ListingWizard({ listingId }: ListingWizardProps) {
     const handleBack = () => {
         prevStep();
         window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleSaveDraft = async () => {
+        setIsSavingDraft(true);
+        const { success } = await saveDraft();
+        setIsSavingDraft(false);
+        if (success) {
+            setUnsavedChanges(false);
+            // Optional: stay on page or show toast. Let's redirect for now if it's the first save, 
+            // or just stay if editing.
+            if (!editingListingId) {
+                router.push("/business/listings?draft=true");
+            }
+        }
     };
 
     const handleSubmit = async () => {
@@ -178,7 +194,7 @@ export default function ListingWizard({ listingId }: ListingWizardProps) {
                         <div className="space-y-10">
                             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                                 <LogoUploader
-                                    url={formData.logo_existing_url}
+                                    url={formData.logo_preview || formData.logo_existing_url}
                                     onChange={(file, url) => {
                                         updateFormData({ logo_file: file, logo_preview: url });
                                         setUnsavedChanges(true);
@@ -191,7 +207,8 @@ export default function ListingWizard({ listingId }: ListingWizardProps) {
                                     photos={formData.photos.map((p: any) => ({
                                         id: p.id,
                                         url: p.preview || p.existing_url,
-                                        isPrimary: p.sort_order === 0
+                                        isPrimary: p.sort_order === 0,
+                                        file: p.file
                                     }))}
                                     onChange={(photos) => {
                                         updateFormData({
@@ -199,7 +216,9 @@ export default function ListingWizard({ listingId }: ListingWizardProps) {
                                                 id: p.id,
                                                 preview: p.url,
                                                 sort_order: idx,
-                                                file: p.file
+                                                file: p.file,
+                                                image_id: p.id !== p.url && !p.url.startsWith('blob:') ? p.id : undefined, // Keep original DB ID if it isn't a new upload
+                                                existing_url: !p.url.startsWith('blob:') ? p.url : undefined
                                             }))
                                         });
                                         setUnsavedChanges(true);
@@ -229,11 +248,16 @@ export default function ListingWizard({ listingId }: ListingWizardProps) {
                     {/* Draft save button */}
                     <button
                         type="button"
-                        onClick={() => { }} // TODO
-                        className="hidden sm:flex items-center gap-1.5 px-4 text-xs font-bold text-gray-400 hover:text-gray-600 transition"
+                        onClick={handleSaveDraft}
+                        disabled={isSavingDraft || isSubmitting}
+                        className="hidden sm:flex items-center gap-1.5 px-4 text-xs font-bold text-gray-400 hover:text-gray-600 transition disabled:opacity-30"
                     >
-                        <Save size={14} />
-                        Save Draft
+                        {isSavingDraft ? (
+                            <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                            <Save size={14} />
+                        )}
+                        {isSavingDraft ? "Saving..." : "Save Draft"}
                     </button>
 
                     {currentStep < 6 ? (

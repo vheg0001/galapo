@@ -22,7 +22,7 @@ export default async function PublicLayout({
         supabase
             .from("listings")
             .select("category_id")
-            .eq("status", "approved")
+            .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true),
     ]);
 

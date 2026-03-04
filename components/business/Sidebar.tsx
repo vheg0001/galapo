@@ -56,8 +56,12 @@ export default function Sidebar({ unreadNotifications = 0 }: SidebarProps) {
         window.location.href = "/login";
     };
 
-    const isActive = (href: string) =>
-        pathname === href || pathname.startsWith(href + "/");
+    const isActive = (href: string) => {
+        if (href === "/business/listings" && pathname === "/business/listings/new") {
+            return false;
+        }
+        return pathname === href || pathname.startsWith(href + "/");
+    };
 
     return (
         <aside className="flex h-full w-64 flex-col bg-[#1B2A4A] text-white">

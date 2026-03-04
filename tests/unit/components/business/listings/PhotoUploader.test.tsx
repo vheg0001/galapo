@@ -34,15 +34,16 @@ describe("PhotoUploader", () => {
         ]));
     });
 
-    it("allows setting a different photo as primary", () => {
+    it("allows setting a different photo as primary and moves it to first position", () => {
         render(<PhotoUploader photos={mockPhotos} onChange={mockOnChange} />);
 
         const setCoverButtons = screen.getAllByRole("button", { name: /Set as Cover/i });
         fireEvent.click(setCoverButtons[0]); // Photo 2
 
-        expect(mockOnChange).toHaveBeenCalledWith(expect.arrayContaining([
-            expect.objectContaining({ id: "2", isPrimary: true })
-        ]));
+        expect(mockOnChange).toHaveBeenCalledWith([
+            expect.objectContaining({ id: "2", isPrimary: true }),
+            expect.objectContaining({ id: "1", isPrimary: false })
+        ]);
     });
 
     it("removes a photo when delete is clicked", () => {

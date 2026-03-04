@@ -26,7 +26,7 @@ export async function GET(request: Request) {
             `)
             .eq("is_active", true)
             .gte("end_date", now)
-            .eq("listings.status", "approved")
+            .in("listings.status", ["approved", "claimed_pending"])
             .eq("listings.is_active", true)
             .order("end_date", { ascending: true })
             .limit(limit);

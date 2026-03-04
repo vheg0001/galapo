@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase";
 import { APP_NAME } from "@/lib/constants";
 import SearchBar from "@/components/shared/SearchBar";
 import ListingCard from "@/components/shared/ListingCard";
@@ -10,6 +10,7 @@ import BlogCard from "@/components/shared/BlogCard";
 import AdSlot from "@/components/shared/AdSlot";
 import MapView from "@/components/shared/MapView";
 import { ArrowRight } from "lucide-react";
+export const revalidate = 0; // Force dynamic rendering for debugging image issues
 
 export const metadata: Metadata = {
     title: "GalaPo – Discover Olongapo City | Business Directory",
@@ -32,6 +33,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
     const supabase = await createServerSupabaseClient();
+    const adminSupabase = createAdminSupabaseClient();
 
     // Parallelize all data fetching to reduce TTFB and LCP
     const [
@@ -55,28 +57,30 @@ export default async function HomePage() {
             .select("name, slug")
             .eq("is_active", true)
             .order("name", { ascending: true }),
-        supabase
+        adminSupabase
             .from("listings")
             .select(`
                 id, slug, business_name, short_description, phone, logo_url,
                 is_featured, is_premium,
                 categories!listings_category_id_fkey ( name ),
-                barangays ( name )
+                barangays ( name ),
+                listing_images ( image_url, is_primary )
             `)
-            .eq("status", "approved")
+            .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
             .eq("is_featured", true)
             .order("created_at", { ascending: false })
             .limit(8),
-        supabase
+        adminSupabase
             .from("listings")
             .select(`
                 id, slug, business_name, short_description, phone, logo_url,
                 is_featured, is_premium,
                 categories!listings_category_id_fkey ( name ),
-                barangays ( name )
+                barangays ( name ),
+                listing_images ( image_url, is_primary )
             `)
-            .eq("status", "approved")
+            .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
             .order("created_at", { ascending: false })
             .limit(6),
@@ -106,7 +110,7 @@ export default async function HomePage() {
         supabase
             .from("listings")
             .select("id, slug, business_name, lat, lng, is_featured, is_premium, categories!listings_category_id_fkey ( name )")
-            .eq("status", "approved")
+            .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
             .or("is_featured.eq.true,is_premium.eq.true")
             .not("lat", "is", null)
@@ -115,7 +119,7 @@ export default async function HomePage() {
         supabase
             .from("listings")
             .select("category_id")
-            .eq("status", "approved")
+            .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true),
     ]);
 
@@ -146,6 +150,17 @@ export default async function HomePage() {
             is_featured: l.is_featured,
             is_premium: l.is_premium,
         }));
+
+    // DEBUG: Look at the first listing to verify data structure
+    if (latestListings && latestListings.length > 0) {
+        console.log("DEBUG [Homepage]: First Latest Listing:", JSON.stringify({
+            name: latestListings[0].business_name,
+            logo_url: latestListings[0].logo_url,
+            images_type: typeof latestListings[0].listing_images,
+            images_count: (latestListings[0].listing_images as any)?.length,
+            has_listing_image: !!(latestListings[0] as any).listing_image
+        }, null, 2));
+    }
 
     return (
         <>
@@ -188,7 +203,7 @@ export default async function HomePage() {
                             </Link>
                         </div>
                         <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
-                            {featuredListings.map((listing) => (
+                            {featuredListings.map((listing, index) => (
                                 <div key={listing.id} className="w-72 shrink-0 snap-start">
                                     <ListingCard
                                         id={listing.id}
@@ -199,9 +214,14 @@ export default async function HomePage() {
                                         barangayName={(listing.barangays as any)?.name}
                                         phone={listing.phone}
                                         logoUrl={listing.logo_url}
+                                        imageUrl={
+                                            (listing.listing_images as any[])?.find(img => img.is_primary)?.image_url ||
+                                            (listing.listing_images as any[])?.[0]?.image_url ||
+                                            (listing as any).listing_image?.[0]?.image_url
+                                        }
                                         isFeatured={listing.is_featured}
                                         isPremium={listing.is_premium}
-                                        priority
+                                        priority={index < 3}
                                     />
                                 </div>
                             ))}
@@ -271,7 +291,7 @@ export default async function HomePage() {
                             </Link>
                         </div>
                         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                            {latestListings.map((listing) => (
+                            {latestListings.map((listing, index) => (
                                 <ListingCard
                                     key={listing.id}
                                     id={listing.id}
@@ -282,7 +302,13 @@ export default async function HomePage() {
                                     barangayName={(listing.barangays as any)?.name}
                                     phone={listing.phone}
                                     logoUrl={listing.logo_url}
+                                    imageUrl={
+                                        (listing.listing_images as any[])?.find(img => img.is_primary)?.image_url ||
+                                        (listing.listing_images as any[])?.[0]?.image_url ||
+                                        (listing as any).listing_image?.[0]?.image_url
+                                    }
                                     isNew
+                                    priority={index < 3}
                                 />
                             ))}
                         </div>

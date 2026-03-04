@@ -4,20 +4,12 @@
 // GalaPo — DynamicFieldRenderer Component (Module 9.1)
 // ──────────────────────────────────────────────────────────
 
-import { FieldType } from "@/lib/types";
+import { FieldType, CategoryField } from "@/lib/types";
 import MenuItemBuilder from "./MenuItemBuilder";
 import { Camera, X, Plus } from "lucide-react";
 
 interface DynamicFieldRendererProps {
-    field: {
-        id: string;
-        field_label: string;
-        field_type: FieldType;
-        is_required: boolean;
-        placeholder?: string;
-        help_text?: string;
-        options?: any;
-    };
+    field: CategoryField;
     value: any;
     onChange: (value: any) => void;
 }
@@ -92,44 +84,58 @@ export default function DynamicFieldRenderer({ field, value, onChange }: Dynamic
 
         case FieldType.BOOLEAN:
             return (
-                <div className="flex items-center justify-between py-1">
-                    <div>
-                        {label}
-                        {helpText}
+                <div className="flex items-center justify-between gap-4 py-3 transition hover:bg-gray-50/50 rounded-xl px-3 -mx-3 border border-transparent hover:border-gray-100">
+                    <div className="flex-1">
+                        <label className="text-sm font-semibold text-gray-700 block">
+                            {field.field_label}
+                            {field.is_required && <span className="text-red-500 ml-1">*</span>}
+                        </label>
+                        {field.help_text && (
+                            <p className="text-xs text-gray-400 mt-0.5">{field.help_text}</p>
+                        )}
                     </div>
-                    <label className="relative inline-flex cursor-pointer items-center">
-                        <input
-                            type="checkbox"
-                            checked={!!value}
-                            onChange={(e) => onChange(e.target.checked)}
-                            className="sr-only"
+                    <button
+                        type="button"
+                        onClick={() => onChange(!value)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 ${value ? "bg-[#FF6B35]" : "bg-gray-200"
+                            }`}
+                    >
+                        <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${value ? "translate-x-5" : "translate-x-0"
+                                }`}
                         />
-                        <div className={`h-6 w-11 rounded-full bg-gray-200 transition-colors ${value ? "bg-[#FF6B35]" : "bg-gray-200"}`}>
-                            <div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${value ? "translate-x-5" : "translate-x-0"}`} />
-                        </div>
-                    </label>
+                    </button>
                 </div>
             );
 
         case FieldType.SELECT:
-            return (
-                <div>
-                    {label}
-                    <select
-                        value={value || ""}
-                        onChange={(e) => onChange(e.target.value)}
-                        className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-1 focus:ring-[#FF6B35]/20 bg-white"
-                    >
-                        <option value="">Select option...</option>
-                        {field.options?.map((opt: any) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                    {helpText}
-                </div>
-            );
-
         case FieldType.MULTI_SELECT:
+            const normalizedOptions = (field.options || []).map((opt: any) => {
+                if (typeof opt === "string") {
+                    return { value: opt, label: opt };
+                }
+                return opt;
+            });
+
+            if (field.field_type === FieldType.SELECT) {
+                return (
+                    <div>
+                        {label}
+                        <select
+                            value={value || ""}
+                            onChange={(e) => onChange(e.target.value)}
+                            className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-1 focus:ring-[#FF6B35]/20 bg-white"
+                        >
+                            <option value="">Select option...</option>
+                            {normalizedOptions.map((opt: any) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                        {helpText}
+                    </div>
+                );
+            }
+
             const currentValues = Array.isArray(value) ? value : [];
             const toggleValue = (val: string) => {
                 if (currentValues.includes(val)) {
@@ -142,14 +148,14 @@ export default function DynamicFieldRenderer({ field, value, onChange }: Dynamic
                 <div>
                     {label}
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {field.options?.map((opt: any) => (
+                        {normalizedOptions.map((opt: any) => (
                             <button
                                 key={opt.value}
                                 type="button"
                                 onClick={() => toggleValue(opt.value)}
                                 className={`flex items-center justify-center rounded-lg border py-2 text-xs font-medium transition ${currentValues.includes(opt.value)
-                                        ? "border-[#FF6B35] bg-[#FF6B35]/5 text-[#FF6B35]"
-                                        : "border-gray-100 bg-gray-50 text-gray-600 hover:border-gray-200"
+                                    ? "border-[#FF6B35] bg-[#FF6B35]/5 text-[#FF6B35]"
+                                    : "border-gray-100 bg-gray-50 text-gray-600 hover:border-gray-200"
                                     }`}
                             >
                                 {opt.label}

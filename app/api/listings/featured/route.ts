@@ -28,7 +28,7 @@ export async function GET(request: Request) {
                 categories!listings_category_id_fkey ( name, slug ),
                 barangays ( name, slug )
             `)
-            .eq("status", "approved")
+            .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
             .eq("is_featured", true)
             // Order by premium first, then newest

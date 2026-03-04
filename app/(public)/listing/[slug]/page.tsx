@@ -173,18 +173,6 @@ export default async function ListingDetailPage({ params }: PageProps) {
                             businessName={listing.business_name}
                             categoryIcon={cat?.icon}
                         />
-
-                        {/* Business logo — overlapping bottom-left of hero */}
-                        {listing.logo_url && (
-                            <div className="absolute -bottom-6 left-6 h-20 w-20 overflow-hidden rounded-2xl border-4 border-background bg-background shadow-xl">
-                                <Image
-                                    src={listing.logo_url}
-                                    alt={`${listing.business_name} logo`}
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                        )}
                     </div>
 
                     {/* ── Main Content Layout ── */}
@@ -194,7 +182,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
                         ═══════════════════════════════════════════════════════ */}
                         <div className="min-w-0 flex-1 space-y-8">
                             {/* Business Info */}
-                            <div className={listing.logo_url ? "pt-8" : ""}>
+                            <div>
                                 <BusinessInfo
                                     businessName={listing.business_name}
                                     address={listing.address}
@@ -203,6 +191,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
                                     operatingHours={hours}
                                     isFeatured={listing.is_featured}
                                     isPremium={listing.is_premium}
+                                    logoUrl={listing.logo_url}
                                 />
                             </div>
 
@@ -239,6 +228,11 @@ export default async function ListingDetailPage({ params }: PageProps) {
                                 listingSlug={slug}
                             />
 
+                            {/* Claim banner — only if no owner and pre-populated */}
+                            {!listing.owner_id && listing.is_pre_populated && (
+                                <ClaimBanner slug={slug} businessName={listing.business_name} />
+                            )}
+
                             {/* Location Map */}
                             {listing.lat && listing.lng && (
                                 <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -265,11 +259,6 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
                             {/* Ad slot */}
                             <AdSlot location="listing_sidebar" />
-
-                            {/* Claim banner — only if no owner */}
-                            {!listing.owner_id && (
-                                <ClaimBanner slug={slug} businessName={listing.business_name} />
-                            )}
                         </aside>
                     </div>
 

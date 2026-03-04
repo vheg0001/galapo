@@ -337,7 +337,7 @@ export const useListingFormStore = create<ListingFormState>()((set, get) => ({
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...payload, status: "pending" }),
+                body: JSON.stringify(payload),
             });
 
             const data = await res.json();
@@ -345,7 +345,29 @@ export const useListingFormStore = create<ListingFormState>()((set, get) => ({
 
             const listingId = data.data?.id || editingListingId;
 
-            // 1. Upload logo if new file selected
+            // --- IMAGE SYNC LOGIC ---
+
+            // 1. Handle Deletions (if editing)
+            if (editingListingId) {
+                // Get fresh list of current photos from DB to compare? 
+                // Or just trust the store's initial prefill vs current photos.
+                // Let's assume we need to fetch what's currently there to safely delete.
+                const currentRes = await fetch(`/api/business/listings/${listingId}/images`);
+                if (currentRes.ok) {
+                    const dbPhotos = await currentRes.json();
+                    const currentIds = new Set(formData.photos.map(p => p.image_id).filter(Boolean));
+
+                    for (const dbPhoto of dbPhotos) {
+                        if (!currentIds.has(dbPhoto.id)) {
+                            await fetch(`/api/business/listings/${listingId}/images?image_id=${dbPhoto.id}`, {
+                                method: "DELETE"
+                            });
+                        }
+                    }
+                }
+            }
+
+            // 2. Upload new logo if selected
             if (formData.logo_file) {
                 const logoForm = new FormData();
                 logoForm.append("file", formData.logo_file);
@@ -355,7 +377,7 @@ export const useListingFormStore = create<ListingFormState>()((set, get) => ({
                 });
             }
 
-            // 2. Upload new photos
+            // 3. Upload new gallery photos
             const newPhotos = formData.photos.filter(p => p.file);
             if (newPhotos.length > 0) {
                 const photoForm = new FormData();
@@ -365,6 +387,19 @@ export const useListingFormStore = create<ListingFormState>()((set, get) => ({
                 await fetch(`/api/business/listings/${listingId}/images`, {
                     method: "POST",
                     body: photoForm
+                });
+            }
+
+            // 4. Update Sort Order / Primary status for existing images
+            const existingPhotos = formData.photos.filter(p => p.image_id);
+            if (existingPhotos.length > 0) {
+                await fetch(`/api/business/listings/${listingId}/images`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(existingPhotos.map((p, idx) => ({
+                        id: p.image_id,
+                        sort_order: idx
+                    })))
                 });
             }
 
@@ -391,14 +426,52 @@ export const useListingFormStore = create<ListingFormState>()((set, get) => ({
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...payload, status: "draft" }),
+                body: JSON.stringify({ ...payload, is_draft: true }),
             });
 
             const data = await res.json();
             if (!res.ok || data.error) throw new Error(data.error || "Failed to save draft");
 
+            const listingId = data.data?.id || editingListingId;
+
+            // Handle image sync similarly for drafts
+            if (editingListingId) {
+                const currentRes = await fetch(`/api/business/listings/${listingId}/images`);
+                if (currentRes.ok) {
+                    const dbPhotos = await currentRes.json();
+                    const currentIds = new Set(formData.photos.map(p => p.image_id).filter(Boolean));
+                    for (const dbPhoto of dbPhotos) {
+                        if (!currentIds.has(dbPhoto.id)) {
+                            await fetch(`/api/business/listings/${listingId}/images?image_id=${dbPhoto.id}`, { method: "DELETE" });
+                        }
+                    }
+                }
+            }
+
+            if (formData.logo_file) {
+                const logoForm = new FormData();
+                logoForm.append("file", formData.logo_file);
+                await fetch(`/api/business/listings/${listingId}/logo`, { method: "POST", body: logoForm });
+            }
+
+            const newPhotos = formData.photos.filter(p => p.file);
+            if (newPhotos.length > 0) {
+                const photoForm = new FormData();
+                newPhotos.forEach(p => { if (p.file) photoForm.append("images", p.file); });
+                await fetch(`/api/business/listings/${listingId}/images`, { method: "POST", body: photoForm });
+            }
+
+            const existingPhotos = formData.photos.filter(p => p.image_id);
+            if (existingPhotos.length > 0) {
+                await fetch(`/api/business/listings/${listingId}/images`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(existingPhotos.map((p, idx) => ({ id: p.image_id, sort_order: idx })))
+                });
+            }
+
             set({ isDirty: false });
-            return { success: true, listingId: data.data?.id || editingListingId };
+            return { success: true, listingId };
         } catch (err: any) {
             return { success: false, error: err.message };
         } finally {

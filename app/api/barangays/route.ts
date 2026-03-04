@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
         const { data, error } = await supabase
             .from("barangays")
-            .select("id, name, slug, zip_code")
+            .select("id, name, slug")
             .eq("city_id", city.id)
             .eq("is_active", true)
             .order("name", { ascending: true });

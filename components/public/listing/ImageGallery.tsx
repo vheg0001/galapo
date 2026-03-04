@@ -53,54 +53,57 @@ export default function ImageGallery({
     return (
         <>
             <div className="space-y-3">
-                {/* Main image */}
-                <div
-                    className="group relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-muted cursor-pointer"
-                    onClick={() => setLightboxOpen(true)}
-                >
-                    <Image
-                        src={current.image_url}
-                        alt={current.alt_text || businessName}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                        priority
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-                    />
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-
-                    {/* Lightbox trigger */}
-                    <button
+                {/* Main image wrapper to constrain logo overlap */}
+                <div className="relative">
+                    {/* Main image content */}
+                    <div
+                        className="group relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-muted cursor-pointer"
                         onClick={() => setLightboxOpen(true)}
-                        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
-                        aria-label="View full screen"
                     >
-                        <ZoomIn className="h-4 w-4" />
-                    </button>
+                        <Image
+                            src={current.image_url}
+                            alt={current.alt_text || businessName}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                            priority
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+                        />
+                        {/* Overlay gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
 
-                    {/* Prev / Next arrows */}
-                    {images.length > 1 && (
-                        <>
-                            <button
-                                onClick={prev}
-                                className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-lg bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60 opacity-0 group-hover:opacity-100"
-                                aria-label="Previous image"
-                            >
-                                <ChevronLeft className="h-5 w-5" />
-                            </button>
-                            <button
-                                onClick={next}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-lg bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60 opacity-0 group-hover:opacity-100"
-                                aria-label="Next image"
-                            >
-                                <ChevronRight className="h-5 w-5" />
-                            </button>
-                            {/* Counter */}
-                            <div className="absolute bottom-4 right-4 rounded-full bg-black/50 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                                {activeIndex + 1} / {images.length}
-                            </div>
-                        </>
-                    )}
+                        {/* Lightbox trigger */}
+                        <button
+                            onClick={() => setLightboxOpen(true)}
+                            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
+                            aria-label="View full screen"
+                        >
+                            <ZoomIn className="h-4 w-4" />
+                        </button>
+
+                        {/* Prev / Next arrows */}
+                        {images.length > 1 && (
+                            <>
+                                <button
+                                    onClick={prev}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-lg bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60 opacity-0 group-hover:opacity-100"
+                                    aria-label="Previous image"
+                                >
+                                    <ChevronLeft className="h-5 w-5" />
+                                </button>
+                                <button
+                                    onClick={next}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-lg bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60 opacity-0 group-hover:opacity-100"
+                                    aria-label="Next image"
+                                >
+                                    <ChevronRight className="h-5 w-5" />
+                                </button>
+                                {/* Counter */}
+                                <div className="absolute bottom-4 right-4 rounded-full bg-black/50 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                                    {activeIndex + 1} / {images.length}
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {/* Thumbnail strip */}

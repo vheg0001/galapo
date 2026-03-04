@@ -43,7 +43,7 @@ export async function GET(
                 .select("subcategory_id")
                 .eq("category_id", category.id)
                 .eq("is_active", true)
-                .eq("status", "approved");
+                .in("status", ["approved", "claimed_pending"]);
 
             const countMap: Record<string, number> = {};
             listings?.forEach((l) => {
@@ -63,7 +63,7 @@ export async function GET(
                 .select("id", { count: "exact", head: true })
                 .eq("category_id", category.id)
                 .eq("is_active", true)
-                .eq("status", "approved");
+                .in("status", ["approved", "claimed_pending"]);
 
             responseData.listing_count = count || 0;
         } else {
@@ -83,7 +83,7 @@ export async function GET(
                 .select("id", { count: "exact", head: true })
                 .eq("subcategory_id", category.id)
                 .eq("is_active", true)
-                .eq("status", "approved");
+                .in("status", ["approved", "claimed_pending"]);
 
             responseData.listing_count = count || 0;
         }

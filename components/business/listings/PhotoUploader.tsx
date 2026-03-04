@@ -51,7 +51,19 @@ export default function PhotoUploader({ photos, onChange, maxPhotos = 10 }: Phot
     };
 
     const setPrimary = (id: string) => {
-        onChange(photos.map(p => ({ ...p, isPrimary: p.id === id })));
+        const index = photos.findIndex(p => p.id === id);
+        if (index === -1) return;
+
+        const updatedPhotos = [...photos];
+        const [selectedPhoto] = updatedPhotos.splice(index, 1);
+
+        // Update isPrimary flags
+        const finalPhotos = [
+            { ...selectedPhoto, isPrimary: true },
+            ...updatedPhotos.map(p => ({ ...p, isPrimary: false }))
+        ];
+
+        onChange(finalPhotos);
     };
 
     return (

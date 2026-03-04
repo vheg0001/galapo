@@ -86,7 +86,7 @@ export async function POST(
                 .getPublicUrl(fileName);
 
             // Insert into DB
-            const { data: galleryItem, error: dbError } = await supabase
+            const { data: galleryItem, error: dbError } = (await supabase
                 .from("listing_images")
                 .insert({
                     listing_id: id,
@@ -95,10 +95,10 @@ export async function POST(
                     is_primary: (count || 0) + results.length === 0,
                 })
                 .select()
-                .single();
+                .single()) as any;
 
             if (dbError) throw dbError;
-            results.push(galleryItem);
+            results.push(galleryItem as any);
         }
 
         return NextResponse.json(results);

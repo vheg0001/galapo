@@ -23,8 +23,8 @@ export default function CategorySelector({ value, subValue, onChange }: Category
         async function fetchCats() {
             try {
                 const res = await fetch("/api/categories");
-                const data = await res.json();
-                setCategories(data);
+                const json = await res.json();
+                setCategories(json.data || json);
             } catch (err) {
                 console.error("Failed to fetch categories", err);
             } finally {
@@ -77,8 +77,8 @@ export default function CategorySelector({ value, subValue, onChange }: Category
                                 type="button"
                                 onClick={() => onChange(cat.id, "")}
                                 className={`group flex w-full items-center justify-between rounded-xl px-4 py-3.5 text-sm transition ${value === cat.id
-                                        ? "bg-[#FF6B35] text-white shadow-md shadow-[#FF6B35]/20"
-                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    ? "bg-[#FF6B35] text-white shadow-md shadow-[#FF6B35]/20"
+                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
@@ -114,8 +114,8 @@ export default function CategorySelector({ value, subValue, onChange }: Category
                                     type="button"
                                     onClick={() => onChange(value, sub.id)}
                                     className={`flex w-full items-center justify-between rounded-xl px-4 py-3.5 text-sm transition ${subValue === sub.id
-                                            ? "bg-[#FF6B35]/10 text-[#FF6B35] font-bold"
-                                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                        ? "bg-[#FF6B35]/10 text-[#FF6B35] font-bold"
+                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                         }`}
                                 >
                                     <span>{sub.name}</span>

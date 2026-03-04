@@ -23,6 +23,7 @@ export default function ClaimForm({ listing }: ClaimFormProps) {
     const [proofFile, setProofFile] = useState<File | null>(null);
     const [contactPhone, setContactPhone] = useState("");
     const [notes, setNotes] = useState("");
+    const [success, setSuccess] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -59,13 +60,36 @@ export default function ClaimForm({ listing }: ClaimFormProps) {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to submit claim.");
 
-            router.push("/business/dashboard?claimed=true");
+            setSuccess(true);
+            setTimeout(() => {
+                router.push("/business/dashboard?claimed=true");
+            }, 3000);
         } catch (err: any) {
             setError(err.message);
         } finally {
             setSubmitting(false);
         }
     };
+
+    if (success) {
+        return (
+            <div className="mx-auto max-w-xl rounded-3xl border border-gray-100 bg-white p-12 text-center shadow-xl shadow-gray-200/50">
+                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <ShieldCheck size={40} />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Claim Submitted!</h2>
+                <p className="mt-4 text-gray-500 leading-relaxed">
+                    Thank you for providing proof of ownership for <b>{listing.business_name}</b>.
+                    Our verification team will review your documents within 24-48 hours.
+                </p>
+                <div className="mt-8 flex flex-col gap-3">
+                    <div className="rounded-xl bg-gray-50 p-4 text-xs text-gray-400">
+                        Redirecting you to your dashboard...
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mx-auto max-w-xl rounded-3xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-200/50">
@@ -141,8 +165,9 @@ export default function ClaimForm({ listing }: ClaimFormProps) {
                 {/* Additional Notes */}
                 <div className="space-y-1.5">
                     <label className="block text-sm font-bold text-gray-700">Additional Notes (Optional)</label>
+                    <span className="text-[10px] text-gray-400 block -mt-1 mb-1">Anything else we should know?</span>
                     <textarea
-                        placeholder="Anything else we should know?"
+                        placeholder="Provide any additional info..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         rows={3}

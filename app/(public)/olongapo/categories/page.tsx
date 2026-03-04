@@ -32,7 +32,7 @@ export default async function CategoriesPage() {
         .from("listings")
         .select("category_id, subcategory_id")
         .eq("is_active", true)
-        .eq("status", "approved");
+        .in("status", ["approved", "claimed_pending"]);
 
     const listingData = listings || [];
 

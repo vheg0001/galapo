@@ -36,8 +36,11 @@ export function getListingsQuery(supabase: SupabaseClient, filters: ListingFilte
     // Default filters for public visibility
     const isActive = filters.isActive !== undefined ? filters.isActive : true;
     const status = filters.status || "approved";
-
-    query = query.eq("is_active", isActive).eq("status", status);
+    if (status === "approved") {
+        query = query.eq("is_active", isActive).in("status", ["approved", "claimed_pending"]);
+    } else {
+        query = query.eq("is_active", isActive).eq("status", status);
+    }
 
     if (filters.isFeatured) {
         query = query.eq("is_featured", true);
@@ -164,7 +167,7 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
             barangays ( name, slug )
         `, { count: "exact" })
         .eq("is_active", true)
-        .eq("status", "approved");
+        .in("status", ["approved", "claimed_pending"]);
 
     // Category or subcategory filter
     if (filters.subcategoryId) {
@@ -272,7 +275,7 @@ export async function getSubcategoryCounts(supabase: SupabaseClient, categoryId:
         .select("subcategory_id")
         .eq("category_id", categoryId)
         .eq("is_active", true)
-        .eq("status", "approved");
+        .in("status", ["approved", "claimed_pending"]);
 
     const counts: Record<string, number> = {};
     data?.forEach((l) => {
@@ -296,7 +299,7 @@ export async function getBarangayCounts(
         .select("barangay_id")
         .eq("category_id", categoryId)
         .eq("is_active", true)
-        .eq("status", "approved");
+        .in("status", ["approved", "claimed_pending"]);
 
     if (subcategoryId) {
         query = query.eq("subcategory_id", subcategoryId);
@@ -324,7 +327,7 @@ import type { ParsedSearchParams } from "@/lib/search-helpers";
 const LISTING_FULL_SELECT = `
     id, slug, business_name, short_description, phone, address,
     logo_url, is_featured, is_premium, created_at, updated_at,
-    operating_hours, lat, lng, tags, status, is_active,
+    operating_hours, lat, lng, tags, status, is_active, is_pre_populated,
     categories!listings_category_id_fkey ( id, name, slug ),
     subcategories:categories!listings_subcategory_id_fkey ( id, name, slug ),
     barangays ( id, name, slug ),
@@ -362,7 +365,7 @@ export async function buildListingsQuery(supabase: SupabaseClient, options: Buil
         .from("listings")
         .select(selectStr, { count: forMap ? undefined : "exact" })
         .eq("is_active", true)
-        .eq("status", "approved");
+        .in("status", ["approved", "claimed_pending"]);
 
     // Category filter
     // If we only have categoryId, we need to fetch listings that belong directly
@@ -489,7 +492,7 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
             id, slug, owner_id, business_name, short_description, full_description,
             address, lat, lng, phone, phone_secondary, email, website,
             social_links, operating_hours, tags, payment_methods,
-            logo_url, is_featured, is_premium, is_active, status,
+            logo_url, is_featured, is_premium, is_active, status, is_pre_populated,
             created_at, updated_at,
             categories!listings_category_id_fkey ( id, name, slug, icon ),
             subcategories:categories!listings_subcategory_id_fkey ( id, name, slug ),
@@ -506,7 +509,7 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
         `)
         .eq("slug", slug)
         .eq("is_active", true)
-        .eq("status", "approved")
+        .in("status", ["approved", "claimed_pending"])
         .maybeSingle();
 
     if (error || !listing) return null;
@@ -565,7 +568,7 @@ export async function getRelatedListings(
             listing_images ( image_url, is_primary )
         `)
         .eq("is_active", true)
-        .eq("status", "approved")
+        .in("status", ["approved", "claimed_pending"])
         .neq("slug", excludeSlug)
         .limit(limit);
 
@@ -634,7 +637,7 @@ export async function getListingsInBounds(
             barangays ( id, name, slug ),
             listing_images ( image_url, sort_order, is_primary )
         `)
-        .eq("status", "approved")
+        .in("status", ["approved", "claimed_pending"])
         .eq("is_active", true)
         .gte("lat", bounds.south)
         .lte("lat", bounds.north)
@@ -655,7 +658,7 @@ export async function searchSuggestions(supabase: SupabaseClient, query: string)
     const { data: businesses } = await supabase
         .from("listings")
         .select("business_name, slug")
-        .eq("status", "approved")
+        .in("status", ["approved", "claimed_pending"])
         .eq("is_active", true)
         .textSearch("business_name", query, { type: "websearch" })
         .limit(5);
@@ -666,7 +669,7 @@ export async function searchSuggestions(supabase: SupabaseClient, query: string)
         const { data: fuzzyBiz } = await supabase
             .from("listings")
             .select("business_name, slug")
-            .eq("status", "approved")
+            .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
             .ilike("business_name", `%${query}%`)
             .limit(5);

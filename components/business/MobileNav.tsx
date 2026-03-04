@@ -35,7 +35,13 @@ export default function MobileNav({ unreadNotifications = 0, onMoreClick }: Mobi
             <div className="flex">
                 {TABS.map((tab) => {
                     const Icon = tab.icon;
-                    const isActive = pathname === tab.href || pathname.startsWith(tab.href + "/");
+                    let isActive = pathname === tab.href || pathname.startsWith(tab.href + "/");
+
+                    // Special case: "Listings" tab should not be active if we are on the "Add New" page
+                    if (tab.label === "Listings" && pathname.includes("/listings/new")) {
+                        isActive = false;
+                    }
+
                     const isNotif = tab.label === "Notifications";
 
                     return (

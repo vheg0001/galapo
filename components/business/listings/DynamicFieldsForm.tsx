@@ -33,7 +33,8 @@ export default function DynamicFieldsForm({
                 // or have a dedicated endpoint for fields.
                 // For now, we fetch from categories API we updated earlier.
                 const res = await fetch(`/api/categories?include_fields=true`);
-                const categories = await res.json();
+                const json = await res.json();
+                const categories = json.data || json;
 
                 let foundFields: CategoryField[] = [];
 

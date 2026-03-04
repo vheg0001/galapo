@@ -5,16 +5,17 @@
 // ──────────────────────────────────────────────────────────
 
 import Link from "next/link";
-import { Edit2, Eye, ExternalLink, MoreVertical, Trash2, AlertCircle } from "lucide-react";
+import { Edit2, Eye, ExternalLink, MoreVertical, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import type { BusinessListing } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 interface ListingCardProps {
     listing: BusinessListing;
     onDelete?: (id: string) => void;
+    isDeleting?: boolean;
 }
 
-export default function ListingCard({ listing, onDelete }: ListingCardProps) {
+export default function ListingCard({ listing, onDelete, isDeleting }: ListingCardProps) {
     const statusColors: Record<string, string> = {
         approved: "bg-green-100 text-green-700 border-green-200",
         pending: "bg-amber-100 text-amber-700 border-amber-200",
@@ -29,6 +30,9 @@ export default function ListingCard({ listing, onDelete }: ListingCardProps) {
         premium: "bg-purple-50 text-purple-600 border-purple-100",
         enterprise: "bg-amber-50 text-amber-600 border-amber-100",
     };
+
+    const isPremium = listing.is_premium;
+    const planType = isPremium ? "premium" : "free";
 
     return (
         <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white transition hover:border-[#FF6B35]/20 hover:shadow-xl hover:shadow-[#FF6B35]/5">
@@ -48,8 +52,8 @@ export default function ListingCard({ listing, onDelete }: ListingCardProps) {
                 </div>
 
                 {/* Plan Badge */}
-                <div className={`absolute right-3 top-3 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${planColors[listing.plan_type] || planColors.free}`}>
-                    {listing.plan_type}
+                <div className={`absolute right-3 top-3 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${planColors[planType] || planColors.free}`}>
+                    {planType}
                 </div>
             </div>
 
@@ -64,7 +68,7 @@ export default function ListingCard({ listing, onDelete }: ListingCardProps) {
                 </div>
 
                 <p className="mb-4 line-clamp-1 text-xs text-gray-500">
-                    {listing.categories?.name} {listing.subcategory?.name ? `• ${listing.subcategory.name}` : ""}
+                    {(listing as any).category?.name} {(listing as any).subcategory?.name ? `• ${(listing as any).subcategory.name}` : ""}
                 </p>
 
                 <div className="mt-auto space-y-3">
@@ -91,10 +95,15 @@ export default function ListingCard({ listing, onDelete }: ListingCardProps) {
                         <button
                             type="button"
                             onClick={() => onDelete?.(listing.id)}
-                            className="flex items-center justify-center rounded-lg bg-gray-50 px-3 py-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500"
+                            disabled={isDeleting}
+                            className="flex items-center justify-center rounded-lg bg-gray-50 px-3 py-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-30"
                             title="Delete Listing"
                         >
-                            <Trash2 size={14} />
+                            {isDeleting ? (
+                                <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                                <Trash2 size={14} />
+                            )}
                         </button>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Clock, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ interface BusinessInfoProps {
     operatingHours: Record<string, { open: string; close: string; closed: boolean }> | null;
     isFeatured: boolean;
     isPremium: boolean;
+    logoUrl?: string | null;
 }
 
 const DAYS_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
@@ -62,6 +64,7 @@ export default function BusinessInfo({
     operatingHours,
     isFeatured,
     isPremium,
+    logoUrl
 }: BusinessInfoProps) {
     const [mounted, setMounted] = useState(false);
 
@@ -75,10 +78,10 @@ export default function BusinessInfo({
     }, [operatingHours, mounted]);
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-4">
             {/* Badges row */}
             {(isPremium || isFeatured) && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-2">
                     {isPremium && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
                             ⭐ Premium
@@ -92,10 +95,22 @@ export default function BusinessInfo({
                 </div>
             )}
 
-            {/* Business name */}
-            <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl lg:text-4xl">
-                {businessName}
-            </h1>
+            {/* Logo and Business name side-by-side */}
+            <div className="flex items-center gap-4">
+                {logoUrl && (
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-border/50 bg-background shadow-sm lg:h-20 lg:w-20">
+                        <Image
+                            src={logoUrl}
+                            alt={`${businessName} logo`}
+                            fill
+                            className="object-cover"
+                        />
+                    </div>
+                )}
+                <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl lg:text-4xl text-balance">
+                    {businessName}
+                </h1>
+            </div>
 
             {/* Category tags */}
             {(category || subcategory) && (

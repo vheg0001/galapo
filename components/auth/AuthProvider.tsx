@@ -8,6 +8,7 @@
 import { useEffect } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
+import { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 interface AuthProviderProps {
     children: React.ReactNode;
@@ -29,7 +30,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
             // 2. Only after initialization is complete, listen for subsequent changes
             const { data } = supabase.auth.onAuthStateChange(
-                async (event, session) => {
+                async (event: AuthChangeEvent, session: Session | null) => {
                     console.log(`AuthProvider: auth state change detected: ${event}, session exists: ${!!session}`);
 
                     // Ignore INITIAL_SESSION here since initialize() already handled it

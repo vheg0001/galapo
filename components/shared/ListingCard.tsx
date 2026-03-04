@@ -36,6 +36,8 @@ export default function ListingCard({
     isNew,
     priority,
 }: ListingCardProps) {
+    // We prioritize the primary gallery image (imageUrl) over the logo for the main cover,
+    // as users usually want the "Cover" they set in the gallery to be the main visual.
     const displayImage = imageUrl || logoUrl || "/placeholder-business.svg";
 
     return (
@@ -51,6 +53,7 @@ export default function ListingCard({
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                     priority={priority}
                 />
+
                 {/* Badges */}
                 <div className="absolute left-3 top-3 flex flex-col gap-1.5">
                     {isFeatured && <Badge variant="featured">Featured</Badge>}
