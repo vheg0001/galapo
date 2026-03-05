@@ -13,13 +13,15 @@ interface DynamicFieldsFormProps {
     subcategoryId?: string;
     values: Record<string, any>;
     onChange: (values: Record<string, any>) => void;
+    listingId?: string; // optional: used to upload images directly when listingId is known
 }
 
 export default function DynamicFieldsForm({
     categoryId,
     subcategoryId,
     values,
-    onChange
+    onChange,
+    listingId,
 }: DynamicFieldsFormProps) {
     const [fields, setFields] = useState<CategoryField[]>([]);
     const [loading, setLoading] = useState(false);
@@ -98,6 +100,7 @@ export default function DynamicFieldsForm({
                     field={field}
                     value={values[field.id]}
                     onChange={(val) => handleFieldChange(field.id, val)}
+                    listingId={listingId}
                 />
             ))}
         </div>

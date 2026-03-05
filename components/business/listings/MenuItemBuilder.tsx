@@ -5,15 +5,18 @@
 // ──────────────────────────────────────────────────────────
 
 import { useState } from "react";
-import { Plus, Trash2, GripVertical, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, Image as ImageIcon, X, Loader2 } from "lucide-react";
 import type { MenuItemValue } from "@/store/listingFormStore";
 
 interface MenuItemBuilderProps {
     items: MenuItemValue[];
     onChange: (items: MenuItemValue[]) => void;
+    listingId?: string; // When provided, uploads happen immediately on file pick
 }
 
-export default function MenuItemBuilder({ items, onChange }: MenuItemBuilderProps) {
+export default function MenuItemBuilder({ items, onChange, listingId }: MenuItemBuilderProps) {
+    const [uploadingId, setUploadingId] = useState<string | null>(null);
+
     const addItem = () => {
         const newItem: MenuItemValue = {
             id: crypto.randomUUID(),
@@ -33,10 +36,33 @@ export default function MenuItemBuilder({ items, onChange }: MenuItemBuilderProp
     };
 
     const handlePhotoUpload = async (id: string, file: File) => {
-        // In a real app, we'd upload to Supabase storage immediately or on submit
-        // For now, we'll create a local preview URL
-        const previewUrl = URL.createObjectURL(file);
-        updateItem(id, { photo_url: previewUrl });
+        if (!listingId) {
+            // No listing ID yet: keep as local blob preview, will be synced on submit
+            const previewUrl = URL.createObjectURL(file);
+            updateItem(id, { photo_url: previewUrl });
+            return;
+        }
+
+        setUploadingId(id);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch(`/api/business/listings/${listingId}/upload-asset`, {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error("Upload failed");
+            const data = await res.json();
+
+            updateItem(id, { photo_url: data.url });
+        } catch (error) {
+            console.error("Photo upload error:", error);
+            alert("Failed to upload photo. Please try again.");
+        } finally {
+            setUploadingId(null);
+        }
     };
 
     return (
@@ -56,7 +82,11 @@ export default function MenuItemBuilder({ items, onChange }: MenuItemBuilderProp
 
                         {/* Photo column */}
                         <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-gray-50">
-                            {item.photo_url ? (
+                            {uploadingId === item.id ? (
+                                <div className="flex h-full w-full items-center justify-center">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                </div>
+                            ) : item.photo_url ? (
                                 <>
                                     <img src={item.photo_url} alt={item.name} className="h-full w-full object-cover" />
                                     <button

@@ -7,6 +7,7 @@
 import { useListingFormStore } from "@/store/listingFormStore";
 import RichTextEditor from "./RichTextEditor";
 import TagInput from "./TagInput";
+import { formatPhoneNumberInput } from "@/lib/utils";
 
 const PAYMENT_METHOD_OPTIONS = [
     "Cash",
@@ -87,7 +88,7 @@ export default function BasicInfoForm() {
                             type="tel"
                             placeholder="e.g. 0912 345 6789"
                             value={formData.phone || ""}
-                            onChange={(e) => updateFormData({ phone: e.target.value })}
+                            onChange={(e) => updateFormData({ phone: formatPhoneNumberInput(e.target.value) })}
                             className={`w-full rounded-xl border px-4 py-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 ${errors.phone ? "border-red-300 bg-red-50 focus:border-red-500" : "border-gray-200 focus:border-[#FF6B35]"
                                 }`}
                         />
@@ -101,7 +102,7 @@ export default function BasicInfoForm() {
                             type="tel"
                             placeholder="e.g. 0998 765 4321"
                             value={formData.phone_secondary || ""}
-                            onChange={(e) => updateFormData({ phone_secondary: e.target.value })}
+                            onChange={(e) => updateFormData({ phone_secondary: formatPhoneNumberInput(e.target.value) })}
                             className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20"
                         />
                     </div>
@@ -225,11 +226,10 @@ export default function BasicInfoForm() {
                                                 : [...(formData.payment_methods || []), method],
                                         })
                                     }
-                                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                                        selected
+                                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${selected
                                             ? "border-[#FF6B35] bg-[#FF6B35] text-white"
                                             : "border-gray-200 bg-white text-gray-700"
-                                    }`}
+                                        }`}
                                 >
                                     {method}
                                 </button>

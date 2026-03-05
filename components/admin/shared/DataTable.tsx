@@ -103,7 +103,8 @@ export default function DataTable<T extends Record<string, any>>({
         } finally {
             setIsColumnPrefsReady(true);
         }
-    }, [storageKey, columns]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [storageKey]);
 
     useEffect(() => {
         if (!isColumnPrefsReady) return;
@@ -181,8 +182,11 @@ export default function DataTable<T extends Record<string, any>>({
                 <div className="flex flex-wrap items-center gap-3">
                     {searchable && (
                         <div className="relative flex items-center group">
+                            <label htmlFor="datatable-search" className="sr-only">{searchPlaceholder}</label>
                             <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground/60 transition-colors group-focus-within:text-primary" />
                             <input
+                                id="datatable-search"
+                                name="datatable_search"
                                 value={search}
                                 onChange={e => handleSearch(e.target.value)}
                                 placeholder={searchPlaceholder}
@@ -276,7 +280,10 @@ export default function DataTable<T extends Record<string, any>>({
                         <tr>
                             {bulkActions.length > 0 && (
                                 <th className="w-12 px-4 py-4">
+                                    <label htmlFor="select-all-rows" className="sr-only">Select All Rows</label>
                                     <input
+                                        id="select-all-rows"
+                                        name="select_all"
                                         type="checkbox"
                                         checked={allSelected}
                                         onChange={toggleAll}
@@ -341,7 +348,10 @@ export default function DataTable<T extends Record<string, any>>({
                                     >
                                         {bulkActions.length > 0 && (
                                             <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                                                <label htmlFor={`select-row-${key}`} className="sr-only">Select Row {key}</label>
                                                 <input
+                                                    id={`select-row-${key}`}
+                                                    name={`select_row_${key}`}
                                                     type="checkbox"
                                                     checked={selected}
                                                     onChange={() => toggleRow(key)}
@@ -366,8 +376,10 @@ export default function DataTable<T extends Record<string, any>>({
             {/* Pagination outline-none transition-all focus:border-primary */}
             <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-muted-foreground px-2">
                 <div className="flex items-center gap-3">
-                    <span>Rows per page:</span>
+                    <label htmlFor="datatable-page-size">Rows per page:</label>
                     <select
+                        id="datatable-page-size"
+                        name="page_size"
                         value={pageSize}
                         onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
                         className="h-8 rounded-lg border border-border/50 bg-background/50 px-2 py-1 text-xs outline-none transition-colors hover:bg-muted focus:border-primary focus:ring-1 focus:ring-primary/20"

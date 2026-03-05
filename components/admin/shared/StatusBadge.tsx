@@ -9,6 +9,7 @@ const CONFIG: Record<string, { label: string; className: string }> = {
     rejected: { label: "Rejected", className: "bg-red-500/10 text-red-600 border-red-500/20" },
     claimed_pending: { label: "Claim Pending", className: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
     draft: { label: "Draft", className: "bg-slate-500/10 text-slate-600 border-slate-500/20" },
+    deactivated: { label: "Archived", className: "bg-red-500/10 text-red-600 border-red-500/20" },
 
     // Payment/Subscription statuses
     verified: { label: "Verified", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
@@ -20,7 +21,6 @@ const CONFIG: Record<string, { label: string; className: string }> = {
     // Annual checks
     confirmed: { label: "Confirmed", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
     no_response: { label: "No Response", className: "bg-red-500/10 text-red-600 border-red-500/20" },
-    deactivated: { label: "Deactivated", className: "bg-slate-500/10 text-slate-600 border-slate-500/20" },
 
     // Boolean
     true: { label: "Yes", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },

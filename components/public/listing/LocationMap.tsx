@@ -91,18 +91,18 @@ function MapInner({ lat, lng, businessName, address, barangayName }: LocationMap
                 </Marker>
             </MapContainer>
 
-            <div className="flex items-start justify-between gap-4 text-sm">
-                <div>
-                    <p className="text-foreground font-medium truncate">{address}</p>
+            <div className="flex items-start justify-between gap-4 text-sm pt-1">
+                <div className="min-w-0 flex-1">
+                    <p className="text-foreground font-medium truncate" title={address}>{address}</p>
                     {barangayName && (
-                        <p className="text-muted-foreground text-xs">{barangayName}, Olongapo City</p>
+                        <p className="text-muted-foreground text-xs truncate">{barangayName}, Olongapo City</p>
                     )}
                 </div>
                 <a
                     href={mapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 text-xs font-medium text-primary hover:underline"
+                    className="shrink-0 text-xs font-medium text-primary hover:underline hover:text-primary/80 transition-colors pt-0.5"
                 >
                     Open in Maps →
                 </a>

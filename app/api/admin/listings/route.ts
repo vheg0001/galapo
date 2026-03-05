@@ -31,10 +31,14 @@ function applyListingFilters(query: any, filters: {
     search: string;
     start: Date | null;
     end: Date | null;
-}) {
+}, includeArchived = false) {
     const { status, categoryId, subcategoryId, barangayId, plan, hasOwner, isActive, search, start, end } = filters;
 
-    if (status && status !== "all") query = query.eq("status", status);
+    if (status && status !== "all") {
+        query = query.eq("status", status);
+    }
+    // Note: the "all" view intentionally shows all statuses including deactivated.
+    // Filter by status=deactivated to see only archived listings.
     if (categoryId) query = query.eq("category_id", categoryId);
     if (subcategoryId) query = query.eq("subcategory_id", subcategoryId);
     if (barangayId) query = query.eq("barangay_id", barangayId);
@@ -152,7 +156,8 @@ export async function GET(request: NextRequest) {
 
         const countsQuery = applyListingFilters(
             admin.from("listings").select("status, is_active"),
-            { ...filters, status: "all" }
+            { ...filters, status: "all" },
+            true // Include archived in counts
         );
 
         const [rowsRes, countRowsRes] = await Promise.all([
@@ -169,11 +174,11 @@ export async function GET(request: NextRequest) {
 
         const { data: monthViews, error: monthViewsError } = listingIds.length
             ? await admin
-                  .from("listing_analytics")
-                  .select("listing_id")
-                  .eq("event_type", "page_view")
-                  .in("listing_id", listingIds)
-                  .gte("created_at", monthStart)
+                .from("listing_analytics")
+                .select("listing_id")
+                .eq("event_type", "page_view")
+                .in("listing_id", listingIds)
+                .gte("created_at", monthStart)
             : { data: [], error: null };
         if (monthViewsError) throw monthViewsError;
 
@@ -205,6 +210,7 @@ export async function GET(request: NextRequest) {
             rejected: 0,
             draft: 0,
             claimed_pending: 0,
+            deactivated: 0,
             total: 0,
             active: 0,
             inactive: 0,

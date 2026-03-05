@@ -5,21 +5,25 @@
 // Premium-styled dynamic field renderer matching the admin form aesthetic.
 // ──────────────────────────────────────────────────────────
 
+import { useState } from "react";
 import { FieldType, CategoryField } from "@/lib/types";
 import MenuItemBuilder from "./MenuItemBuilder";
-import { Camera, X, Plus } from "lucide-react";
+import { Camera, X, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DynamicFieldRendererProps {
     field: CategoryField;
     value: any;
     onChange: (value: any) => void;
+    listingId?: string; // Optional: when known, images upload immediately instead of using blob URLs
 }
 
 const INPUT_CLS = "w-full rounded-2xl border border-border/60 bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-all focus:border-[#FF6B35] focus:ring-4 focus:ring-[#FF6B35]/10 shadow-sm";
 const LABEL_CLS = "text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1";
 
-export default function DynamicFieldRenderer({ field, value, onChange }: DynamicFieldRendererProps) {
+export default function DynamicFieldRenderer({ field, value, onChange, listingId }: DynamicFieldRendererProps) {
+    const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+
     const label = (
         <label className={LABEL_CLS}>
             {field.field_label}
@@ -181,9 +185,37 @@ export default function DynamicFieldRenderer({ field, value, onChange }: Dynamic
 
         case FieldType.IMAGE_GALLERY:
             const images = Array.isArray(value) ? value : [];
-            const addImage = () => {
-                onChange([...images, ""]);
+
+            const handleImageUpload = async (file: File) => {
+                if (!listingId) {
+                    const previewUrl = URL.createObjectURL(file);
+                    onChange([...images, previewUrl]);
+                    return;
+                }
+
+                const newIdx = images.length;
+                setUploadingIdx(newIdx);
+                try {
+                    const formData = new FormData();
+                    formData.append("file", file);
+
+                    const res = await fetch(`/api/business/listings/${listingId}/upload-asset`, {
+                        method: "POST",
+                        body: formData,
+                    });
+
+                    if (!res.ok) throw new Error("Upload failed");
+                    const data = await res.json();
+
+                    onChange([...images, data.url]);
+                } catch (error) {
+                    console.error("Image gallery upload error:", error);
+                    alert("Failed to upload image. Please try again.");
+                } finally {
+                    setUploadingIdx(null);
+                }
             };
+
             return (
                 <div className="space-y-2">
                     {label}
@@ -206,14 +238,26 @@ export default function DynamicFieldRenderer({ field, value, onChange }: Dynamic
                                 </button>
                             </div>
                         ))}
-                        {images.length < 5 && (
-                            <button
-                                type="button"
-                                onClick={addImage}
-                                className="flex h-20 w-20 items-center justify-center rounded-xl border-2 border-dashed border-border/50 text-muted-foreground/40 hover:border-primary/40 hover:text-primary/50 transition-colors"
-                            >
+
+                        {uploadingIdx !== null && (
+                            <div className="flex h-20 w-20 items-center justify-center rounded-xl border border-border/50 bg-muted">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            </div>
+                        )}
+
+                        {images.length < 5 && uploadingIdx === null && (
+                            <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border/50 text-muted-foreground/40 hover:border-primary/40 hover:text-primary/50 transition-colors">
                                 <Plus size={20} />
-                            </button>
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleImageUpload(file);
+                                    }}
+                                />
+                            </label>
                         )}
                     </div>
                     {helpText}
@@ -224,7 +268,7 @@ export default function DynamicFieldRenderer({ field, value, onChange }: Dynamic
             return (
                 <div className="space-y-2">
                     {label}
-                    <MenuItemBuilder items={value || []} onChange={onChange} />
+                    <MenuItemBuilder items={value || []} onChange={onChange} listingId={listingId} />
                     {helpText}
                 </div>
             );

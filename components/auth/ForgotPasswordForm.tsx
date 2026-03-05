@@ -85,6 +85,7 @@ export default function ForgotPasswordForm() {
                 </label>
                 <input
                     id="forgot-email"
+                    name="email"
                     type="email"
                     autoComplete="email"
                     value={email}

@@ -58,7 +58,10 @@ export default function ListingsFilterBar({
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="relative flex-1">
+                    <label htmlFor="listing-search" className="sr-only">Search Listings</label>
                     <input
+                        id="listing-search"
+                        name="q"
                         value={search}
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder="Search business name, email, phone..."
@@ -77,6 +80,7 @@ export default function ListingsFilterBar({
                     <button
                         type="button"
                         onClick={onClear}
+                        aria-label="Clear Filters"
                         className="h-11 rounded-xl px-4 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                         Clear
@@ -87,8 +91,10 @@ export default function ListingsFilterBar({
             {showMore && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Category</label>
+                        <label htmlFor="filter-category" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Category</label>
                         <select
+                            id="filter-category"
+                            name="category_id"
                             value={filters.category_id}
                             onChange={(e) => onChange({ category_id: e.target.value, subcategory_id: "" })}
                             className="h-10 w-full rounded-xl border border-border/50 bg-muted/30 px-3 text-sm font-medium transition-colors focus:border-primary/50 focus:bg-background outline-none"
@@ -101,8 +107,10 @@ export default function ListingsFilterBar({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Subcategory</label>
+                        <label htmlFor="filter-subcategory" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Subcategory</label>
                         <select
+                            id="filter-subcategory"
+                            name="subcategory_id"
                             value={filters.subcategory_id}
                             onChange={(e) => onChange({ subcategory_id: e.target.value })}
                             className="h-10 w-full rounded-xl border border-border/50 bg-muted/30 px-3 text-sm font-medium transition-colors focus:border-primary/50 focus:bg-background outline-none"
@@ -115,8 +123,10 @@ export default function ListingsFilterBar({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Location</label>
+                        <label htmlFor="filter-barangay" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Location</label>
                         <select
+                            id="filter-barangay"
+                            name="barangay_id"
                             value={filters.barangay_id}
                             onChange={(e) => onChange({ barangay_id: e.target.value })}
                             className="h-10 w-full rounded-xl border border-border/50 bg-muted/30 px-3 text-sm font-medium transition-colors focus:border-primary/50 focus:bg-background outline-none"
@@ -129,8 +139,10 @@ export default function ListingsFilterBar({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Subscription Plan</label>
+                        <label htmlFor="filter-plan" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Subscription Plan</label>
                         <select
+                            id="filter-plan"
+                            name="plan"
                             value={filters.plan}
                             onChange={(e) => onChange({ plan: e.target.value as any })}
                             className="h-10 w-full rounded-xl border border-border/50 bg-muted/30 px-3 text-sm font-medium transition-colors focus:border-primary/50 focus:bg-background outline-none"
@@ -143,8 +155,10 @@ export default function ListingsFilterBar({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Ownership</label>
+                        <label htmlFor="filter-ownership" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Ownership</label>
                         <select
+                            id="filter-ownership"
+                            name="owner_type"
                             value={filters.owner_type}
                             onChange={(e) => onChange({ owner_type: e.target.value as any })}
                             className="h-10 w-full rounded-xl border border-border/50 bg-muted/30 px-3 text-sm font-medium transition-colors focus:border-primary/50 focus:bg-background outline-none"
@@ -156,8 +170,10 @@ export default function ListingsFilterBar({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Visibility</label>
+                        <label htmlFor="filter-visibility" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Visibility</label>
                         <select
+                            id="filter-visibility"
+                            name="active"
                             value={filters.active}
                             onChange={(e) => onChange({ active: e.target.value as any })}
                             className="h-10 w-full rounded-xl border border-border/50 bg-muted/30 px-3 text-sm font-medium transition-colors focus:border-primary/50 focus:bg-background outline-none"
@@ -169,8 +185,10 @@ export default function ListingsFilterBar({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Date From</label>
+                        <label htmlFor="filter-date-from" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Date From</label>
                         <input
+                            id="filter-date-from"
+                            name="date_from"
                             value={filters.date_from}
                             onChange={(e) => onChange({ date_from: e.target.value })}
                             type="date"
@@ -179,8 +197,10 @@ export default function ListingsFilterBar({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Date To</label>
+                        <label htmlFor="filter-date-to" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-1">Date To</label>
                         <input
+                            id="filter-date-to"
+                            name="date_to"
                             value={filters.date_to}
                             onChange={(e) => onChange({ date_to: e.target.value })}
                             type="date"

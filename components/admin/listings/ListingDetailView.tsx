@@ -10,10 +10,73 @@ interface ListingDetailViewProps {
     events: any[];
 }
 
-function renderValue(val: any) {
-    if (val === null || val === undefined || val === "") return "Not provided";
-    if (typeof val === "object") return JSON.stringify(val);
-    return String(val);
+function renderValue(val: any, type?: string) {
+    if (val === null || val === undefined || val === "") return <span className="text-muted-foreground/50">Not provided</span>;
+
+    switch (type) {
+        case "boolean":
+            return val ? (
+                <span className="text-emerald-600 font-bold uppercase tracking-wider text-[10px]">Yes</span>
+            ) : (
+                <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">No</span>
+            );
+
+        case "multi_select": {
+            const items = Array.isArray(val) ? val : [val];
+            return (
+                <div className="flex flex-wrap gap-1 mt-1">
+                    {items.map((it: string, i: number) => (
+                        <span key={i} className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold text-foreground ring-1 ring-border/50">
+                            {it}
+                        </span>
+                    ))}
+                </div>
+            );
+        }
+
+        case "menu_items": {
+            const items = Array.isArray(val) ? val : [];
+            if (items.length === 0) return <span className="text-muted-foreground/50 italic">No items</span>;
+            return (
+                <div className="space-y-1.5 mt-2">
+                    {items.map((item: any, i: number) => (
+                        <div key={i} className="flex items-center gap-3 rounded-lg bg-background/50 p-2 ring-1 ring-border/30">
+                            {item.photo_url && (
+                                <img src={item.photo_url} alt="" className="h-8 w-8 shrink-0 rounded-md object-cover" />
+                            )}
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs font-bold text-foreground leading-none">{item.name}</p>
+                                {item.price && <p className="mt-1 text-[10px] font-medium text-primary">₱{item.price}</p>}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        case "image_gallery": {
+            const urls = Array.isArray(val) ? val : [val];
+            return (
+                <div className="flex flex-wrap gap-2 mt-2">
+                    {urls.map((url: string, i: number) => (
+                        <div key={i} className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/50">
+                            <img src={url} alt="" className="h-full w-full object-cover" />
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        case "currency":
+            return <span className="font-bold text-primary">₱{Number(val).toLocaleString()}</span>;
+
+        case "number":
+            return <span className="font-bold">{Number(val).toLocaleString()}</span>;
+
+        default:
+            if (typeof val === "object") return <code className="text-[10px] bg-muted p-1 rounded">{JSON.stringify(val)}</code>;
+            return <span className="font-medium">{String(val)}</span>;
+    }
 }
 
 function formatRichText(value: unknown) {
@@ -212,7 +275,9 @@ export default function ListingDetailView({ listing, deals, events }: ListingDet
                             <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
                                 {fv.category_fields?.field_label ?? fv.category_fields?.field_name ?? "Field"}
                             </label>
-                            <p className="text-sm font-semibold text-foreground">{renderValue(fv.value)}</p>
+                            <div className="text-sm font-semibold text-foreground">
+                                {renderValue(fv.value, fv.category_fields?.field_type)}
+                            </div>
                         </div>
                     ))}
                 </div>

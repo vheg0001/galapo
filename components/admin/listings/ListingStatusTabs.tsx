@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type ListingStatusTab = "all" | "pending" | "approved" | "rejected" | "draft" | "claimed_pending";
+export type ListingStatusTab = "all" | "pending" | "approved" | "rejected" | "draft" | "claimed_pending" | "deactivated";
 
 interface ListingStatusTabsProps {
     value: ListingStatusTab;
@@ -17,9 +17,10 @@ const LABELS: Record<ListingStatusTab, string> = {
     rejected: "Rejected",
     draft: "Draft",
     claimed_pending: "Claimed Pending",
+    deactivated: "Archived",
 };
 
-const TABS: ListingStatusTab[] = ["all", "pending", "approved", "rejected", "draft", "claimed_pending"];
+const TABS: ListingStatusTab[] = ["all", "pending", "approved", "rejected", "draft", "claimed_pending", "deactivated"];
 
 export default function ListingStatusTabs({ value, counts, onChange }: ListingStatusTabsProps) {
     return (

@@ -80,7 +80,7 @@ describe("DynamicFields", () => {
         const menuField = {
             id: "5",
             value: [
-                { id: "m1", name: "Adobo", price: 150, description: "Classic Filipino dish" }
+                { id: "m1", name: "Adobo", price: 150, description: "Classic Filipino dish", photo_url: "https://example.com/adobo.jpg" }
             ],
             category_fields: {
                 id: "f5",
@@ -95,6 +95,9 @@ describe("DynamicFields", () => {
         expect(screen.getByText("Adobo")).toBeInTheDocument();
         // MenuDisplay uses formatCurrency too
         expect(screen.getByText(/₱150/)).toBeInTheDocument();
+        const img = screen.getByAltText("Adobo");
+        expect(img).toBeInTheDocument();
+        expect(img.getAttribute("src")).toContain("adobo.jpg");
     });
 
     it("empty values are skipped", () => {

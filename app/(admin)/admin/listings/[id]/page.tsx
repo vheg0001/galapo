@@ -14,6 +14,8 @@ import AnalyticsSummary from "@/components/admin/listings/AnalyticsSummary";
 import AdminNotesSection from "@/components/admin/listings/AdminNotesSection";
 import RejectionModal from "@/components/admin/listings/RejectionModal";
 import ApprovalDialog from "@/components/admin/listings/ApprovalDialog";
+import HardDeleteModal from "@/components/admin/shared/HardDeleteModal";
+import { Trash2 } from "lucide-react";
 
 export default function AdminListingDetailPage() {
     const params = useParams<{ id: string }>();
@@ -25,6 +27,8 @@ export default function AdminListingDetailPage() {
     const [showReject, setShowReject] = useState(false);
     const [showApprove, setShowApprove] = useState(false);
     const [showActions, setShowActions] = useState(false);
+    const [showHardDelete, setShowHardDelete] = useState(false);
+    const [hardDeleteLoading, setHardDeleteLoading] = useState(false);
     const actionsRef = useRef<HTMLDivElement>(null);
 
     useClickOutside(actionsRef, () => setShowActions(false));
@@ -43,12 +47,56 @@ export default function AdminListingDetailPage() {
     }, [id]);
 
     async function runAction(action: string, reason?: string) {
-        await fetch(`/api/admin/listings/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, reason }),
-        });
+        if (action === "delete_soft") {
+            const res = await fetch(`/api/admin/listings/${id}`, { method: "DELETE" });
+            if (res.ok) {
+                router.push("/admin/listings");
+                return;
+            }
+        }
+
+        // If the listing is in claimed_pending state, use the dedicated claims API
+        if (listing?.status === "claimed_pending" && (action === "approve" || action === "reject")) {
+            const res = await fetch(`/api/admin/claims/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action, reason }),
+            });
+            if (!res.ok) {
+                const json = await res.json();
+                alert(json.error || "Action failed");
+            }
+        } else {
+            await fetch(`/api/admin/listings/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action, reason }),
+            });
+        }
         await load();
+    }
+
+    async function handleHardDelete() {
+        setHardDeleteLoading(true);
+        try {
+            const res = await fetch(`/api/admin/listings/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ hard: true, confirmation: "DELETE" }),
+            });
+            if (res.ok) {
+                router.push("/admin/listings");
+                return;
+            } else {
+                const err = await res.json();
+                alert(err.error || "Hard delete failed");
+            }
+        } catch (error) {
+            console.error("Hard delete failed:", error);
+        } finally {
+            setHardDeleteLoading(false);
+            setShowHardDelete(false);
+        }
     }
 
     if (loading) return <div className="py-8 text-sm text-muted-foreground">Loading listing...</div>;
@@ -183,6 +231,27 @@ export default function AdminListingDetailPage() {
                                             </a>
                                         </>
                                     )}
+
+                                    <div className="my-1.5 h-px bg-border/50" />
+                                    {listing.status === "deactivated" ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowHardDelete(true)}
+                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-500/10"
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                            Delete Permanent
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => runAction("delete_soft")}
+                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-500/10"
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                            Delete (Soft)
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -237,6 +306,14 @@ export default function AdminListingDetailPage() {
                     await runAction("reject", reason);
                     setShowReject(false);
                 }}
+            />
+
+            <HardDeleteModal
+                open={showHardDelete}
+                itemName={listing.business_name}
+                loading={hardDeleteLoading}
+                onClose={() => setShowHardDelete(false)}
+                onConfirm={handleHardDelete}
             />
         </div>
     );

@@ -409,6 +409,85 @@ export const useListingFormStore = create<ListingFormState>()((set, get) => ({
                 });
             }
 
+            // 5. SYNC DYNAMIC FIELD IMAGES (PERSIST BLOBs)
+            // Scan dynamic_fields for any values that are blob URLs (from Create mode)
+            const dynamicFields = { ...formData.dynamic_fields };
+            let dynamicFieldsChanged = false;
+
+            for (const [fieldId, value] of Object.entries(dynamicFields)) {
+                if (!Array.isArray(value) || value.length === 0) continue;
+
+                // Case 1: Menu Items (Array of objects with photo_url) — check FIRST
+                if (typeof value[0] === "object" && value[0] !== null && "photo_url" in value[0]) {
+                    const newItems = await Promise.all(value.map(async (item: any) => {
+                        if (item.photo_url && item.photo_url.startsWith("blob:")) {
+                            try {
+                                const blob = await fetch(item.photo_url).then(r => r.blob());
+                                const syncForm = new FormData();
+                                syncForm.append("file", blob, "menu-item.jpg");
+
+                                const syncRes = await fetch(`/api/business/listings/${listingId}/upload-asset`, {
+                                    method: "POST",
+                                    body: syncForm
+                                });
+
+                                if (syncRes.ok) {
+                                    const syncData = await syncRes.json();
+                                    dynamicFieldsChanged = true;
+                                    return { ...item, photo_url: syncData.url };
+                                }
+                            } catch (e) {
+                                console.error("Failed to sync menu item blob:", item.photo_url, e);
+                            }
+                        }
+                        return item;
+                    }));
+                    dynamicFields[fieldId] = newItems;
+                }
+
+                // Case 2: Image Gallery (Array of strings)
+                else if (typeof value[0] === "string") {
+                    const newUrls = await Promise.all(value.map(async (v) => {
+                        if (typeof v === "string" && v.startsWith("blob:")) {
+                            try {
+                                const blob = await fetch(v).then(r => r.blob());
+                                const syncForm = new FormData();
+                                syncForm.append("file", blob, "asset.jpg");
+
+                                const syncRes = await fetch(`/api/business/listings/${listingId}/upload-asset`, {
+                                    method: "POST",
+                                    body: syncForm
+                                });
+
+                                if (syncRes.ok) {
+                                    const syncData = await syncRes.json();
+                                    dynamicFieldsChanged = true;
+                                    return syncData.url;
+                                }
+                            } catch (e) {
+                                console.error("Failed to sync dynamic gallery blob:", v, e);
+                            }
+                        }
+                        return v;
+                    }));
+                    dynamicFields[fieldId] = newUrls;
+                }
+            }
+
+            // If any dynamic field images were uploaded, update the listing one last time
+            if (dynamicFieldsChanged) {
+                await fetch(url, {
+                    method: "PUT", // Always PUT for sync update
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        dynamic_fields: Object.entries(dynamicFields).map(([field_id, value]) => ({
+                            field_id,
+                            value,
+                        }))
+                    }),
+                });
+            }
+
             set({ isDirty: false });
             return { success: true, listingId };
         } catch (err: any) {

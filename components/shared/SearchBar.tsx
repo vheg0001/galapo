@@ -30,6 +30,8 @@ export default function SearchBar({ categories = [], barangays = [], variant = "
             <form onSubmit={handleSearch} className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
+                    id="search-compact"
+                    name="q"
                     type="search"
                     placeholder="Search businesses..."
                     value={query}
@@ -48,6 +50,8 @@ export default function SearchBar({ categories = [], barangays = [], variant = "
                     <div className="relative flex-[1.5] min-w-[240px]">
                         <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                         <input
+                            id="search-hero"
+                            name="q"
                             type="search"
                             placeholder="What are you looking for?"
                             value={query}

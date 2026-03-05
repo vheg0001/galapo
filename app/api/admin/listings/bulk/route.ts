@@ -94,10 +94,11 @@ export async function POST(request: NextRequest) {
                 } else if (action === "reject") {
                     updates.status = "rejected";
                     updates.rejection_reason = reason;
-                } else if (action === "activate") {
-                    updates.is_active = true;
-                } else if (action === "deactivate" || action === "delete") {
+                } else if (action === "deactivate") {
                     updates.is_active = false;
+                } else if (action === "delete") {
+                    updates.is_active = false;
+                    updates.status = "deactivated";
                 }
 
                 const { error: updateError } = await admin.from("listings").update(updates).eq("id", listingId);

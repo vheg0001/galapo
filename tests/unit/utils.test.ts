@@ -4,6 +4,7 @@ import {
     formatCurrency,
     formatDate,
     formatPhone,
+    formatPhoneNumberInput,
     truncateText,
     generateInvoiceNumber
 } from "@/lib/utils";
@@ -120,6 +121,26 @@ describe("Utils", () => {
         it("should not truncate text shorter than or equal to the length", () => {
             expect(truncateText("Hello", 5)).toBe("Hello");
             expect(truncateText("Hi", 5)).toBe("Hi");
+        });
+    });
+
+    describe("formatPhoneNumberInput", () => {
+        it("should format a clean 11 digit string as XXXX XXX XXXX", () => {
+            expect(formatPhoneNumberInput("09171234567")).toBe("0917 123 4567");
+        });
+
+        it("should format partial inputs correctly", () => {
+            expect(formatPhoneNumberInput("0917")).toBe("0917");
+            expect(formatPhoneNumberInput("09171")).toBe("0917 1");
+            expect(formatPhoneNumberInput("09171234")).toBe("0917 123 4");
+        });
+
+        it("should strip non-digits", () => {
+            expect(formatPhoneNumberInput("0917-123-4567")).toBe("0917 123 4567");
+        });
+
+        it("should cap at 11 digits", () => {
+            expect(formatPhoneNumberInput("0917123456789")).toBe("0917 123 4567");
         });
     });
 });

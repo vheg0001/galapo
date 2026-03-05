@@ -221,6 +221,26 @@ export async function PUT(
         delete updatePayload.created_at;
         delete updatePayload.dynamic_fields;
         delete updatePayload.image_urls;
+        // Strip out relation fields that might be left in the payload by the frontend
+        delete updatePayload.categories;
+        delete updatePayload.subcategory;
+        delete updatePayload.barangays;
+        delete updatePayload.cities;
+        delete updatePayload.profiles;
+        delete updatePayload.events;
+        delete updatePayload.deals;
+        delete updatePayload.views;
+        delete updatePayload.clicks;
+        delete updatePayload.reviews;
+        delete updatePayload.owner;
+
+        // Convert empty strings to null ONLY for foreign key columns (UUID types in Supabase)
+        // This avoids "invalid input syntax for type uuid: ''" while respecting NOT NULL constraints on text fields
+        for (const key of Object.keys(updatePayload)) {
+            if (updatePayload[key] === "" && key.endsWith("_id")) {
+                updatePayload[key] = null;
+            }
+        }
 
         if ("owner_id" in updatePayload) {
             updatePayload.is_pre_populated = !updatePayload.owner_id;
@@ -333,7 +353,16 @@ export async function PATCH(
             if (!reason) {
                 return NextResponse.json({ error: "Rejection reason is required." }, { status: 400 });
             }
-            updatePayload.status = "rejected";
+
+            // If it's a claim rejection, it should revert to approved (pre-populated) NOT hidden
+            if (listing.status === "claimed_pending") {
+                updatePayload.status = "approved";
+                updatePayload.owner_id = null;
+                updatePayload.claim_proof_url = null;
+                updatePayload.claimed_at = null;
+            } else {
+                updatePayload.status = "rejected";
+            }
             updatePayload.rejection_reason = reason;
         } else {
             return NextResponse.json({ error: "Unsupported action." }, { status: 400 });
@@ -377,7 +406,11 @@ export async function DELETE(
         const hard = searchParams.get("hard") === "true" || body.hard === true;
 
         if (!hard) {
-            const { error } = await admin.from("listings").update({ is_active: false, updated_at: new Date().toISOString() }).eq("id", id);
+            const { error } = await admin.from("listings").update({
+                is_active: false,
+                status: "deactivated",
+                updated_at: new Date().toISOString()
+            }).eq("id", id);
             if (error) throw error;
 
             await logAdminActivityIfAvailable(admin, {
@@ -385,7 +418,7 @@ export async function DELETE(
                 entity_type: "listing",
                 entity_id: id,
                 action: "soft_delete",
-                metadata: null,
+                metadata: { status: "deactivated", is_active: false },
                 created_at: new Date().toISOString(),
             });
 
@@ -413,13 +446,19 @@ export async function DELETE(
             .eq("listing_id", id);
         if (imagesError) throw imagesError;
 
-        const logoPath = extractStoragePath(listing.logo_url, "logos");
+        // Try extracting logo path from both potential buckets
+        const logoPathListings = extractStoragePath(listing.logo_url, "listings");
+        const logoPathLogos = extractStoragePath(listing.logo_url, "logos");
+
         const listingImagePaths = (images ?? [])
             .map((img: any) => extractStoragePath(img.image_url, "listings"))
             .filter(Boolean) as string[];
 
-        if (logoPath) {
-            await admin.storage.from("logos").remove([logoPath]);
+        if (logoPathLogos) {
+            await admin.storage.from("logos").remove([logoPathLogos]);
+        }
+        if (logoPathListings) {
+            await admin.storage.from("listings").remove([logoPathListings]);
         }
         if (listingImagePaths.length) {
             await admin.storage.from("listings").remove(listingImagePaths);

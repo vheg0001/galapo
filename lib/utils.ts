@@ -108,6 +108,43 @@ export function formatPhone(phone: string): string {
   return phone;
 }
 
+/**
+ * Formats a phone number as you type: XXXX XXX XXXX
+ * @example formatPhoneNumberInput("09171234567") → "0917 123 4567"
+ */
+export function formatPhoneNumberInput(value: string): string {
+  // Strip non-digits
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+
+  // Mobile numbers (starts with 09, 11 digits max)
+  if (digits.startsWith("09")) {
+    const limited = digits.slice(0, 11);
+    if (limited.length <= 4) return limited;
+    if (limited.length <= 7) return `${limited.slice(0, 4)} ${limited.slice(4)}`;
+    return `${limited.slice(0, 4)} ${limited.slice(4, 7)} ${limited.slice(7)}`;
+  }
+
+  // Metro Manila Landline (starts with 02, 10 digits max)
+  if (digits.startsWith("02")) {
+    const limited = digits.slice(0, 10);
+    if (limited.length <= 2) return `(${limited}`;
+    if (limited.length <= 6) return `(${limited.slice(0, 2)}) ${limited.slice(2)}`;
+    return `(${limited.slice(0, 2)}) ${limited.slice(2, 6)} ${limited.slice(6)}`;
+  }
+
+  // Provincial Landline (e.g. 047, starts with 0, 10 digits max)
+  if (digits.startsWith("0")) {
+    const limited = digits.slice(0, 10);
+    if (limited.length <= 3) return `(${limited}`;
+    if (limited.length <= 6) return `(${limited.slice(0, 3)}) ${limited.slice(3)}`;
+    return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)} ${limited.slice(6)}`;
+  }
+
+  // Fallback for other numbers
+  return digits.slice(0, 15);
+}
+
 // ── Invoice Number Generator ────────────────────────────
 
 /**

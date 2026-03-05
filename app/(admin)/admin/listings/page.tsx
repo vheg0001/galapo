@@ -11,6 +11,7 @@ import RejectionModal from "@/components/admin/listings/RejectionModal";
 import ApprovalDialog from "@/components/admin/listings/ApprovalDialog";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { cn } from "@/lib/utils";
+import HardDeleteModal from "@/components/admin/shared/HardDeleteModal";
 
 type ListingRow = {
     id: string;
@@ -48,9 +49,10 @@ type ListingRowActionsProps = {
     onApprove: () => void;
     onReject: () => void;
     onAction: (actionType: string) => void;
+    onHardDelete: () => void;
 };
 
-function ListingRowActions({ listing, onApprove, onReject, onAction }: ListingRowActionsProps) {
+function ListingRowActions({ listing, onApprove, onReject, onAction, onHardDelete }: ListingRowActionsProps) {
     const detailsRef = useRef<HTMLDetailsElement>(null);
     useClickOutside(detailsRef, () => {
         if (detailsRef.current) {
@@ -87,9 +89,15 @@ function ListingRowActions({ listing, onApprove, onReject, onAction }: ListingRo
 
                     <div className="my-1 h-px bg-border/50" />
 
-                    <button type="button" onClick={() => onAction("delete_soft")} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-500/10">
-                        Delete (Soft)
-                    </button>
+                    {listing.status === "deactivated" ? (
+                        <button type="button" onClick={onHardDelete} className="block w-full rounded-md px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-500/10">
+                            Delete Permanent
+                        </button>
+                    ) : (
+                        <button type="button" onClick={() => onAction("delete_soft")} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-500/10">
+                            Delete (Soft)
+                        </button>
+                    )}
                 </div>
             </div>
         </details>
@@ -101,7 +109,7 @@ export default function AdminListingsPage() {
     const [categories, setCategories] = useState<any[]>([]);
     const [subcategories, setSubcategories] = useState<any[]>([]);
     const [barangays, setBarangays] = useState<any[]>([]);
-    const [counts, setCounts] = useState<any>({ all: 0, pending: 0, approved: 0, rejected: 0, draft: 0, claimed_pending: 0 });
+    const [counts, setCounts] = useState<any>({ all: 0, pending: 0, approved: 0, rejected: 0, draft: 0, claimed_pending: 0, deactivated: 0, total: 0, active: 0, inactive: 0 });
     const [total, setTotal] = useState(0);
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState<ListingsFiltersValue>(DEFAULT_FILTERS);
@@ -109,6 +117,8 @@ export default function AdminListingsPage() {
     const [rejectTarget, setRejectTarget] = useState<string | null>(null);
     const [bulkRejectTargets, setBulkRejectTargets] = useState<ListingRow[]>([]);
     const [approveTarget, setApproveTarget] = useState<string | null>(null);
+    const [hardDeleteTarget, setHardDeleteTarget] = useState<ListingRow | null>(null);
+    const [hardDeleteLoading, setHardDeleteLoading] = useState(false);
 
     async function loadMeta() {
         const [catRes, brgyRes] = await Promise.all([
@@ -141,7 +151,13 @@ export default function AdminListingsPage() {
         if (search.trim()) params.set("search", search.trim());
 
         const res = await fetch(`/api/admin/listings?${params.toString()}`, { cache: "no-store" });
+        if (!res.ok) {
+            console.error("[loadRows] API error:", res.status, await res.text());
+            setLoading(false);
+            return;
+        }
         const json = await res.json();
+        console.log("[loadRows] got", json.data?.length, "rows, total:", json.total);
         setRows(json.data ?? []);
         setTotal(json.total ?? 0);
         setCounts((prev: any) => {
@@ -163,12 +179,37 @@ export default function AdminListingsPage() {
     }, [filters, search]);
 
     async function patchListing(id: string, action: string, reason?: string) {
-        await fetch(`/api/admin/listings/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, reason }),
-        });
+        if (action === "delete_soft") {
+            await fetch(`/api/admin/listings/${id}`, { method: "DELETE" });
+        } else {
+            await fetch(`/api/admin/listings/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action, reason }),
+            });
+        }
         await loadRows();
+    }
+
+    async function hardDeleteListing(id: string) {
+        setHardDeleteLoading(true);
+        try {
+            const res = await fetch(`/api/admin/listings/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ hard: true, confirmation: "DELETE" }),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                alert(err.error || "Failed to delete listing permanently.");
+            }
+        } catch (error) {
+            console.error("Hard delete failed:", error);
+        } finally {
+            setHardDeleteLoading(false);
+            setHardDeleteTarget(null);
+            await loadRows();
+        }
     }
 
     async function bulk(action: string, selectedRows: ListingRow[], reason?: string) {
@@ -269,6 +310,7 @@ export default function AdminListingsPage() {
                     onApprove={() => setApproveTarget(r.id)}
                     onReject={() => setRejectTarget(r.id)}
                     onAction={(type) => patchListing(r.id, type as any)}
+                    onHardDelete={() => setHardDeleteTarget(r)}
                 />
             ),
         },
@@ -362,6 +404,17 @@ export default function AdminListingsPage() {
                     setBulkRejectTargets([]);
                 }}
             />
-        </div>
+
+            <HardDeleteModal
+                open={!!hardDeleteTarget}
+                title="Delete Listing Permanently"
+                itemName={hardDeleteTarget?.business_name}
+                loading={hardDeleteLoading}
+                onClose={() => setHardDeleteTarget(null)}
+                onConfirm={() => {
+                    if (hardDeleteTarget) hardDeleteListing(hardDeleteTarget.id);
+                }}
+            />
+        </div >
     );
 }

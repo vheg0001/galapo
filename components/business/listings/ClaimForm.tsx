@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X, ShieldCheck, Mail, Phone, Info, Loader2 } from "lucide-react";
+import { formatPhoneNumberInput } from "@/lib/utils";
 
 interface ClaimFormProps {
     listing: {
@@ -156,7 +157,7 @@ export default function ClaimForm({ listing }: ClaimFormProps) {
                             placeholder="0912 345 6789"
                             required
                             value={contactPhone}
-                            onChange={(e) => setContactPhone(e.target.value)}
+                            onChange={(e) => setContactPhone(formatPhoneNumberInput(e.target.value))}
                             className="w-full rounded-xl border border-gray-100 bg-gray-50/50 py-3 pl-11 pr-4 text-sm transition focus:border-[#FF6B35] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FF6B35]/20"
                         />
                     </div>

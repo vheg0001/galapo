@@ -81,14 +81,6 @@ export default function LocationForm() {
                 const json = await res.json();
                 const addr = json?.address ?? {};
 
-                const streetParts = [addr.house_number, addr.road].filter(Boolean);
-                const derivedStreet =
-                    streetParts.join(" ").trim() ||
-                    addr.neighbourhood ||
-                    addr.suburb ||
-                    addr.village ||
-                    "";
-
                 const barangayCandidate =
                     addr.suburb ||
                     addr.village ||
@@ -100,7 +92,6 @@ export default function LocationForm() {
                 const matchedBarangayId = matchBarangayId(barangays, barangayCandidate);
 
                 const patch: Record<string, any> = {};
-                if (derivedStreet) patch.address = derivedStreet;
                 if (matchedBarangayId) patch.barangay_id = matchedBarangayId;
 
                 if (Object.keys(patch).length > 0) {
@@ -137,7 +128,7 @@ export default function LocationForm() {
                         lng={formData.lng}
                         onChange={(lat, lng) => updateFormData({ lat, lng })}
                     />
-                    {isResolvingPin && <p className="text-xs text-gray-500">Detecting nearest street and barangay from pin...</p>}
+                    {isResolvingPin && <p className="text-xs text-gray-500">Detecting nearest barangay from pin...</p>}
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">

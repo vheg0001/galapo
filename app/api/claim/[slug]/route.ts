@@ -71,10 +71,11 @@ export async function POST(
             const ext = proofFile.name.split(".").pop();
             const fileName = `${listing.id}/${session.user.id}-${Date.now()}.${ext}`;
 
+            const buffer = await proofFile.arrayBuffer();
             const admin = createAdminSupabaseClient();
             const { error: uploadError } = await admin.storage
                 .from("claims")
-                .upload(fileName, proofFile, {
+                .upload(fileName, buffer, {
                     upsert: false,
                     contentType: proofFile.type,
                 });

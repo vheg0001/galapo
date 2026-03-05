@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 
 import { Building2, MapPin, Phone, Mail, Globe, Facebook, Instagram, Twitter, Youtube, Clock, Info, Sparkles, Image as ImageIcon, Send, ShieldCheck, CheckCircle2, XCircle, LayoutGrid, Eye, EyeOff, MessageSquare } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatPhoneNumberInput } from "@/lib/utils";
 import MapPinSelector from "@/components/business/listings/MapPinSelector";
 import OperatingHoursEditor from "@/components/business/listings/OperatingHoursEditor";
 import DynamicFieldsForm from "@/components/business/listings/DynamicFieldsForm";
@@ -178,8 +178,8 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                 short_description: listing.short_description ?? "",
                 full_description: normalizeDescriptionInput(listing.full_description),
                 address: listing.address ?? "",
-                phone: listing.phone ?? "",
-                phone_secondary: listing.phone_secondary ?? "",
+                phone: formatPhoneNumberInput(listing.phone ?? ""),
+                phone_secondary: formatPhoneNumberInput(listing.phone_secondary ?? ""),
                 email: listing.email ?? "",
                 website: listing.website ?? "",
                 logo_url: listing.logo_url ?? "",
@@ -260,14 +260,6 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                 const json = await res.json();
                 const addr = json?.address ?? {};
 
-                const streetParts = [addr.house_number, addr.road].filter(Boolean);
-                const derivedStreet =
-                    streetParts.join(" ").trim() ||
-                    addr.neighbourhood ||
-                    addr.suburb ||
-                    addr.village ||
-                    "";
-
                 const barangayCandidate =
                     addr.suburb ||
                     addr.village ||
@@ -280,7 +272,6 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
 
                 setForm((prev: any) => {
                     const patch: Record<string, any> = {};
-                    if (derivedStreet && prev.address !== derivedStreet) patch.address = derivedStreet;
                     if (matchedBarangayId && prev.barangay_id !== matchedBarangayId) patch.barangay_id = matchedBarangayId;
                     return Object.keys(patch).length > 0 ? { ...prev, ...patch } : prev;
                 });
@@ -329,6 +320,70 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
         return Array.isArray(imagesJson.image_urls) ? imagesJson.image_urls as string[] : [];
     }
 
+    async function syncDynamicFieldBlobs(targetListingId: string, currentDynamicFields: Record<string, any>) {
+        const dynamicFields = { ...currentDynamicFields };
+        let changed = false;
+
+        for (const [fieldId, value] of Object.entries(dynamicFields)) {
+            // Case 1: Image Gallery (Array of strings starting with blob:)
+            if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string") {
+                const newUrls = await Promise.all(value.map(async (v) => {
+                    if (typeof v === "string" && v.startsWith("blob:")) {
+                        try {
+                            const blob = await fetch(v).then(r => r.blob());
+                            const syncForm = new FormData();
+                            syncForm.append("file", blob, "asset.jpg");
+
+                            const syncRes = await fetch(`/api/business/listings/${targetListingId}/upload-asset`, {
+                                method: "POST",
+                                body: syncForm
+                            });
+
+                            if (syncRes.ok) {
+                                const data = await syncRes.json();
+                                changed = true;
+                                return data.url;
+                            }
+                        } catch (e) {
+                            console.error("Failed to sync dynamic gallery blob:", v, e);
+                        }
+                    }
+                    return v;
+                }));
+                dynamicFields[fieldId] = newUrls;
+            }
+            // Case 2: Menu Items (Array of objects with photo_url)
+            else if (Array.isArray(value) && value.length > 0 && typeof value[0] === "object" && "photo_url" in value[0]) {
+                const newItems = await Promise.all(value.map(async (item: any) => {
+                    if (item.photo_url && item.photo_url.startsWith("blob:")) {
+                        try {
+                            const blob = await fetch(item.photo_url).then(r => r.blob());
+                            const syncForm = new FormData();
+                            syncForm.append("file", blob, "menu-item.jpg");
+
+                            const syncRes = await fetch(`/api/business/listings/${targetListingId}/upload-asset`, {
+                                method: "POST",
+                                body: syncForm
+                            });
+
+                            if (syncRes.ok) {
+                                const data = await syncRes.json();
+                                changed = true;
+                                return { ...item, photo_url: data.url };
+                            }
+                        } catch (e) {
+                            console.error("Failed to sync menu item blob:", item.photo_url, e);
+                        }
+                    }
+                    return item;
+                }));
+                dynamicFields[fieldId] = newItems;
+            }
+        }
+
+        return { dynamicFields, changed };
+    }
+
     async function save() {
         setSaving(true);
         setMessage("");
@@ -351,7 +406,11 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                 const createdId = json.data.id as string;
                 const uploadedLogoUrl = await uploadLogo(createdId);
                 const uploadedNewUrls = await uploadNewPhotos(createdId);
-                if (uploadedLogoUrl || uploadedNewUrls.length > 0) {
+
+                // Sync dynamic field images (blobs)
+                const { dynamicFields: syncedFields, changed: domainsChanged } = await syncDynamicFieldBlobs(createdId, form.dynamic_fields);
+
+                if (uploadedLogoUrl || uploadedNewUrls.length > 0 || domainsChanged) {
                     const finalImageUrls: string[] = [];
                     let uploadedIndex = 0;
                     photoItems.forEach((item) => {
@@ -369,6 +428,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                         body: JSON.stringify({
                             logo_url: uploadedLogoUrl ?? form.logo_url ?? null,
                             image_urls: finalImageUrls,
+                            dynamic_fields: syncedFields,
                         }),
                     });
                 }
@@ -395,7 +455,11 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
             const targetId = listingId as string;
             const uploadedLogoUrl = await uploadLogo(targetId);
             const uploadedNewUrls = await uploadNewPhotos(targetId);
-            if (uploadedLogoUrl || uploadedNewUrls.length > 0) {
+
+            // Sync dynamic field images (blobs) - as safeguard
+            const { dynamicFields: syncedFields, changed: domainsChanged } = await syncDynamicFieldBlobs(targetId, form.dynamic_fields);
+
+            if (uploadedLogoUrl || uploadedNewUrls.length > 0 || domainsChanged) {
                 const finalImageUrls: string[] = [];
                 let uploadedIndex = 0;
                 photoItems.forEach((item) => {
@@ -413,6 +477,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                     body: JSON.stringify({
                         logo_url: uploadedLogoUrl ?? form.logo_url ?? null,
                         image_urls: finalImageUrls,
+                        dynamic_fields: syncedFields,
                     }),
                 });
                 if (!patchRes.ok) {
@@ -601,9 +666,11 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Primary Phone</label>
                                 <div className="relative">
                                     <input
+                                        id="listing-phone"
+                                        name="phone"
                                         value={form.phone}
-                                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                                        placeholder="+63 ..."
+                                        onChange={(e) => setForm({ ...form, phone: formatPhoneNumberInput(e.target.value) })}
+                                        placeholder="09XX XXX XXXX"
                                         className="h-12 w-full rounded-2xl border border-border/50 bg-background pl-11 pr-4 text-sm font-medium transition-all focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm"
                                     />
                                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
@@ -613,9 +680,11 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Secondary Phone</label>
                                 <div className="relative">
                                     <input
+                                        id="listing-phone-secondary"
+                                        name="phone_secondary"
                                         value={form.phone_secondary}
-                                        onChange={(e) => setForm({ ...form, phone_secondary: e.target.value })}
-                                        placeholder="+63 ..."
+                                        onChange={(e) => setForm({ ...form, phone_secondary: formatPhoneNumberInput(e.target.value) })}
+                                        placeholder="09XX XXX XXXX"
                                         className="h-12 w-full rounded-2xl border border-border/50 bg-background pl-11 pr-4 text-sm font-medium transition-all focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm"
                                     />
                                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
@@ -743,7 +812,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                         <div className="rounded-2xl bg-muted/30 p-4 border border-border/30">
                             <p className="text-[10px] leading-relaxed text-muted-foreground italic font-medium">
                                 <Info className="h-3 w-3 inline mr-1 -mt-0.5" />
-                                Tip: Drag the map pin to auto-populate the address and barangay fields based on geolocation data.
+                                Tip: Drag the map pin to auto-populate the barangay field based on geolocation data.
                             </p>
                         </div>
                     </div>
@@ -798,6 +867,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                                 subcategoryId={form.subcategory_id}
                                 values={form.dynamic_fields}
                                 onChange={(values) => setForm({ ...form, dynamic_fields: values })}
+                                listingId={listingId}
                             />
                             {(Object.keys(form.dynamic_fields ?? {}).length === 0) && !form.category_id && (
                                 <p className="text-center text-xs text-muted-foreground/60 italic py-4">

@@ -251,7 +251,7 @@ export default async function HomePage() {
                             .map((cat) => (
                                 <Link
                                     key={cat.id}
-                                    href={`/categories/${cat.slug}`}
+                                    href={`/olongapo/${cat.slug}`}
                                     className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-secondary hover:shadow-lg hover:-translate-y-1"
                                 >
                                     <span className="text-3xl">{cat.icon || "📁"}</span>
@@ -266,7 +266,7 @@ export default async function HomePage() {
                     </div>
                     <div className="mt-8 text-center">
                         <Link
-                            href="/categories"
+                            href="/olongapo/categories"
                             className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
                         >
                             View All Categories <ArrowRight className="h-4 w-4" />
