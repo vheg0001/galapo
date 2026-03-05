@@ -4,6 +4,48 @@ import { createAdminSupabaseClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id } = await params;
+    const auth = await requireAdmin(request);
+    if ("error" in auth) return auth.error;
+
+    const admin = createAdminSupabaseClient();
+    try {
+        const { data: listing, error } = await admin
+            .from("listings")
+            .select(`
+                id, business_name, slug, status, claim_proof_url, claimed_at, created_at, is_pre_populated,
+                categories!listings_category_id_fkey(name),
+                profiles!listings_owner_id_fkey(id, full_name, email, phone)
+            `)
+            .eq("id", id)
+            .single();
+
+        if (error || !listing) {
+            return NextResponse.json({ error: "Claim listing not found." }, { status: 404 });
+        }
+
+        return NextResponse.json({
+            id: listing.id,
+            listing_name: listing.business_name,
+            slug: listing.slug,
+            status: listing.status,
+            claim_proof_url: listing.claim_proof_url,
+            claimed_at: listing.claimed_at,
+            created_at: listing.created_at,
+            is_pre_populated: listing.is_pre_populated,
+            category_name: (listing as any).categories?.name ?? "Uncategorized",
+            claimant: (listing as any).profiles ?? null,
+        });
+    } catch (err: any) {
+        console.error("[admin/claims/[id] GET]", err);
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+}
+
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }

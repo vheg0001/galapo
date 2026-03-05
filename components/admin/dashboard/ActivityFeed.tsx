@@ -37,25 +37,30 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
                     View all
                 </Link>
             </div>
-            <div className="divide-y divide-border">
+            <div className="relative space-y-1 py-4">
+                {/* Timeline Line */}
+                <div className="absolute left-[34px] top-6 bottom-6 w-0.5 bg-border/40" />
+
                 {activities.length === 0 ? (
                     <p className="py-10 text-center text-sm text-muted-foreground">No recent activity.</p>
                 ) : (
-                    activities.map((activity) => {
+                    activities.map((activity, idx) => {
                         const cfg = TYPE_CONFIG[activity.type] ?? { icon: Building2, color: "bg-gray-100 text-gray-500" };
                         const Icon = cfg.icon;
                         return (
-                            <div key={activity.id} className="flex items-start gap-3 px-5 py-3.5">
-                                <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${cfg.color}`}>
-                                    <Icon className="h-4 w-4" />
+                            <div key={activity.id} className="group relative flex items-start gap-4 px-5 py-3 transition-colors hover:bg-muted/30">
+                                <div className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-4 ring-background transition-transform duration-300 group-hover:scale-110 ${cfg.color}`}>
+                                    <Icon className="h-3.5 w-3.5" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-foreground leading-snug">{activity.title}</p>
-                                    <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed line-clamp-2">{activity.message}</p>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="text-sm font-bold text-foreground leading-none">{activity.title}</p>
+                                        <span className="shrink-0 text-[10px] font-medium text-muted-foreground/60 tabular-nums">
+                                            {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+                                        </span>
+                                    </div>
+                                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed line-clamp-2 italic">"{activity.message}"</p>
                                 </div>
-                                <span className="shrink-0 text-[10px] text-muted-foreground/70 whitespace-nowrap pt-1">
-                                    {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
-                                </span>
                             </div>
                         );
                     })

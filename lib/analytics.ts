@@ -18,7 +18,15 @@ export async function trackContactClick(
             case AnalyticsEventType.EMAIL_CLICK: typeStr = "email"; break;
             case AnalyticsEventType.WEBSITE_CLICK: typeStr = "website"; break;
             case AnalyticsEventType.DIRECTIONS_CLICK: typeStr = "directions"; break;
-            case AnalyticsEventType.SOCIAL_CLICK: typeStr = "social"; break;
+            case AnalyticsEventType.SOCIAL_CLICK: {
+                const platform = String(eventData?.platform ?? "").toLowerCase();
+                if (platform === "facebook" || platform === "instagram" || platform === "tiktok" || platform === "twitter" || platform === "x" || platform === "youtube") {
+                    typeStr = platform === "twitter" ? "x" : platform;
+                } else {
+                    typeStr = "x";
+                }
+                break;
+            }
             case AnalyticsEventType.SHARE: typeStr = "share"; break;
             default: typeStr = "other";
         }

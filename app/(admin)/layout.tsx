@@ -54,7 +54,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <div className="flex min-h-screen bg-[#F5F7FA]">
+        <div className="flex min-h-screen overflow-x-hidden bg-[#F5F7FA]">
             {/* Desktop Sidebar */}
             <div className="hidden lg:block">
                 <AdminSidebar
@@ -79,7 +79,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
             {/* Main content area */}
             <div className={cn(
-                "flex flex-1 flex-col transition-all duration-300",
+                "flex min-w-0 flex-1 flex-col transition-all duration-300",
                 sidebarCollapsed ? "lg:pl-16" : "lg:pl-[260px]"
             )}>
                 <AdminTopBar
@@ -87,7 +87,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                     adminName={adminName}
                     adminEmail={adminEmail}
                 />
-                <main className="flex-1 p-4 sm:p-6 lg:p-8">
+                <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
                     {children}
                 </main>
             </div>

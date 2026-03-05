@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
     ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Download,
     ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, SlidersHorizontal, Loader2
@@ -38,6 +38,7 @@ interface DataTableProps<T> {
     onRowClick?: (row: T) => void;
     className?: string;
     filterComponent?: React.ReactNode;
+    persistKey?: string;
 }
 
 type SortDirection = "asc" | "desc" | null;
@@ -65,7 +66,7 @@ export default function DataTable<T extends Record<string, any>>({
     data, columns, keyField, isLoading = false, searchable = true,
     searchPlaceholder = "Search...", bulkActions = [], defaultPageSize = 10,
     pageSizeOptions = [10, 20, 50], emptyMessage = "No records found.",
-    onRowClick, className, filterComponent
+    onRowClick, className, filterComponent, persistKey
 }: DataTableProps<T>) {
     const [search, setSearch] = useState("");
     const [sortKey, setSortKey] = useState<string | null>(null);
@@ -77,6 +78,41 @@ export default function DataTable<T extends Record<string, any>>({
         new Set(columns.filter(c => c.hidden).map(c => c.key))
     );
     const [colPickerOpen, setColPickerOpen] = useState(false);
+    const [isColumnPrefsReady, setIsColumnPrefsReady] = useState(false);
+    const storageKey = useMemo(() => {
+        const signature = columns.map((c) => c.key).join("|");
+        if (persistKey) return `admin:datatable:cols:${persistKey}:${signature}`;
+        if (typeof window !== "undefined") return `admin:datatable:cols:${window.location.pathname}:${signature}`;
+        return `admin:datatable:cols:${signature}`;
+    }, [columns, persistKey]);
+
+    useEffect(() => {
+        setIsColumnPrefsReady(false);
+        try {
+            const raw = window.localStorage.getItem(storageKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    const validKeys = new Set(columns.map((c) => c.key));
+                    const next = new Set<string>(parsed.filter((key: string) => validKeys.has(key)));
+                    setHiddenCols(next);
+                }
+            }
+        } catch {
+            // Ignore malformed persisted table settings.
+        } finally {
+            setIsColumnPrefsReady(true);
+        }
+    }, [storageKey, columns]);
+
+    useEffect(() => {
+        if (!isColumnPrefsReady) return;
+        try {
+            window.localStorage.setItem(storageKey, JSON.stringify(Array.from(hiddenCols)));
+        } catch {
+            // Ignore persistence errors (private mode, quota, etc).
+        }
+    }, [hiddenCols, storageKey, isColumnPrefsReady]);
 
     const visibleCols = useMemo(() => columns.filter(c => !hiddenCols.has(c.key)), [columns, hiddenCols]);
 
@@ -139,21 +175,21 @@ export default function DataTable<T extends Record<string, any>>({
     };
 
     return (
-        <div className={cn("flex flex-col gap-3", className)}>
+        <div className={cn("flex flex-col gap-4 relative", className)}>
             {/* Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                <div className="flex flex-wrap items-center gap-3">
                     {searchable && (
-                        <div className="relative flex items-center">
-                            <Search className="absolute left-3 h-3.5 w-3.5 text-muted-foreground" />
+                        <div className="relative flex items-center group">
+                            <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground/60 transition-colors group-focus-within:text-primary" />
                             <input
                                 value={search}
                                 onChange={e => handleSearch(e.target.value)}
                                 placeholder={searchPlaceholder}
-                                className="h-8 rounded-lg border border-border bg-background pl-8 pr-7 text-sm outline-none focus:border-[#FF6B35] focus:ring-1 focus:ring-[#FF6B35]/20 w-52"
+                                className="h-10 w-64 rounded-xl border border-border/50 bg-background/50 pl-10 pr-9 text-sm font-medium outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10 shadow-sm"
                             />
                             {search && (
-                                <button onClick={() => handleSearch("")} className="absolute right-2">
+                                <button onClick={() => handleSearch("")} className="absolute right-2.5 rounded-md p-1 hover:bg-muted transition-colors">
                                     <X className="h-3.5 w-3.5 text-muted-foreground" />
                                 </button>
                             )}
@@ -161,17 +197,18 @@ export default function DataTable<T extends Record<string, any>>({
                     )}
                     {filterComponent}
                     {selectedKeys.size > 0 && bulkActions.length > 0 && (
-                        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-1">
-                            <span className="text-xs text-muted-foreground">{selectedKeys.size} selected</span>
+                        <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-1.5 shadow-sm animate-in fade-in slide-in-from-left-2 duration-300">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-primary">{selectedKeys.size} selected</span>
+                            <div className="h-4 w-px bg-primary/20" />
                             {bulkActions.map((action, i) => (
                                 <button
                                     key={i}
                                     onClick={() => { action.onClick(selectedRows); setSelectedKeys(new Set()); }}
                                     className={cn(
-                                        "rounded px-2 py-0.5 text-xs font-medium transition",
+                                        "rounded-lg px-3 py-1.5 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm",
                                         action.variant === "destructive"
-                                            ? "bg-red-500 text-white hover:bg-red-600"
-                                            : "bg-primary text-primary-foreground hover:bg-primary/90"
+                                            ? "bg-red-500 text-white hover:bg-red-600 shadow-red-500/20"
+                                            : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20"
                                     )}
                                 >
                                     {action.label}
@@ -186,32 +223,37 @@ export default function DataTable<T extends Record<string, any>>({
                     <div className="relative">
                         <button
                             onClick={() => setColPickerOpen(!colPickerOpen)}
-                            className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-muted"
+                            className="flex h-10 items-center gap-2 rounded-xl border border-border/50 bg-background/50 px-4 text-xs font-bold text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
                         >
-                            <SlidersHorizontal className="h-3.5 w-3.5" />
+                            <SlidersHorizontal className="h-4 w-4" />
                             Columns
                         </button>
                         {colPickerOpen && (
                             <>
                                 <div className="fixed inset-0 z-10" onClick={() => setColPickerOpen(false)} />
-                                <div className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-border bg-background shadow-lg">
-                                    {columns.map(col => (
-                                        <label key={col.key} className="flex cursor-pointer items-center gap-2 px-3 py-2 text-xs hover:bg-muted">
-                                            <input
-                                                type="checkbox"
-                                                checked={!hiddenCols.has(col.key)}
-                                                onChange={() => {
-                                                    setHiddenCols(prev => {
-                                                        const next = new Set(prev);
-                                                        next.has(col.key) ? next.delete(col.key) : next.add(col.key);
-                                                        return next;
-                                                    });
-                                                }}
-                                                className="accent-[#FF6B35]"
-                                            />
-                                            {col.header}
-                                        </label>
-                                    ))}
+                                <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-border/50 bg-background/95 backdrop-blur-xl shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="px-3 py-2 border-b border-border/50">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Toggle Columns</span>
+                                    </div>
+                                    <div className="p-1">
+                                        {columns.map(col => (
+                                            <label key={col.key} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors hover:bg-muted/50">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!hiddenCols.has(col.key)}
+                                                    onChange={() => {
+                                                        setHiddenCols(prev => {
+                                                            const next = new Set(prev);
+                                                            next.has(col.key) ? next.delete(col.key) : next.add(col.key);
+                                                            return next;
+                                                        });
+                                                    }}
+                                                    className="accent-primary w-4 h-4 rounded border-border cursor-pointer"
+                                                />
+                                                {col.header}
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -219,26 +261,26 @@ export default function DataTable<T extends Record<string, any>>({
                     {/* CSV Export */}
                     <button
                         onClick={() => exportCSV(sorted, columns)}
-                        className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-muted"
+                        className="flex h-10 items-center gap-2 rounded-xl border border-border/50 bg-background/50 px-4 text-xs font-bold text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
                     >
-                        <Download className="h-3.5 w-3.5" />
+                        <Download className="h-4 w-4" />
                         Export
                     </button>
                 </div>
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto rounded-xl border border-border bg-background">
-                <table className="w-full min-w-[600px] text-sm">
-                    <thead className="border-b border-border bg-muted/40">
+            <div className="overflow-x-auto rounded-[2rem] border border-border/50 bg-background/40 shadow-sm backdrop-blur-sm ring-1 ring-border/50">
+                <table className="w-full min-w-[600px] text-sm text-left">
+                    <thead className="border-b border-border/50 bg-muted/20 backdrop-blur-xl">
                         <tr>
                             {bulkActions.length > 0 && (
-                                <th className="w-10 px-3 py-3">
+                                <th className="w-12 px-4 py-4">
                                     <input
                                         type="checkbox"
                                         checked={allSelected}
                                         onChange={toggleAll}
-                                        className="accent-[#FF6B35]"
+                                        className="accent-primary w-4 h-4 rounded border-border cursor-pointer"
                                     />
                                 </th>
                             )}
@@ -246,13 +288,13 @@ export default function DataTable<T extends Record<string, any>>({
                                 <th
                                     key={col.key}
                                     className={cn(
-                                        "whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
-                                        col.sortable && "cursor-pointer select-none hover:text-foreground",
+                                        "whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground",
+                                        col.sortable && "cursor-pointer select-none hover:text-foreground transition-colors",
                                         col.headerClassName
                                     )}
                                     onClick={() => col.sortable && handleSort(col.key)}
                                 >
-                                    <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-1.5">
                                         {col.header}
                                         {col.sortable && <SortIcon col={col} />}
                                     </span>
@@ -260,24 +302,26 @@ export default function DataTable<T extends Record<string, any>>({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-border/30">
                         {isLoading ? (
                             Array.from({ length: 5 }).map((_, i) => (
-                                <tr key={i}>
-                                    {bulkActions.length > 0 && <td className="px-3 py-3"><div className="h-4 w-4 rounded bg-muted animate-pulse" /></td>}
+                                <tr key={i} className="hover:bg-muted/10 transition-colors">
+                                    {bulkActions.length > 0 && <td className="px-4 py-4"><div className="h-4 w-4 rounded bg-muted/60 animate-pulse" /></td>}
                                     {visibleCols.map(col => (
-                                        <td key={col.key} className="px-4 py-3">
-                                            <div className="h-4 rounded bg-muted animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
+                                        <td key={col.key} className="px-4 py-4">
+                                            <div className="h-4 rounded bg-muted/60 animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
                                         </td>
                                     ))}
                                 </tr>
                             ))
                         ) : paginated.length === 0 ? (
                             <tr>
-                                <td colSpan={visibleCols.length + (bulkActions.length > 0 ? 1 : 0)} className="py-16 text-center text-muted-foreground">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Search className="h-8 w-8 opacity-30" />
-                                        <p className="text-sm">{emptyMessage}</p>
+                                <td colSpan={visibleCols.length + (bulkActions.length > 0 ? 1 : 0)} className="py-24 text-center text-muted-foreground">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="p-4 rounded-full bg-muted/30 ring-1 ring-border/50">
+                                            <Search className="h-8 w-8 text-muted-foreground/40" />
+                                        </div>
+                                        <p className="text-sm font-medium">{emptyMessage}</p>
                                     </div>
                                 </td>
                             </tr>
@@ -289,25 +333,25 @@ export default function DataTable<T extends Record<string, any>>({
                                     <tr
                                         key={key}
                                         className={cn(
-                                            "transition-colors",
-                                            selected ? "bg-[#FF6B35]/5" : "hover:bg-muted/30",
+                                            "transition-colors duration-200",
+                                            selected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30",
                                             onRowClick && "cursor-pointer"
                                         )}
                                         onClick={() => onRowClick?.(row)}
                                     >
                                         {bulkActions.length > 0 && (
-                                            <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
+                                            <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                                 <input
                                                     type="checkbox"
                                                     checked={selected}
                                                     onChange={() => toggleRow(key)}
                                                     onClick={e => e.stopPropagation()}
-                                                    className="accent-[#FF6B35]"
+                                                    className="accent-primary w-4 h-4 rounded border-border cursor-pointer transition-transform active:scale-95"
                                                 />
                                             </td>
                                         )}
                                         {visibleCols.map(col => (
-                                            <td key={col.key} className={cn("px-4 py-3 text-sm text-foreground", col.className)}>
+                                            <td key={col.key} className={cn("px-4 py-3 text-sm font-medium text-foreground relative", col.className)}>
                                                 {col.render ? col.render(row, i) : String(row[col.key] ?? "—")}
                                             </td>
                                         ))}
@@ -319,27 +363,27 @@ export default function DataTable<T extends Record<string, any>>({
                 </table>
             </div>
 
-            {/* Pagination */}
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
+            {/* Pagination outline-none transition-all focus:border-primary */}
+            <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-muted-foreground px-2">
+                <div className="flex items-center gap-3">
                     <span>Rows per page:</span>
                     <select
                         value={pageSize}
                         onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-                        className="rounded border border-border bg-background px-2 py-1 text-xs focus:outline-none"
+                        className="h-8 rounded-lg border border-border/50 bg-background/50 px-2 py-1 text-xs outline-none transition-colors hover:bg-muted focus:border-primary focus:ring-1 focus:ring-primary/20"
                     >
                         {pageSizeOptions.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
-                    <span>
+                    <span className="hidden sm:inline">
                         {Math.min((page - 1) * pageSize + 1, sorted.length)}–{Math.min(page * pageSize, sorted.length)} of {sorted.length}
                     </span>
                 </div>
-                <div className="flex items-center gap-1">
-                    <button onClick={() => setPage(1)} disabled={page === 1} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ChevronsLeft className="h-4 w-4" /></button>
-                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                    <span className="px-2">Page {page} of {totalPages}</span>
-                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
-                    <button onClick={() => setPage(totalPages)} disabled={page === totalPages} className="rounded p-1 hover:bg-muted disabled:opacity-30"><ChevronsRight className="h-4 w-4" /></button>
+                <div className="flex items-center gap-1.5">
+                    <button onClick={() => setPage(1)} disabled={page === 1} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-background/50 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"><ChevronsLeft className="h-4 w-4" /></button>
+                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-background/50 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"><ChevronLeft className="h-4 w-4" /></button>
+                    <span className="flex h-8 items-center px-3 rounded-lg bg-background/50 border border-border/50">Page {page} of {totalPages}</span>
+                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-background/50 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"><ChevronRight className="h-4 w-4" /></button>
+                    <button onClick={() => setPage(totalPages)} disabled={page === totalPages} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-background/50 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"><ChevronsRight className="h-4 w-4" /></button>
                 </div>
             </div>
         </div>

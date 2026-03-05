@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, CreditCard, ShieldCheck, Plus, MonitorPlay } from "lucide-react";
+import { Building2, CreditCard, ShieldCheck, Plus, MonitorPlay, Calendar } from "lucide-react";
 
 interface QuickActionsProps {
     pendingListings: number;
@@ -38,6 +38,13 @@ export default function QuickActions({ pendingListings, pendingPayments, pending
             color: "bg-[#0F1A2E] hover:bg-[#1a2d4f]",
         },
         {
+            href: "/admin/events",
+            label: "Create Event",
+            count: null,
+            icon: Calendar,
+            color: "bg-indigo-600 hover:bg-indigo-700",
+        },
+        {
             href: "/admin/ads",
             label: "Manage Ads",
             count: null,
@@ -47,20 +54,28 @@ export default function QuickActions({ pendingListings, pendingPayments, pending
     ];
 
     return (
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
             {actions.map((action) => (
                 <Link
                     key={action.href}
                     href={action.href}
-                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition ${action.color}`}
+                    className="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-background p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
                 >
-                    <action.icon className="h-4 w-4" />
-                    {action.label}
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm transition-transform duration-500 group-hover:scale-110 ${action.color.split(' ')[0]}`}>
+                        <action.icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-bold uppercase tracking-tight text-foreground">{action.label}</p>
+                    </div>
+
                     {action.count !== null && action.count > 0 && (
-                        <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1.5 text-xs font-bold">
+                        <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-black text-white shadow-md ring-2 ring-background animate-in zoom-in-0 duration-500">
                             {action.count}
                         </span>
                     )}
+
+                    {/* Hover Glow */}
+                    <div className="absolute inset-0 -z-10 rounded-2xl bg-primary/5 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100" />
                 </Link>
             ))}
         </div>

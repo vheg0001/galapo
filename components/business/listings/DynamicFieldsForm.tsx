@@ -69,18 +69,23 @@ export default function DynamicFieldsForm({
 
     if (loading) {
         return (
-            <div className="space-y-4 animate-pulse">
-                <div className="h-10 bg-gray-50 rounded-lg w-1/3" />
-                <div className="h-32 bg-gray-50 rounded-lg w-full" />
-                <div className="h-32 bg-gray-50 rounded-lg w-full" />
+            <div className="space-y-3 animate-pulse">
+                <div className="h-4 bg-muted/50 rounded-full w-1/4" />
+                <div className="h-12 bg-muted/30 rounded-2xl w-full" />
+                <div className="h-4 bg-muted/50 rounded-full w-1/3 mt-4" />
+                <div className="h-12 bg-muted/30 rounded-2xl w-full" />
+                <div className="h-4 bg-muted/50 rounded-full w-1/4 mt-4" />
+                <div className="h-12 bg-muted/30 rounded-2xl w-full" />
             </div>
         );
     }
 
     if (!loading && fields.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 rounded-xl border-2 border-dashed border-gray-100 bg-gray-50/50">
-                <p className="text-sm text-gray-400">No additional details needed for this category.</p>
+            <div className="flex flex-col items-center justify-center py-10 rounded-2xl border border-dashed border-border/50 bg-muted/10">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40">
+                    No extra attributes for this category
+                </p>
             </div>
         );
     }

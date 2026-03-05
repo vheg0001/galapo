@@ -33,7 +33,8 @@ export default function AdminTopBar({
             <div className="flex items-center gap-3">
                 <button
                     onClick={onMenuToggle}
-                    className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground lg:hidden"
+                    aria-label="Open menu"
                 >
                     <Menu className="h-5 w-5" />
                 </button>

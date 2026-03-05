@@ -90,16 +90,25 @@ export const useBusinessStore = create<BusinessState>()((set, get) => ({
     isLoadingNotifications: false,
 
     fetchDashboardData: async (userId: string) => {
+        if (!userId) return;
         set({ isLoading: true });
         try {
             // Fetch stats from our new API
-            const statsRes = await fetch("/api/business/dashboard/stats");
+            const statsRes = await fetch("/api/business/dashboard/stats", { cache: "no-store" });
+            if (statsRes.status === 401) {
+                set({ stats: defaultStats, listings: [] });
+                return;
+            }
             const statsData = await statsRes.json();
 
             if (statsData.error) throw new Error(statsData.error);
 
             // Fetch listings from our new API
-            const listingsRes = await fetch("/api/business/listings?limit=5");
+            const listingsRes = await fetch("/api/business/listings?limit=5", { cache: "no-store" });
+            if (listingsRes.status === 401) {
+                set({ stats: defaultStats, listings: [] });
+                return;
+            }
             const listingsData = await listingsRes.json();
 
             if (listingsData.error) throw new Error(listingsData.error);
@@ -123,9 +132,14 @@ export const useBusinessStore = create<BusinessState>()((set, get) => ({
     },
 
     fetchListings: async (userId: string) => {
+        if (!userId) return;
         set({ isLoading: true });
         try {
-            const res = await fetch("/api/business/listings?limit=50");
+            const res = await fetch("/api/business/listings?limit=50", { cache: "no-store" });
+            if (res.status === 401) {
+                set({ listings: [] });
+                return;
+            }
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             set({ listings: data.data });
@@ -137,11 +151,16 @@ export const useBusinessStore = create<BusinessState>()((set, get) => ({
     },
 
     fetchNotifications: async (userId: string) => {
+        if (!userId) return;
         set({ isLoadingNotifications: true });
         try {
             // Using existing notifications endpoint if it exists, or just direct for now
             // But requirements 3. specified /api/business/activity for source
-            const res = await fetch("/api/business/activity");
+            const res = await fetch("/api/business/activity", { cache: "no-store" });
+            if (res.status === 401) {
+                set({ notifications: [], unreadCount: 0 });
+                return;
+            }
             const data = await res.json();
 
             if (data.error) throw new Error(data.error);

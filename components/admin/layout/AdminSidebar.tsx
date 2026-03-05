@@ -63,7 +63,7 @@ export default function AdminSidebar({
             </div>
 
             {/* Nav */}
-            <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
+            <nav className="scrollbar-hide flex-1 overflow-y-auto px-2 py-3 space-y-1">
                 <SidebarNavGroup label="Overview" emoji="📊" collapsed={collapsed}>
                     <SidebarNavItem href="/admin/dashboard" label="Dashboard" icon={LayoutDashboard} collapsed={collapsed} />
                 </SidebarNavGroup>

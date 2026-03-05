@@ -34,7 +34,10 @@ export async function POST(
         case "directions": eventType = AnalyticsEventType.DIRECTIONS_CLICK; break;
         case "facebook":
         case "instagram":
+        case "twitter":
+        case "x":
         case "tiktok":
+        case "youtube":
             eventType = AnalyticsEventType.SOCIAL_CLICK;
             break;
         default:

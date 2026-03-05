@@ -17,20 +17,28 @@ export async function GET(request: NextRequest) {
     try {
         const admin = createAdminSupabaseClient();
 
-        const { data, error, count } = await admin
+        let query = admin
             .from("listings")
             .select(`
                 id, business_name, slug, status, claimed_at, claim_proof_url,
                 created_at, is_pre_populated,
                 profiles!listings_owner_id_fkey(id, full_name, email, avatar_url)
             `, { count: "exact" })
-            .eq("status", status === "all" ? undefined : "claimed_pending" as any)
             .order("claimed_at", { ascending: false })
             .range(offset, offset + limit - 1);
 
+        if (status === "pending" || status === "all") {
+            query = query.eq("status", "claimed_pending");
+        } else if (status === "approved") {
+            query = query.eq("status", "approved").not("owner_id", "is", null).eq("is_pre_populated", false);
+        } else if (status === "rejected") {
+            query = query.eq("status", "approved").is("owner_id", null);
+        }
+
+        const { data, error, count } = await query;
+
         if (error) throw error;
 
-        // If status filter isn't "pending", adjust the query for other statuses like "approved"/"rejected"
         return NextResponse.json({
             claims: (data ?? []).map((l: any) => ({
                 id: l.id,

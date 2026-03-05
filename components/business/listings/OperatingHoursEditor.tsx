@@ -6,7 +6,8 @@
 // ──────────────────────────────────────────────────────────
 
 import type { OperatingHours, DayHours } from "@/lib/types";
-import { Copy } from "lucide-react";
+import { Copy, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Day = keyof OperatingHours;
 
@@ -27,7 +28,12 @@ interface OperatingHoursEditorProps {
 
 export default function OperatingHoursEditor({ value, onChange }: OperatingHoursEditorProps) {
     const update = (day: Day, patch: Partial<DayHours>) => {
-        onChange({ ...value, [day]: { ...value[day], ...patch } });
+        const currentDay = value?.[day] || { open: "08:00", close: "17:00", closed: false };
+        const newValue = {
+            ...(value || {}),
+            [day]: { ...currentDay, ...patch }
+        } as OperatingHours;
+        onChange(newValue);
     };
 
     const copyMondayToAll = () => {
@@ -40,74 +46,96 @@ export default function OperatingHoursEditor({ value, onChange }: OperatingHours
     return (
         <div className="space-y-3">
             {/* Copy Monday button */}
-            <div className="flex justify-end">
+            <div className="flex justify-end pr-1">
                 <button
                     type="button"
                     onClick={copyMondayToAll}
-                    className="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition"
+                    className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all active:scale-95 shadow-sm"
                 >
-                    <Copy size={13} />
-                    Copy Monday to all days
+                    <Copy size={12} className="opacity-70" />
+                    Copy Monday content to all days
                 </button>
             </div>
 
             {/* Days table */}
-            <div className="overflow-hidden rounded-xl border border-gray-200">
-                <div className="hidden grid-cols-[130px_1fr_1fr_auto] items-center gap-3 border-b border-gray-100 bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wider text-gray-500 sm:grid">
+            <div className="overflow-hidden rounded-2xl border border-border/50 bg-background/30 shadow-sm ring-1 ring-border/40">
+                <div className="hidden sm:grid grid-cols-[130px_1fr_1fr_100px] items-center gap-4 border-b border-border/40 bg-muted/20 px-6 py-3 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
                     <span>Day</span>
-                    <span>Opens</span>
-                    <span>Closes</span>
-                    <span>Closed</span>
+                    <span className="text-center">Opens</span>
+                    <span className="text-center">Closes</span>
+                    <span className="text-right">Status</span>
                 </div>
 
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-border/30">
                     {DAYS.map(({ key, label, short }) => {
-                        const day = value[key];
+                        const day = value[key] || { open: "08:00", close: "17:00", closed: false };
                         return (
                             <div
                                 key={key}
-                                className={`grid grid-cols-[100px_1fr_1fr_auto] sm:grid-cols-[130px_1fr_1fr_auto] items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 transition ${day.closed ? "bg-gray-50/80" : "bg-white"
-                                    }`}
+                                className={cn(
+                                    "grid grid-cols-1 sm:grid-cols-[130px_1fr_1fr_100px] items-center gap-4 px-4 sm:px-6 py-3.5 transition-all duration-200",
+                                    day.closed ? "bg-muted/20 opacity-60" : "bg-transparent hover:bg-muted/5"
+                                )}
                             >
                                 {/* Day name */}
-                                <span className="text-sm font-medium text-gray-700">
-                                    <span className="sm:hidden">{short}</span>
-                                    <span className="hidden sm:inline">{label}</span>
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <div className={cn(
+                                        "h-1.5 w-1.5 rounded-full shrink-0",
+                                        day.closed ? "bg-muted-foreground/30" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                                    )} />
+                                    <span className="text-xs font-bold text-foreground tracking-tight truncate">
+                                        <span className="sm:hidden">{label}</span>
+                                        <span className="hidden sm:inline">{label}</span>
+                                    </span>
+                                </div>
 
                                 {/* Open time */}
-                                <input
-                                    type="time"
-                                    value={day.open}
-                                    disabled={day.closed}
-                                    onChange={(e) => update(key, { open: e.target.value })}
-                                    className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 focus:border-[#FF6B35] focus:outline-none focus:ring-1 focus:ring-[#FF6B35]/20"
-                                />
+                                <div className="space-y-1 sm:space-y-0 relative">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 sm:hidden ml-1">Opens</p>
+                                    <div className="relative group">
+                                        <input
+                                            type="time"
+                                            value={day.open}
+                                            disabled={day.closed}
+                                            onChange={(e) => update(key, { open: e.target.value })}
+                                            className="w-full rounded-2xl border border-border/60 bg-background pl-3 pr-8 py-2 text-sm font-bold text-foreground disabled:cursor-not-allowed disabled:bg-muted/20 disabled:text-muted-foreground/30 transition-all focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
+                                        />
+                                        <Clock className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none group-focus-within:text-primary/60 transition-colors" />
+                                    </div>
+                                </div>
 
                                 {/* Close time */}
-                                <input
-                                    type="time"
-                                    value={day.close}
-                                    disabled={day.closed}
-                                    onChange={(e) => update(key, { close: e.target.value })}
-                                    className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 focus:border-[#FF6B35] focus:outline-none focus:ring-1 focus:ring-[#FF6B35]/20"
-                                />
+                                <div className="space-y-1 sm:space-y-0 relative">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 sm:hidden ml-1">Closes</p>
+                                    <div className="relative group">
+                                        <input
+                                            type="time"
+                                            value={day.close}
+                                            disabled={day.closed}
+                                            onChange={(e) => update(key, { close: e.target.value })}
+                                            className="w-full rounded-2xl border border-border/60 bg-background pl-3 pr-8 py-2 text-sm font-bold text-foreground disabled:cursor-not-allowed disabled:bg-muted/20 disabled:text-muted-foreground/30 transition-all focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
+                                        />
+                                        <Clock className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none group-focus-within:text-primary/60 transition-colors" />
+                                    </div>
+                                </div>
 
                                 {/* Closed toggle */}
-                                <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                                    <div className="relative">
-                                        <input
-                                            type="checkbox"
-                                            checked={day.closed}
-                                            onChange={(e) => update(key, { closed: e.target.checked })}
-                                            className="sr-only"
-                                        />
-                                        <div className={`h-5 w-9 rounded-full transition-colors ${day.closed ? "bg-[#FF6B35]" : "bg-gray-200"}`}>
-                                            <div className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${day.closed ? "translate-x-4" : "translate-x-0"}`} />
-                                        </div>
-                                    </div>
-                                    <span className="text-xs text-gray-500 hidden sm:inline">Closed</span>
-                                </label>
+                                <div className="flex items-center justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => update(key, { closed: !day.closed })}
+                                        className={cn(
+                                            "flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 transition-all active:scale-95 shadow-sm min-w-[75px] justify-center",
+                                            day.closed
+                                                ? "border-red-500/20 bg-red-500/5 text-red-600/70 hover:bg-red-500/10"
+                                                : "border-emerald-500/20 bg-emerald-500/5 text-emerald-600/70 hover:bg-emerald-500/10"
+                                        )}
+                                    >
+                                        <span className="text-[9px] font-black uppercase tracking-widest">
+                                            {day.closed ? "Closed" : "Open"}
+                                        </span>
+                                    </button>
+                                </div>
                             </div>
                         );
                     })}

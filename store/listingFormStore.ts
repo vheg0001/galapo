@@ -42,7 +42,9 @@ export interface ListingFormData {
     social_links: {
         facebook: string;
         instagram: string;
+        twitter: string;
         tiktok: string;
+        youtube: string;
     };
     payment_methods: string[];
 
@@ -84,7 +86,7 @@ const DEFAULT_FORM_DATA: ListingFormData = {
     phone_secondary: "",
     email: "",
     website: "",
-    social_links: { facebook: "", instagram: "", tiktok: "" },
+    social_links: { facebook: "", instagram: "", twitter: "", tiktok: "", youtube: "" },
     payment_methods: [],
     address: "",
     barangay_id: "",
@@ -143,7 +145,9 @@ function buildListingPayload(formData: ListingFormData) {
     const social_links: Record<string, string> = {};
     if (formData.social_links.facebook) social_links.facebook = formData.social_links.facebook;
     if (formData.social_links.instagram) social_links.instagram = formData.social_links.instagram;
+    if (formData.social_links.twitter) social_links.twitter = formData.social_links.twitter;
     if (formData.social_links.tiktok) social_links.tiktok = formData.social_links.tiktok;
+    if (formData.social_links.youtube) social_links.youtube = formData.social_links.youtube;
 
     return {
         category_id: formData.category_id,
@@ -251,7 +255,9 @@ export const useListingFormStore = create<ListingFormState>()((set, get) => ({
                 social_links: {
                     facebook: listing.social_links?.facebook ?? "",
                     instagram: listing.social_links?.instagram ?? "",
+                    twitter: listing.social_links?.twitter ?? listing.social_links?.x ?? "",
                     tiktok: listing.social_links?.tiktok ?? "",
+                    youtube: listing.social_links?.youtube ?? "",
                 },
                 payment_methods: listing.payment_methods ?? [],
                 address: listing.address ?? "",

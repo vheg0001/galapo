@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Mail, Globe, Navigation, Facebook, Instagram, ExternalLink } from "lucide-react";
+import { Phone, Mail, Globe, Navigation, Facebook, Instagram, ExternalLink, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackContactClick } from "@/lib/analytics";
 import { AnalyticsEventType } from "@/lib/types";
@@ -13,7 +13,10 @@ interface ContactCardProps {
     socialLinks?: {
         facebook?: string;
         instagram?: string;
+        twitter?: string;
+        x?: string;
         tiktok?: string;
+        youtube?: string;
         [key: string]: string | undefined;
     } | null;
     lat?: number | null;
@@ -26,6 +29,14 @@ function TikTokIcon({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
             <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.19a8.19 8.19 0 004.79 1.52V6.27a4.85 4.85 0 01-1.02-.58z" />
+        </svg>
+    );
+}
+
+function XIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+            <path d="M18.901 2H22l-6.768 7.736L23.2 22h-6.24l-4.89-6.914L6.02 22H2.92l7.24-8.276L.8 2h6.4l4.42 6.26L18.9 2zm-1.094 18h1.73L6.26 3.896H4.404L17.807 20z" />
         </svg>
     );
 }
@@ -46,7 +57,8 @@ export default function ContactCard({
         ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
         : null;
 
-    const hasSocial = socialLinks && (socialLinks.facebook || socialLinks.instagram || socialLinks.tiktok);
+    const xLink = socialLinks?.twitter || socialLinks?.x;
+    const hasSocial = socialLinks && (socialLinks.facebook || socialLinks.instagram || socialLinks.tiktok || socialLinks.youtube || xLink);
 
     const btnClass = "group flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3.5 text-sm font-medium transition-all hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm";
     const iconClass = "h-4.5 w-4.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary";
@@ -140,6 +152,7 @@ export default function ContactCard({
                                 rel="noopener noreferrer"
                                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
                                 aria-label="Facebook"
+                                onClick={() => trackContactClick(listingSlug, AnalyticsEventType.SOCIAL_CLICK, { platform: "facebook" })}
                             >
                                 <Facebook className="h-4 w-4" />
                             </a>
@@ -151,8 +164,21 @@ export default function ContactCard({
                                 rel="noopener noreferrer"
                                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-pink-400 hover:bg-pink-50 hover:text-pink-600 dark:hover:bg-pink-900/20"
                                 aria-label="Instagram"
+                                onClick={() => trackContactClick(listingSlug, AnalyticsEventType.SOCIAL_CLICK, { platform: "instagram" })}
                             >
                                 <Instagram className="h-4 w-4" />
+                            </a>
+                        )}
+                        {xLink && (
+                            <a
+                                href={xLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-white/10 dark:hover:text-white"
+                                aria-label="X"
+                                onClick={() => trackContactClick(listingSlug, AnalyticsEventType.SOCIAL_CLICK, { platform: "twitter" })}
+                            >
+                                <XIcon className="h-4 w-4" />
                             </a>
                         )}
                         {socialLinks?.tiktok && (
@@ -162,8 +188,21 @@ export default function ContactCard({
                                 rel="noopener noreferrer"
                                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-white/10 dark:hover:text-white"
                                 aria-label="TikTok"
+                                onClick={() => trackContactClick(listingSlug, AnalyticsEventType.SOCIAL_CLICK, { platform: "tiktok" })}
                             >
                                 <TikTokIcon className="h-4 w-4" />
+                            </a>
+                        )}
+                        {socialLinks?.youtube && (
+                            <a
+                                href={socialLinks.youtube}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                                aria-label="YouTube"
+                                onClick={() => trackContactClick(listingSlug, AnalyticsEventType.SOCIAL_CLICK, { platform: "youtube" })}
+                            >
+                                <Youtube className="h-4 w-4" />
                             </a>
                         )}
                     </div>

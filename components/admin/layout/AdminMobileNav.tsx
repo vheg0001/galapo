@@ -17,14 +17,21 @@ interface AdminMobileNavProps {
 export default function AdminMobileNav({
     open, onClose, pendingListings, pendingPayments, pendingClaims, adminName
 }: AdminMobileNavProps) {
-    // Prevent body scroll when open
+    // Lock page scroll only while the mobile drawer is open.
     useEffect(() => {
-        if (open) {
-            document.body.style.overflow = "hidden";
-        } else {
+        const mediaQuery = window.matchMedia("(max-width: 1023px)");
+
+        const syncBodyScroll = () => {
+            document.body.style.overflow = open && mediaQuery.matches ? "hidden" : "";
+        };
+
+        syncBodyScroll();
+        mediaQuery.addEventListener("change", syncBodyScroll);
+
+        return () => {
+            mediaQuery.removeEventListener("change", syncBodyScroll);
             document.body.style.overflow = "";
-        }
-        return () => { document.body.style.overflow = ""; };
+        };
     }, [open]);
 
     return (

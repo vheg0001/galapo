@@ -4,7 +4,7 @@
 // GalaPo — LogoUploader Component (Module 9.1)
 // ──────────────────────────────────────────────────────────
 
-import { useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Upload, X, ImageIcon, Loader2 } from "lucide-react";
 
 interface LogoUploaderProps {
@@ -14,6 +14,10 @@ interface LogoUploaderProps {
 
 export default function LogoUploader({ url, onChange }: LogoUploaderProps) {
     const [preview, setPreview] = useState<string | undefined>(url);
+
+    useEffect(() => {
+        setPreview(url);
+    }, [url]);
 
     const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

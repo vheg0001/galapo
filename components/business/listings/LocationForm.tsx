@@ -9,10 +9,34 @@ import { useListingFormStore } from "@/store/listingFormStore";
 import MapPinSelector from "./MapPinSelector";
 import type { Barangay } from "@/lib/types";
 
+function normalizeText(value: string) {
+    return value
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function matchBarangayId(barangays: Barangay[], rawCandidate: string | null | undefined) {
+    if (!rawCandidate) return "";
+    const candidate = normalizeText(rawCandidate);
+    if (!candidate) return "";
+
+    const exact = barangays.find((b) => normalizeText(b.name) === candidate);
+    if (exact) return exact.id;
+
+    const partial = barangays.find((b) => {
+        const name = normalizeText(b.name);
+        return name.includes(candidate) || candidate.includes(name);
+    });
+    return partial?.id ?? "";
+}
+
 export default function LocationForm() {
     const { formData, updateFormData, errors } = useListingFormStore();
     const [barangays, setBarangays] = useState<Barangay[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isResolvingPin, setIsResolvingPin] = useState(false);
 
     useEffect(() => {
         async function fetchBarangays() {
@@ -37,6 +61,66 @@ export default function LocationForm() {
         fetchBarangays();
     }, []);
 
+    useEffect(() => {
+        if (!formData.lat || !formData.lng || barangays.length === 0) return;
+
+        const controller = new AbortController();
+        const timeout = setTimeout(async () => {
+            try {
+                setIsResolvingPin(true);
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${formData.lat}&lon=${formData.lng}`,
+                    {
+                        signal: controller.signal,
+                        headers: {
+                            Accept: "application/json",
+                        },
+                    }
+                );
+                if (!res.ok) return;
+                const json = await res.json();
+                const addr = json?.address ?? {};
+
+                const streetParts = [addr.house_number, addr.road].filter(Boolean);
+                const derivedStreet =
+                    streetParts.join(" ").trim() ||
+                    addr.neighbourhood ||
+                    addr.suburb ||
+                    addr.village ||
+                    "";
+
+                const barangayCandidate =
+                    addr.suburb ||
+                    addr.village ||
+                    addr.neighbourhood ||
+                    addr.city_district ||
+                    addr.quarter ||
+                    addr.hamlet ||
+                    null;
+                const matchedBarangayId = matchBarangayId(barangays, barangayCandidate);
+
+                const patch: Record<string, any> = {};
+                if (derivedStreet) patch.address = derivedStreet;
+                if (matchedBarangayId) patch.barangay_id = matchedBarangayId;
+
+                if (Object.keys(patch).length > 0) {
+                    updateFormData(patch);
+                }
+            } catch (error: any) {
+                if (error?.name !== "AbortError") {
+                    console.error("Reverse geocoding failed:", error);
+                }
+            } finally {
+                setIsResolvingPin(false);
+            }
+        }, 500);
+
+        return () => {
+            clearTimeout(timeout);
+            controller.abort();
+        };
+    }, [formData.lat, formData.lng, barangays, updateFormData]);
+
     return (
         <div className="mx-auto max-w-3xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="space-y-4">
@@ -53,6 +137,7 @@ export default function LocationForm() {
                         lng={formData.lng}
                         onChange={(lat, lng) => updateFormData({ lat, lng })}
                     />
+                    {isResolvingPin && <p className="text-xs text-gray-500">Detecting nearest street and barangay from pin...</p>}
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">

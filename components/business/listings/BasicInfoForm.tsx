@@ -8,8 +8,20 @@ import { useListingFormStore } from "@/store/listingFormStore";
 import RichTextEditor from "./RichTextEditor";
 import TagInput from "./TagInput";
 
+const PAYMENT_METHOD_OPTIONS = [
+    "Cash",
+    "GCash",
+    "Maya",
+    "Bank Transfer",
+    "Credit Card",
+    "Debit Card",
+    "GrabPay",
+    "ShopeePay",
+];
+
 export default function BasicInfoForm() {
     const { formData, updateFormData, errors } = useListingFormStore();
+    const socialLinks = formData.social_links || { facebook: "", instagram: "", twitter: "", tiktok: "", youtube: "" };
 
     return (
         <div className="mx-auto max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -65,7 +77,7 @@ export default function BasicInfoForm() {
                     />
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                     {/* Contact Phone */}
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-gray-700">
@@ -80,6 +92,18 @@ export default function BasicInfoForm() {
                                 }`}
                         />
                         {errors.phone && <p className="text-xs font-medium text-red-500">{errors.phone}</p>}
+                    </div>
+
+                    {/* Secondary Phone */}
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-gray-700">Secondary Phone</label>
+                        <input
+                            type="tel"
+                            placeholder="e.g. 0998 765 4321"
+                            value={formData.phone_secondary || ""}
+                            onChange={(e) => updateFormData({ phone_secondary: e.target.value })}
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20"
+                        />
                     </div>
 
                     {/* Contact Email */}
@@ -105,6 +129,114 @@ export default function BasicInfoForm() {
                         onChange={(e) => updateFormData({ website: e.target.value })}
                         className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20"
                     />
+                </div>
+
+                {/* Social Links */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">Social Links</label>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <input
+                            type="url"
+                            placeholder="Facebook URL"
+                            value={socialLinks.facebook || ""}
+                            onChange={(e) =>
+                                updateFormData({
+                                    social_links: {
+                                        ...socialLinks,
+                                        facebook: e.target.value,
+                                    },
+                                })
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20"
+                        />
+                        <input
+                            type="url"
+                            placeholder="Instagram URL"
+                            value={socialLinks.instagram || ""}
+                            onChange={(e) =>
+                                updateFormData({
+                                    social_links: {
+                                        ...socialLinks,
+                                        instagram: e.target.value,
+                                    },
+                                })
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20"
+                        />
+                        <input
+                            type="url"
+                            placeholder="X (Twitter) URL"
+                            value={socialLinks.twitter || ""}
+                            onChange={(e) =>
+                                updateFormData({
+                                    social_links: {
+                                        ...socialLinks,
+                                        twitter: e.target.value,
+                                    },
+                                })
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20"
+                        />
+                        <input
+                            type="url"
+                            placeholder="TikTok URL"
+                            value={socialLinks.tiktok || ""}
+                            onChange={(e) =>
+                                updateFormData({
+                                    social_links: {
+                                        ...socialLinks,
+                                        tiktok: e.target.value,
+                                    },
+                                })
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20"
+                        />
+                        <input
+                            type="url"
+                            placeholder="YouTube URL"
+                            value={socialLinks.youtube || ""}
+                            onChange={(e) =>
+                                updateFormData({
+                                    social_links: {
+                                        ...socialLinks,
+                                        youtube: e.target.value,
+                                    },
+                                })
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#FF6B35] focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20"
+                        />
+                    </div>
+                </div>
+
+                {/* Payment methods */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">Payment Methods</label>
+                    <div className="flex flex-wrap gap-2">
+                        {PAYMENT_METHOD_OPTIONS.map((method) => {
+                            const selected = (formData.payment_methods || []).includes(method);
+                            return (
+                                <button
+                                    key={method}
+                                    type="button"
+                                    onClick={() =>
+                                        updateFormData({
+                                            payment_methods: selected
+                                                ? (formData.payment_methods || []).filter((m) => m !== method)
+                                                : [...(formData.payment_methods || []), method],
+                                        })
+                                    }
+                                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                        selected
+                                            ? "border-[#FF6B35] bg-[#FF6B35] text-white"
+                                            : "border-gray-200 bg-white text-gray-700"
+                                    }`}
+                                >
+                                    {method}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <p className="text-[10px] text-gray-400">Suggested payment methods commonly used in the Philippines.</p>
                 </div>
 
                 {/* Tags */}

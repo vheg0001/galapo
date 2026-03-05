@@ -4,7 +4,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase";
 import AdminStatsCard from "@/components/admin/dashboard/AdminStatsCard";
 import QuickActions from "@/components/admin/dashboard/QuickActions";
 import AdminDashboardDeepSections from "@/components/admin/dashboard/AdminDashboardDeepSections";
-import { Building2, CreditCard, ShieldCheck, Users, BarChart2 } from "lucide-react";
+import { Building2, CreditCard, ShieldCheck, Users, BarChart2, Calendar } from "lucide-react";
 
 export const metadata: Metadata = {
     title: "Dashboard - GalaPo Admin",
@@ -35,10 +35,24 @@ export default async function AdminDashboardPage() {
     ]);
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-extrabold text-foreground">Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Welcome back. Here's what's happening on GalaPo.</p>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <div className="mb-2 flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary ring-1 ring-inset ring-primary/20 transition-all hover:bg-primary/20">
+                            <BarChart2 className="h-3.5 w-3.5" />
+                            Live Metrics
+                        </div>
+                        <div className="flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground ring-1 ring-inset ring-border/50">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                    </div>
+                    <h1 className="text-4xl font-black tracking-tight text-foreground">
+                        {now.getHours() < 12 ? "Good Morning" : now.getHours() < 17 ? "Good Afternoon" : "Good Evening"}, Admin
+                    </h1>
+                    <p className="mt-1 text-base font-medium text-muted-foreground">Welcome back. Here's what's happening on <span className="text-foreground">GalaPo</span> today.</p>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
