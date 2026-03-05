@@ -183,3 +183,29 @@ Using the user object as returned from supabase.auth.getSession() or from some s
  GET /api/auth/profile 200 in 706ms (compile: 5ms, proxy.ts: 10ms, render: 690ms)
 ✓ Compiled in 185ms
  GET /admin/dashboard 200 in 2.1s (compile: 149ms, proxy.ts: 686ms, render: 1298ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 959ms (compile: 8ms, proxy.ts: 9ms, render: 942ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 301ms (compile: 3ms, proxy.ts: 8ms, render: 290ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 342ms (compile: 10ms, proxy.ts: 8ms, render: 324ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 350ms (compile: 7ms, proxy.ts: 7ms, render: 337ms)
+✓ Compiled in 419ms
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 508ms (compile: 5ms, proxy.ts: 6ms, render: 497ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/admin/stats 200 in 1139ms (compile: 12ms, proxy.ts: 6ms, render: 1121ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/admin/stats 200 in 807ms (compile: 4ms, proxy.ts: 8ms, render: 794ms)
+ GET /admin/dashboard 200 in 4.0s (compile: 138ms, proxy.ts: 606ms, render: 3.2s)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 329ms (compile: 8ms, proxy.ts: 14ms, render: 307ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 564ms (compile: 6ms, proxy.ts: 6ms, render: 552ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 646ms (compile: 16ms, proxy.ts: 6ms, render: 624ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 847ms (compile: 14ms, proxy.ts: 16ms, render: 817ms)
+Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+ GET /api/auth/profile 200 in 313ms (compile: 12ms, proxy.ts: 7ms, render: 295ms)
