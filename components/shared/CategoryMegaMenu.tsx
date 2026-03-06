@@ -71,22 +71,27 @@ export default function CategoryMegaMenu({ categories }: CategoryMegaMenuProps) 
                         </Link>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
-                        {categories.map((cat) => (
-                            <Link
-                                key={cat.id}
-                                href={`/olongapo/${cat.slug}`}
-                                onClick={() => setIsOpen(false)}
-                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                            >
-                                <span className="text-lg">{cat.icon || "📁"}</span>
-                                <div className="flex flex-col">
-                                    <span className="font-medium">{cat.name}</span>
-                                    <span className="text-[10px] text-muted-foreground">
-                                        {cat.listing_count || 0} listings
+                        {categories.map((cat) => {
+                            const IconCmp = cat.icon ? (require("lucide-react") as any)[cat.icon] : null;
+                            return (
+                                <Link
+                                    key={cat.id}
+                                    href={`/olongapo/${cat.slug}`}
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                >
+                                    <span className="text-lg">
+                                        {IconCmp ? <IconCmp className="h-5 w-5" /> : "📁"}
                                     </span>
-                                </div>
-                            </Link>
-                        ))}
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">{cat.name}</span>
+                                        <span className="text-[10px] text-muted-foreground">
+                                            {cat.listing_count || 0} listings
+                                        </span>
+                                    </div>
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
             )}

@@ -70,6 +70,7 @@ export default function MenuDisplay({ items }: MenuDisplayProps) {
                                         alt={item.name}
                                         fill
                                         className="object-cover transition-opacity hover:opacity-80"
+                                        sizes="80px"
                                     />
                                 </button>
                             )}

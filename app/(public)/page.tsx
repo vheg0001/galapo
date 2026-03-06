@@ -69,8 +69,9 @@ export default async function HomePage() {
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
             .eq("is_featured", true)
+            .order("is_premium", { ascending: false })
             .order("created_at", { ascending: false })
-            .limit(8),
+            .limit(6),
         adminSupabase
             .from("listings")
             .select(`
@@ -165,10 +166,20 @@ export default async function HomePage() {
     return (
         <>
             {/* ──── SECTION 1: Hero ──── */}
-            <section className="relative overflow-hidden bg-primary px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary via-primary to-[#0f1d35]" />
-                <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-secondary/20 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-secondary/10 blur-3xl" />
+            <section className="relative overflow-hidden px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
+                <div
+                    className="absolute inset-0 bg-no-repeat"
+                    style={{
+                        backgroundImage: `url('/background.webp')`,
+                        backgroundSize: '100% auto',
+                        backgroundPosition: 'center',
+                    }}
+                />
+                {/* Overlay to ensure text readability */}
+                <div className="absolute inset-0 bg-primary/60 backdrop-blur-[2px]" />
+
+                <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-secondary/20 blur-3xl opacity-50" />
+                <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-secondary/10 blur-3xl opacity-30" />
 
                 <div className="relative mx-auto max-w-4xl text-center">
                     <h1 className="text-4xl font-extrabold tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl">
@@ -202,28 +213,27 @@ export default async function HomePage() {
                                 View All <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
+                        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                             {featuredListings.map((listing, index) => (
-                                <div key={listing.id} className="w-72 shrink-0 snap-start">
-                                    <ListingCard
-                                        id={listing.id}
-                                        slug={listing.slug}
-                                        businessName={listing.business_name}
-                                        shortDescription={listing.short_description}
-                                        categoryName={(listing.categories as any)?.name}
-                                        barangayName={(listing.barangays as any)?.name}
-                                        phone={listing.phone}
-                                        logoUrl={listing.logo_url}
-                                        imageUrl={
-                                            (listing.listing_images as any[])?.find(img => img.is_primary)?.image_url ||
-                                            (listing.listing_images as any[])?.[0]?.image_url ||
-                                            (listing as any).listing_image?.[0]?.image_url
-                                        }
-                                        isFeatured={listing.is_featured}
-                                        isPremium={listing.is_premium}
-                                        priority={index < 3}
-                                    />
-                                </div>
+                                <ListingCard
+                                    key={listing.id}
+                                    id={listing.id}
+                                    slug={listing.slug}
+                                    businessName={listing.business_name}
+                                    shortDescription={listing.short_description}
+                                    categoryName={(listing.categories as any)?.name}
+                                    barangayName={(listing.barangays as any)?.name}
+                                    phone={listing.phone}
+                                    logoUrl={listing.logo_url}
+                                    imageUrl={
+                                        (listing.listing_images as any[])?.find(img => img.is_primary)?.image_url ||
+                                        (listing.listing_images as any[])?.[0]?.image_url ||
+                                        (listing as any).listing_image?.[0]?.image_url
+                                    }
+                                    isFeatured={listing.is_featured}
+                                    isPremium={listing.is_premium}
+                                    priority={index < 3}
+                                />
                             ))}
                         </div>
                         <Link href="/search?featured=true" className="mt-4 flex sm:hidden items-center justify-center gap-1 text-sm font-medium text-secondary hover:underline">
@@ -248,21 +258,26 @@ export default async function HomePage() {
                         {(categories || [])
                             .filter((cat) => cat.parent_id === null)
                             .slice(0, 12)
-                            .map((cat) => (
-                                <Link
-                                    key={cat.id}
-                                    href={`/olongapo/${cat.slug}`}
-                                    className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-secondary hover:shadow-lg hover:-translate-y-1"
-                                >
-                                    <span className="text-3xl">{cat.icon || "📁"}</span>
-                                    <span className="text-sm font-medium text-foreground group-hover:text-secondary transition-colors">
-                                        {cat.name}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                        {countMap[cat.id] || 0} listings
-                                    </span>
-                                </Link>
-                            ))}
+                            .map((cat) => {
+                                const IconCmp = cat.icon ? (require("lucide-react") as any)[cat.icon] : null;
+                                return (
+                                    <Link
+                                        key={cat.id}
+                                        href={`/olongapo/${cat.slug}`}
+                                        className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-secondary hover:shadow-lg hover:-translate-y-1"
+                                    >
+                                        <span className="text-3xl text-muted-foreground group-hover:text-primary transition-colors">
+                                            {IconCmp ? <IconCmp className="h-8 w-8" /> : "📁"}
+                                        </span>
+                                        <span className="text-sm font-medium text-foreground group-hover:text-secondary transition-colors">
+                                            {cat.name}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {countMap[cat.id] || 0} listings
+                                        </span>
+                                    </Link>
+                                );
+                            })}
                     </div>
                     <div className="mt-8 text-center">
                         <Link

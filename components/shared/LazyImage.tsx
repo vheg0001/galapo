@@ -19,7 +19,7 @@ export default function LazyImage({
     className = "",
     priority = false,
 }: LazyImageProps) {
-    const imgRef = useRef<HTMLImageElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const [isLoaded, setIsLoaded] = useState(priority);
     const [isInView, setIsInView] = useState(priority);
     const [hasError, setHasError] = useState(false);
@@ -31,7 +31,7 @@ export default function LazyImage({
             return;
         }
 
-        if (!imgRef.current) return;
+        if (!containerRef.current) return;
 
         if (typeof IntersectionObserver === "undefined") {
             setIsInView(true);
@@ -49,7 +49,8 @@ export default function LazyImage({
             },
             { rootMargin: "200px" }
         );
-        observer.observe(imgRef.current);
+
+        observer.observe(containerRef.current);
         return () => observer.disconnect();
     }, [priority]);
 
@@ -68,6 +69,7 @@ export default function LazyImage({
 
     return (
         <div
+            ref={containerRef}
             className={`relative w-full h-full ${className} bg-[#f3f4f6]`}
             style={{ overflow: "hidden" }}
             data-priority={priority}
@@ -75,7 +77,6 @@ export default function LazyImage({
         >
             {isInView && (
                 <img
-                    ref={imgRef}
                     src={src}
                     alt={alt}
                     onLoad={handleLoad}
@@ -86,7 +87,7 @@ export default function LazyImage({
                         objectFit: "cover",
                     }}
                     className="absolute inset-0 w-full h-full"
-                    loading={priority ? "eager" : "lazy"}
+                    loading="eager"
                 />
             )}
 

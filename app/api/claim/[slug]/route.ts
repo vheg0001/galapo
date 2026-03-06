@@ -71,7 +71,8 @@ export async function POST(
             const ext = proofFile.name.split(".").pop();
             const fileName = `${listing.id}/${session.user.id}-${Date.now()}.${ext}`;
 
-            const buffer = await proofFile.arrayBuffer();
+            const arrayBuffer = await proofFile.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
             const admin = createAdminSupabaseClient();
             const { error: uploadError } = await admin.storage
                 .from("claims")
@@ -80,7 +81,10 @@ export async function POST(
                     contentType: proofFile.type,
                 });
 
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+                console.error("[CLAIM_POST] Upload Error:", uploadError);
+                throw new Error("Failed to upload proof document.");
+            }
 
             const { data: { publicUrl } } = admin.storage
                 .from("claims")

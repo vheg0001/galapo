@@ -47,26 +47,58 @@ export default function ClaimDetailView({ claim, onAction }: ClaimDetailViewProp
 
             <div className="rounded-xl border border-border bg-background p-4">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Admin Notes / Rejection Reason</h3>
-                <textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    rows={4}
-                    placeholder="Required for rejection."
-                    className="mt-3 w-full rounded-lg border border-border px-3 py-2 text-sm"
-                />
-                <div className="mt-3 flex gap-2">
-                    <button type="button" disabled={saving} onClick={() => handle("approve")} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">
-                        Approve Claim
-                    </button>
-                    <button
-                        type="button"
-                        disabled={saving || !reason.trim()}
-                        onClick={() => handle("reject")}
-                        className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                    >
-                        Reject Claim
-                    </button>
-                </div>
+
+                {claim.status === "claimed_pending" ? (
+                    <>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {[
+                                "Invalid or unreadable proof document.",
+                                "Document does not match business details.",
+                                "Expired or unofficial document.",
+                                "Contact information mismatch.",
+                            ].map((suggestion) => (
+                                <button
+                                    key={suggestion}
+                                    onClick={() => setReason(suggestion)}
+                                    className="rounded-full border border-border bg-muted/50 px-3 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                >
+                                    {suggestion}
+                                </button>
+                            ))}
+                        </div>
+
+                        <textarea
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            rows={4}
+                            placeholder="Required for rejection."
+                            className="mt-3 w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+                        />
+                        <div className="mt-3 flex gap-2">
+                            <button type="button" disabled={saving} onClick={() => handle("approve")} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white">
+                                Approve Claim
+                            </button>
+                            <button
+                                type="button"
+                                disabled={saving || !reason.trim()}
+                                onClick={() => handle("reject")}
+                                className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                            >
+                                Reject Claim
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="mt-2 text-sm">
+                        {claim.rejection_reason ? (
+                            <p className="rounded-lg bg-muted/50 p-3 italic text-muted-foreground">
+                                Previous Reason: {claim.rejection_reason}
+                            </p>
+                        ) : (
+                            <p className="text-muted-foreground italic">No specific reason or notes recorded for this processed claim.</p>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

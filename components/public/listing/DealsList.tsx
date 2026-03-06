@@ -50,7 +50,13 @@ export default function DealsList({ deals }: DealsListProps) {
                         {/* Deal image */}
                         {deal.image_url && (
                             <div className="relative aspect-[3/1] w-full overflow-hidden bg-muted">
-                                <Image src={deal.image_url} alt={deal.title} fill className="object-cover" />
+                                <Image
+                                    src={deal.image_url}
+                                    alt={deal.title}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 1024px) 100vw, 800px"
+                                />
                             </div>
                         )}
 

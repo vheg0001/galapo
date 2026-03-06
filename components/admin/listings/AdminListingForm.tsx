@@ -9,6 +9,7 @@ import OperatingHoursEditor from "@/components/business/listings/OperatingHoursE
 import DynamicFieldsForm from "@/components/business/listings/DynamicFieldsForm";
 import LogoUploader from "@/components/business/listings/LogoUploader";
 import PhotoUploader from "@/components/business/listings/PhotoUploader";
+import TagInput from "@/components/business/listings/TagInput";
 
 interface AdminListingFormProps {
     mode: "create" | "edit";
@@ -53,6 +54,7 @@ const EMPTY_FORM = {
     },
     dynamic_fields: {} as Record<string, any>,
     image_urls: [] as string[],
+    tags: [] as string[],
     category_id: "",
     subcategory_id: "",
     barangay_id: "",
@@ -203,6 +205,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                 payment_methods: Array.isArray(listing.payment_methods) ? listing.payment_methods : [],
                 operating_hours: listing.operating_hours ?? EMPTY_FORM.operating_hours,
                 dynamic_fields: dynamicFields,
+                tags: Array.isArray(listing.tags) ? listing.tags : [],
                 image_urls: Array.isArray(json.images) ? json.images.map((img: any) => img.image_url).filter(Boolean) : [],
             });
             const loadedPhotos: AdminPhotoItem[] = Array.isArray(json.images)
@@ -852,6 +855,25 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                                 rows={8}
                                 className="w-full rounded-2xl border border-border/50 bg-background p-4 text-sm font-medium leading-relaxed transition-all focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm resize-none"
                             />
+                        </div>
+                    </div>
+
+                    <div className="border-t border-border/40 pt-8 space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-primary/60" />
+                            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">Search Keywords (Tags)</label>
+                        </div>
+                        <div className="rounded-[1.5rem] border border-border/50 bg-muted/10 p-4 shadow-sm">
+                            <TagInput
+                                tags={form.tags ?? []}
+                                onChange={(tags) => setForm({ ...form, tags })}
+                                maxTags={10}
+                                placeholder="Type a keyword and press Enter (e.g. 'Restaurant', 'Seafood', 'Family Friendly')"
+                            />
+                            <p className="mt-3 text-[10px] font-medium text-muted-foreground/60 italic ml-1">
+                                <Info className="h-3 w-3 inline mr-1 -mt-0.5" />
+                                These keywords help users find this business more easily in search results.
+                            </p>
                         </div>
                     </div>
 

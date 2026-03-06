@@ -64,6 +64,7 @@ export default function EventsList({ events }: EventsListProps) {
                                 alt={event.title}
                                 fill
                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                sizes="112px"
                             />
                         </div>
                     )}

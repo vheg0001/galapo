@@ -14,6 +14,8 @@ export default function CategoryCard({ name, slug, icon, listingCount, subcatego
     const visibleSubs = subcategories.slice(0, maxVisible);
     const overflow = subcategories.length - maxVisible;
 
+    const IconCmp = icon ? (require("lucide-react") as any)[icon] : null;
+
     return (
         <Link
             href={`/olongapo/${slug}`}
@@ -22,7 +24,9 @@ export default function CategoryCard({ name, slug, icon, listingCount, subcatego
             {/* Icon + Name */}
             <div className="flex items-center gap-3 mb-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-muted-foreground/10 group-hover:text-foreground">
-                    <span className="text-xl">{icon || "📁"}</span>
+                    <span className="text-xl">
+                        {IconCmp ? <IconCmp className="h-6 w-6" /> : "📁"}
+                    </span>
                 </div>
                 <div>
                     <h3 className="text-base font-semibold text-foreground group-hover:text-foreground transition-colors">

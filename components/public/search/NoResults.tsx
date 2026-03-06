@@ -60,20 +60,25 @@ export default function NoResults({ query, popularCategories, onClearFilters }: 
                         Popular Categories
                     </h3>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        {popularCategories.slice(0, 6).map((cat) => (
-                            <Link
-                                key={cat.id}
-                                href={`/olongapo/${cat.slug}`}
-                                className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-secondary/30 hover:shadow-md"
-                            >
-                                {cat.icon && (
-                                    <span className="text-2xl leading-none">{cat.icon}</span>
-                                )}
-                                <span className="text-sm font-medium text-foreground line-clamp-2">
-                                    {cat.name}
-                                </span>
-                            </Link>
-                        ))}
+                        {popularCategories.slice(0, 6).map((cat) => {
+                            const IconCmp = cat.icon ? (require("lucide-react") as any)[cat.icon] : null;
+                            return (
+                                <Link
+                                    key={cat.id}
+                                    href={`/olongapo/${cat.slug}`}
+                                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-secondary/30 hover:shadow-md"
+                                >
+                                    {IconCmp && (
+                                        <span className="text-2xl leading-none">
+                                            <IconCmp className="h-6 w-6 text-muted-foreground" />
+                                        </span>
+                                    )}
+                                    <span className="text-sm font-medium text-foreground line-clamp-2">
+                                        {cat.name}
+                                    </span>
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
             )}

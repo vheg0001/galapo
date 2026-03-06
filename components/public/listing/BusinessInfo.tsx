@@ -9,8 +9,8 @@ import { useMemo, useState, useEffect } from "react";
 interface BusinessInfoProps {
     businessName: string;
     address: string;
-    category: { name: string; slug: string } | null;
-    subcategory: { name: string; slug: string } | null;
+    category: { name: string; slug: string; icon?: string | null } | null;
+    subcategory: { name: string; slug: string; icon?: string | null } | null;
     operatingHours: Record<string, { open: string; close: string; closed: boolean }> | null;
     isFeatured: boolean;
     isPremium: boolean;
@@ -104,6 +104,7 @@ export default function BusinessInfo({
                             alt={`${businessName} logo`}
                             fill
                             className="object-cover"
+                            sizes="(max-width: 1024px) 64px, 80px"
                         />
                     </div>
                 )}
@@ -118,8 +119,16 @@ export default function BusinessInfo({
                     {category && (
                         <Link
                             href={`/olongapo/${category.slug}`}
-                            className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                         >
+                            {category.icon ? (
+                                <span className="text-muted-foreground/60">
+                                    {(() => {
+                                        const IconComp = (require("lucide-react") as any)[category.icon];
+                                        return IconComp ? <IconComp className="h-3 w-3" /> : "📁";
+                                    })()}
+                                </span>
+                            ) : "📁"}
                             {category.name}
                         </Link>
                     )}
@@ -127,9 +136,18 @@ export default function BusinessInfo({
                         <>
                             {category && <span className="text-muted-foreground/40 text-xs self-center">›</span>}
                             <Link
+                                id="subcategory-pill"
                                 href={`/olongapo/${category?.slug}/${subcategory.slug}`}
-                                className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
                             >
+                                {subcategory.icon ? (
+                                    <span>
+                                        {(() => {
+                                            const IconComp = (require("lucide-react") as any)[subcategory.icon];
+                                            return IconComp ? <IconComp className="h-3 w-3" /> : "📁";
+                                        })()}
+                                    </span>
+                                ) : "📁"}
                                 {subcategory.name}
                             </Link>
                         </>

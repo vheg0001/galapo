@@ -126,7 +126,7 @@ export async function getCategoryBySlug(supabase: SupabaseClient, slug: string) 
     // Fetch subcategories if this is a parent
     const { data: subcategories } = await supabase
         .from("categories")
-        .select("id, name, slug")
+        .select("id, name, slug, icon")
         .eq("parent_id", category.id)
         .eq("is_active", true)
         .order("sort_order", { ascending: true })
@@ -329,7 +329,7 @@ const LISTING_FULL_SELECT = `
     logo_url, is_featured, is_premium, created_at, updated_at,
     operating_hours, lat, lng, tags, status, is_active, is_pre_populated,
     categories!listings_category_id_fkey ( id, name, slug ),
-    subcategories:categories!listings_subcategory_id_fkey ( id, name, slug ),
+    subcategories:categories!listings_subcategory_id_fkey ( id, name, slug, icon ),
     barangays ( id, name, slug ),
     listing_images ( image_url, sort_order, is_primary ),
     deals ( id ),
@@ -495,7 +495,7 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
             logo_url, is_featured, is_premium, is_active, status, is_pre_populated,
             created_at, updated_at,
             categories!listings_category_id_fkey ( id, name, slug, icon ),
-            subcategories:categories!listings_subcategory_id_fkey ( id, name, slug ),
+            subcategories:categories!listings_subcategory_id_fkey ( id, name, slug, icon ),
             barangays ( id, name, slug ),
             listing_images ( id, image_url, alt_text, sort_order, is_primary ),
             listing_field_values (

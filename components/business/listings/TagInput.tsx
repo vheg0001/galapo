@@ -45,21 +45,21 @@ export default function TagInput({
 
     return (
         <div
-            className="min-h-[44px] flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-white p-2 cursor-text focus-within:border-[#FF6B35] focus-within:ring-1 focus-within:ring-[#FF6B35]/20 transition"
+            className="min-h-[48px] flex flex-wrap gap-2 rounded-2xl border border-border/50 bg-background px-4 py-2 cursor-text focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/5 transition-all shadow-sm"
             onClick={() => inputRef.current?.focus()}
         >
             {tags.map((tag) => (
                 <span
                     key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-[#FF6B35]/10 px-2.5 py-0.5 text-sm font-medium text-[#FF6B35]"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary ring-1 ring-primary/20"
                 >
                     {tag}
                     <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
-                        className="hover:text-red-500 transition"
+                        className="hover:text-primary-foreground hover:bg-primary rounded-full p-0.5 transition-all"
                     >
-                        <X size={12} />
+                        <X size={10} />
                     </button>
                 </span>
             ))}
@@ -71,11 +71,13 @@ export default function TagInput({
                     onKeyDown={handleKeyDown}
                     onBlur={() => input.trim() && addTag(input)}
                     placeholder={tags.length === 0 ? placeholder : ""}
-                    className="flex-1 min-w-[120px] bg-transparent text-sm text-gray-700 placeholder:text-gray-400 outline-none"
+                    className="flex-1 min-w-[140px] bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none"
                 />
             )}
             {tags.length >= maxTags && (
-                <span className="text-xs text-gray-400 self-center">Max {maxTags} tags</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 self-center">
+                    Max {maxTags} tags
+                </span>
             )}
         </div>
     );

@@ -308,7 +308,13 @@ function ListingDetailView({ listing, related, slug }: any) {
                         <ImageGallery images={images} businessName={listing.business_name} categoryIcon={cat?.icon} />
                         {listing.logo_url && (
                             <div className="absolute -bottom-6 left-6 h-20 w-20 overflow-hidden rounded-2xl border-4 border-background bg-background shadow-xl">
-                                <Image src={listing.logo_url} alt={`${listing.business_name} logo`} fill className="object-cover" />
+                                <Image
+                                    src={listing.logo_url}
+                                    alt={`${listing.business_name} logo`}
+                                    fill
+                                    className="object-cover"
+                                    sizes="80px"
+                                />
                             </div>
                         )}
                     </div>

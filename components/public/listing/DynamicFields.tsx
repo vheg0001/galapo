@@ -49,7 +49,13 @@ function ImageGalleryField({ value }: { value: any }) {
                         className="relative aspect-square overflow-hidden rounded-lg border border-border bg-muted cursor-zoom-in hover:opacity-80 transition-opacity"
                         aria-label={`View image ${i + 1}`}
                     >
-                        <Image src={url} alt={`Image ${i + 1}`} fill className="object-cover" />
+                        <Image
+                            src={url}
+                            alt={`Image ${i + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 33vw, 200px"
+                        />
                     </button>
                 ))}
             </div>

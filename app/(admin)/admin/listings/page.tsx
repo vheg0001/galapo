@@ -50,9 +50,11 @@ type ListingRowActionsProps = {
     onReject: () => void;
     onAction: (actionType: string) => void;
     onHardDelete: () => void;
+    onCopy: () => void;
+    isCopying?: boolean;
 };
 
-function ListingRowActions({ listing, onApprove, onReject, onAction, onHardDelete }: ListingRowActionsProps) {
+function ListingRowActions({ listing, onApprove, onReject, onAction, onHardDelete, onCopy, isCopying }: ListingRowActionsProps) {
     const detailsRef = useRef<HTMLDetailsElement>(null);
     useClickOutside(detailsRef, () => {
         if (detailsRef.current) {
@@ -67,34 +69,53 @@ function ListingRowActions({ listing, onApprove, onReject, onAction, onHardDelet
             </summary>
             <div className="absolute right-0 top-full z-20 mt-1 w-48 overflow-hidden rounded-xl border border-border/50 bg-background/95 backdrop-blur-xl shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="p-1 space-y-0.5">
-                    <a href={`/listing/${listing.slug}`} target="_blank" rel="noopener noreferrer" className="block rounded-md px-3 py-2 text-xs font-medium transition-colors hover:bg-muted/80">View Public Page</a>
-                    <Link href={`/admin/listings/${listing.id}/edit`} className="block rounded-md px-3 py-2 text-xs font-medium transition-colors hover:bg-muted/80">Edit Listing</Link>
+                    <a href={`/listing/${listing.slug}`} target="_blank" rel="noopener noreferrer" className="block rounded-md px-3 py-2 text-xs font-medium transition-colors hover:bg-muted/80 cursor-pointer">View Public Page</a>
+                    <Link href={`/admin/listings/${listing.id}/edit`} className="block rounded-md px-3 py-2 text-xs font-medium transition-colors hover:bg-muted/80 cursor-pointer">Edit Listing</Link>
+                    <button
+                        type="button"
+                        onClick={onCopy}
+                        disabled={isCopying}
+                        className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-muted/80 disabled:opacity-50 cursor-pointer"
+                    >
+                        {isCopying ? "Copying..." : "Copy Listing"}
+                    </button>
 
                     {listing.status === "pending" && (
                         <>
                             <div className="my-1 h-px bg-border/50" />
-                            <button type="button" onClick={onApprove} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/10">Approve</button>
-                            <button type="button" onClick={onReject} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/10">Reject</button>
+                            <button type="button" onClick={onApprove} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/10 cursor-pointer">Approve</button>
+                            <button type="button" onClick={onReject} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/10 cursor-pointer">Reject</button>
                         </>
                     )}
 
                     <div className="my-1 h-px bg-border/50" />
 
-                    <button type="button" onClick={() => onAction("toggle_active")} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-muted/80">
+                    <button type="button" onClick={() => onAction("toggle_active")} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-muted/80 cursor-pointer">
                         Set {listing.is_active ? "Inactive" : "Active"}
                     </button>
-                    <button type="button" onClick={() => onAction("toggle_featured")} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-muted/80">
-                        Toggle Featured
-                    </button>
+
+                    {listing.owner_id && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (window.confirm(`Are you sure you want to reset "${listing.business_name}"? This will remove the owner and notify them.`)) {
+                                    onAction("reset_listing");
+                                }
+                            }}
+                            className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/10 cursor-pointer"
+                        >
+                            Reset Listing
+                        </button>
+                    )}
 
                     <div className="my-1 h-px bg-border/50" />
 
                     {listing.status === "deactivated" ? (
-                        <button type="button" onClick={onHardDelete} className="block w-full rounded-md px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-500/10">
+                        <button type="button" onClick={onHardDelete} className="block w-full rounded-md px-3 py-2 text-left text-xs font-bold text-red-600 transition-colors hover:bg-red-500/10 cursor-pointer">
                             Delete Permanent
                         </button>
                     ) : (
-                        <button type="button" onClick={() => onAction("delete_soft")} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-500/10">
+                        <button type="button" onClick={() => onAction("delete_soft")} className="block w-full rounded-md px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-500/10 cursor-pointer">
                             Delete (Soft)
                         </button>
                     )}
@@ -106,6 +127,7 @@ function ListingRowActions({ listing, onApprove, onReject, onAction, onHardDelet
 
 export default function AdminListingsPage() {
     const [rows, setRows] = useState<ListingRow[]>([]);
+    const [isCopying, setIsCopying] = useState<string | null>(null);
     const [categories, setCategories] = useState<any[]>([]);
     const [subcategories, setSubcategories] = useState<any[]>([]);
     const [barangays, setBarangays] = useState<any[]>([]);
@@ -212,6 +234,73 @@ export default function AdminListingsPage() {
         }
     }
 
+    async function copyListing(listing: ListingRow) {
+        if (!window.confirm(`Are you sure you want to duplicate "${listing.business_name}"?`)) return;
+        setIsCopying(listing.id);
+
+        try {
+            // 1. Fetch full details
+            const detailRes = await fetch(`/api/admin/listings/${listing.id}`);
+            const detailJson = await detailRes.json();
+            if (!detailRes.ok) throw new Error(detailJson.error || "Failed to fetch listing details");
+
+            const original = detailJson.listing;
+            const originalImages = detailJson.images ?? [];
+            const originalFields = detailJson.dynamic_field_values ?? [];
+
+            // 2. Prepare payload
+            const images = originalImages.map((img: any) => img.image_url).filter(Boolean);
+            const dynamicFields = originalFields.reduce((acc: Record<string, any>, row: any) => {
+                if (row.field_id) acc[row.field_id] = row.value;
+                return acc;
+            }, {});
+
+            const payload = {
+                business_name: `${original.business_name} (Copy)`,
+                category_id: original.category_id,
+                subcategory_id: original.subcategory_id,
+                barangay_id: original.barangay_id,
+                address: original.address,
+                lat: original.lat,
+                lng: original.lng,
+                phone: original.phone,
+                phone_secondary: original.phone_secondary,
+                email: original.email,
+                website: original.website,
+                social_links: original.social_links ?? {},
+                operating_hours: original.operating_hours ?? {},
+                short_description: original.short_description,
+                full_description: original.full_description,
+                tags: original.tags ?? [],
+                payment_methods: original.payment_methods ?? [],
+                logo_url: original.logo_url,
+                image_urls: images,
+                dynamic_fields: dynamicFields,
+                // Critical overrides for the request
+                owner_id: null,
+                is_active: false,
+                status: "approved",
+            };
+
+            // 3. Create the copy
+            const createRes = await fetch("/api/admin/listings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const createJson = await createRes.json();
+            if (!createRes.ok) throw new Error(createJson.error || "Failed to create duplicated listing");
+
+            alert("Listing duplicated successfully as an inactive, pre-populated listing.");
+            await loadRows();
+        } catch (error: any) {
+            console.error("Copy failed:", error);
+            alert(`Duplicate failed: ${error.message}`);
+        } finally {
+            setIsCopying(null);
+        }
+    }
+
     async function bulk(action: string, selectedRows: ListingRow[], reason?: string) {
         await fetch("/api/admin/listings/bulk", {
             method: "POST",
@@ -228,7 +317,7 @@ export default function AdminListingsPage() {
             render: (r) => (
                 <button
                     type="button"
-                    className="font-mono text-xs text-blue-600 underline"
+                    className="font-mono text-xs text-blue-600 underline cursor-pointer"
                     onClick={(e) => {
                         e.stopPropagation();
                         navigator.clipboard.writeText(r.id);
@@ -285,7 +374,7 @@ export default function AdminListingsPage() {
                 <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); patchListing(r.id, "toggle_featured"); }}
-                    className={`transition-transform hover:scale-110 active:scale-95 ${r.is_featured ? "text-amber-500" : "text-muted-foreground/30 hover:text-amber-500/50"}`}
+                    className={`transition-transform hover:scale-110 active:scale-95 cursor-pointer ${r.is_featured ? "text-amber-500" : "text-muted-foreground/30 hover:text-amber-500/50"}`}
                 >
                     <Star className={`h-5 w-5 ${r.is_featured ? "fill-amber-500" : ""}`} />
                 </button>
@@ -311,6 +400,8 @@ export default function AdminListingsPage() {
                     onReject={() => setRejectTarget(r.id)}
                     onAction={(type) => patchListing(r.id, type as any)}
                     onHardDelete={() => setHardDeleteTarget(r)}
+                    onCopy={() => copyListing(r)}
+                    isCopying={isCopying === r.id}
                 />
             ),
         },

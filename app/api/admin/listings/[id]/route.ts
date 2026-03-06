@@ -364,6 +364,29 @@ export async function PATCH(
                 updatePayload.status = "rejected";
             }
             updatePayload.rejection_reason = reason;
+        } else if (action === "reset_listing") {
+            const { data: currentListing } = await admin
+                .from("listings")
+                .select("owner_id, business_name")
+                .eq("id", id)
+                .single();
+
+            if (currentListing?.owner_id) {
+                // Notify the owner before removing them
+                await admin.from("notifications").insert({
+                    user_id: currentListing.owner_id,
+                    type: "listing_deactivated",
+                    title: "Listing Removed from Account",
+                    message: `Your listing '${currentListing.business_name}' has been moved to pre-populated status by an administrator.`,
+                    data: { listing_id: id, business_name: currentListing.business_name }
+                });
+            }
+
+            updatePayload.owner_id = null;
+            updatePayload.is_pre_populated = true;
+            updatePayload.status = "approved"; // Ensure it stays public as pre-populated
+            updatePayload.claim_proof_url = null;
+            updatePayload.claimed_at = null;
         } else {
             return NextResponse.json({ error: "Unsupported action." }, { status: 400 });
         }

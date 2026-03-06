@@ -17,6 +17,37 @@ export async function GET(request: NextRequest) {
     try {
         const admin = createAdminSupabaseClient();
 
+        if (status === "rejected") {
+            const { data, error, count } = await admin
+                .from("notifications")
+                .select(`
+                    id, created_at, data,
+                    profiles!notifications_user_id_fkey(id, full_name, email, avatar_url)
+                `, { count: "exact" })
+                .eq("type", "claim_rejected")
+                .order("created_at", { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) throw error;
+
+            return NextResponse.json({
+                claims: (data ?? []).map((n: any) => ({
+                    id: n.data?.listing_id ?? n.id,
+                    notification_id: n.id,
+                    listing_name: n.data?.listing_name ?? "Unknown",
+                    slug: "",
+                    status: "rejected",
+                    claimed_at: n.created_at,
+                    proof_url: n.data?.proof_url ?? n.data?.claim_proof_url ?? null,
+                    claimant: n.profiles ?? null,
+                    is_pre_populated: false,
+                })),
+                total: count ?? 0,
+                page,
+                limit,
+            });
+        }
+
         let query = admin
             .from("listings")
             .select(`
@@ -30,9 +61,7 @@ export async function GET(request: NextRequest) {
         if (status === "pending" || status === "all") {
             query = query.eq("status", "claimed_pending");
         } else if (status === "approved") {
-            query = query.eq("status", "approved").not("owner_id", "is", null).eq("is_pre_populated", false);
-        } else if (status === "rejected") {
-            query = query.eq("status", "approved").is("owner_id", null);
+            query = query.eq("status", "approved").not("claimed_at", "is", null).not("owner_id", "is", null);
         }
 
         const { data, error, count } = await query;

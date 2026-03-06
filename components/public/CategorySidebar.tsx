@@ -8,6 +8,7 @@ interface Subcategory {
     id: string;
     name: string;
     slug: string;
+    icon?: string | null;
     listingCount: number;
 }
 
@@ -100,22 +101,34 @@ export default function CategorySidebar({
                                 All {categoryName}
                             </button>
                         </li>
-                        {subcategories.map((sub) => (
-                            <li key={sub.id}>
-                                <button
-                                    onClick={() => handleSubcategoryClick(sub.slug)}
-                                    className={cn(
-                                        "w-full flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                                        activeSubcategory === sub.slug
-                                            ? "bg-primary/10 font-medium text-primary"
-                                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                    )}
-                                >
-                                    <span>{sub.name}</span>
-                                    <span className="text-xs text-muted-foreground/70">{sub.listingCount}</span>
-                                </button>
-                            </li>
-                        ))}
+                        {subcategories.map((sub) => {
+                            const IconCmp = sub.icon ? (require("lucide-react") as any)[sub.icon] : null;
+
+                            return (
+                                <li key={sub.id}>
+                                    <button
+                                        onClick={() => handleSubcategoryClick(sub.slug)}
+                                        className={cn(
+                                            "w-full flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                                            activeSubcategory === sub.slug
+                                                ? "bg-primary/10 font-medium text-primary"
+                                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <span className={cn(
+                                                "shrink-0 transition-colors",
+                                                activeSubcategory === sub.slug ? "text-primary" : "text-muted-foreground/60"
+                                            )}>
+                                                {IconCmp ? <IconCmp className="h-4 w-4" /> : "📁"}
+                                            </span>
+                                            <span className="truncate">{sub.name}</span>
+                                        </div>
+                                        <span className="text-xs text-muted-foreground/70 ml-2">{sub.listingCount}</span>
+                                    </button>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
             )}

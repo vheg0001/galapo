@@ -71,23 +71,29 @@ export default function CategorySelector({ value, subValue, onChange }: Category
                         <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">Primary Category</h3>
                     </div>
                     <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-                        {filteredCategories.map((cat) => (
-                            <button
-                                key={cat.id}
-                                type="button"
-                                onClick={() => onChange(cat.id, "")}
-                                className={`group flex w-full items-center justify-between rounded-xl px-4 py-3.5 text-sm transition ${value === cat.id
-                                    ? "bg-[#FF6B35] text-white shadow-md shadow-[#FF6B35]/20"
-                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                                    }`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="text-lg">{cat.icon}</span>
-                                    <span className="font-semibold">{cat.name}</span>
-                                </div>
-                                <ChevronRight size={16} className={value === cat.id ? "text-white/70" : "text-gray-300 group-hover:text-gray-400"} />
-                            </button>
-                        ))}
+                        {filteredCategories.map((cat) => {
+                            const IconCmp = cat.icon ? (require("lucide-react") as any)[cat.icon] : null;
+
+                            return (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => onChange(cat.id, "")}
+                                    className={`group flex w-full items-center justify-between rounded-xl px-4 py-3.5 text-sm transition ${value === cat.id
+                                        ? "bg-[#FF6B35] text-white shadow-md shadow-[#FF6B35]/20"
+                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-lg">
+                                            {IconCmp ? <IconCmp className="h-5 w-5" /> : null}
+                                        </span>
+                                        <span className="font-semibold">{cat.name}</span>
+                                    </div>
+                                    <ChevronRight size={16} className={value === cat.id ? "text-white/70" : "text-gray-300 group-hover:text-gray-400"} />
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 

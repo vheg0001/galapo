@@ -1,102 +1,120 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Tag } from "lucide-react";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
-import { createAdminSupabaseClient } from "@/lib/supabase";
+import CategoryTree from "@/components/admin/categories/CategoryTree";
+import CategoryDetail from "@/components/admin/categories/CategoryDetail";
+import AddCategoryModal from "@/components/admin/categories/AddCategoryModal";
 
-export const metadata: Metadata = {
-    title: "Categories - GalaPo Admin",
-    robots: { index: false, follow: false },
-};
+export default function AdminCategoriesPage() {
+    const [categories, setCategories] = useState<any[]>([]);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [addOpen, setAddOpen] = useState(false);
+    const [addParentId, setAddParentId] = useState<string | undefined>(undefined);
 
-export const revalidate = 60;
-
-type CategoryRow = {
-    id: string;
-    name: string;
-    slug: string;
-    parent_id: string | null;
-    is_active: boolean;
-    sort_order: number;
-};
-
-export default async function AdminCategoriesPage() {
-    const admin = createAdminSupabaseClient();
-    const { data, error } = await admin
-        .from("categories")
-        .select("id, name, slug, parent_id, is_active, sort_order")
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true });
-
-    const categories = (data ?? []) as CategoryRow[];
-    const parents = categories.filter((c) => !c.parent_id);
-    const children = categories.filter((c) => !!c.parent_id);
-
-    const childCountByParent = new Map<string, number>();
-    for (const child of children) {
-        const parentId = child.parent_id as string;
-        childCountByParent.set(parentId, (childCountByParent.get(parentId) ?? 0) + 1);
+    async function loadCategories() {
+        setLoading(true);
+        const res = await fetch("/api/admin/categories");
+        const data = await res.json();
+        setCategories(data.data ?? []);
+        setLoading(false);
     }
 
+    useEffect(() => { loadCategories(); }, []);
+
+    const handleReorder = useCallback(async (reordered: any[]) => {
+        setCategories(reordered);
+        // Save reordered sort_order to server
+        await Promise.all(reordered.map((cat, i) =>
+            fetch(`/api/admin/categories/${cat.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sort_order: i }),
+            })
+        ));
+    }, []);
+
+    const handleAddSubcategory = useCallback((parentId: string) => {
+        setAddParentId(parentId);
+        setAddOpen(true);
+    }, []);
+
+    const parentCategories = categories.filter((c) => !c.parent_id);
+
     return (
-        <div className="space-y-6">
-            <AdminPageHeader
-                title="Categories"
-                description="Top-level categories and their subcategory counts."
-                breadcrumbs={[
-                    { label: "Admin", href: "/admin/dashboard" },
-                    { label: "Categories" },
-                ]}
-            />
+        <div className="flex h-[calc(100vh-4rem)] flex-col">
+            <div className="border-b border-border/50 px-8 py-5">
+                <AdminPageHeader
+                    title="Category Management"
+                    description="Manage categories, subcategories, and their dynamic fields."
+                    breadcrumbs={[{ label: "Admin" }, { label: "Categories" }]}
+                    actions={
+                        <button
+                            type="button"
+                            onClick={() => { setAddParentId(undefined); setAddOpen(true); }}
+                            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:scale-105 active:scale-95"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Add Category
+                        </button>
+                    }
+                />
+            </div>
 
-            {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    Failed to load categories. {error.message}
-                </div>
-            )}
-
-            {!error && (
-                <div className="rounded-2xl border border-border bg-background shadow-sm">
-                    <div className="border-b border-border px-4 py-3">
-                        <p className="text-sm font-semibold text-foreground">
-                            {parents.length} top-level categories, {children.length} subcategories
-                        </p>
-                    </div>
-
-                    {parents.length === 0 ? (
-                        <div className="px-4 py-8 text-sm text-muted-foreground">
-                            No categories found.
+            <div className="flex flex-1 overflow-hidden">
+                {/* Left Panel — Category Tree (40%) */}
+                <div className="w-[40%] border-r border-border/50 bg-background/30 overflow-hidden flex flex-col">
+                    {loading ? (
+                        <div className="flex flex-1 items-center justify-center">
+                            <div className="space-y-3 w-full px-4">
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="h-10 rounded-lg bg-muted/40 animate-pulse" />
+                                ))}
+                            </div>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                                    <tr>
-                                        <th className="px-4 py-3 font-semibold">Category</th>
-                                        <th className="hidden px-4 py-3 font-semibold sm:table-cell">Slug</th>
-                                        <th className="px-4 py-3 font-semibold">Subcategories</th>
-                                        <th className="hidden px-4 py-3 font-semibold md:table-cell">Order</th>
-                                        <th className="px-4 py-3 font-semibold">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {parents.map((category) => (
-                                        <tr key={category.id} className="border-t border-border">
-                                            <td className="px-4 py-3 font-medium text-foreground">{category.name}</td>
-                                            <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">{category.slug}</td>
-                                            <td className="px-4 py-3 text-foreground">{childCountByParent.get(category.id) ?? 0}</td>
-                                            <td className="hidden px-4 py-3 text-foreground md:table-cell">{category.sort_order}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={category.is_active ? "text-emerald-600" : "text-red-600"}>
-                                                    {category.is_active ? "Active" : "Inactive"}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <CategoryTree
+                            categories={categories}
+                            selectedId={selectedId}
+                            onSelect={(cat) => setSelectedId(cat.id)}
+                            onReorder={handleReorder}
+                            onAddSubcategory={handleAddSubcategory}
+                        />
+                    )}
+                </div>
+
+                {/* Right Panel — Detail (60%) */}
+                <div className="flex-1 bg-background/20 overflow-hidden">
+                    {selectedId ? (
+                        <CategoryDetail
+                            key={selectedId}
+                            categoryId={selectedId}
+                            parentCategories={parentCategories}
+                            onSaved={loadCategories}
+                            onDeleted={() => { setSelectedId(null); loadCategories(); }}
+                        />
+                    ) : (
+                        <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground">
+                            <div className="rounded-full bg-muted/30 p-6 ring-1 ring-border/50">
+                                <Tag className="h-10 w-10 text-muted-foreground/40" />
+                            </div>
+                            <div className="text-center">
+                                <p className="text-base font-semibold">Select a category</p>
+                                <p className="text-sm">Click any category in the tree to view and edit details</p>
+                            </div>
                         </div>
                     )}
                 </div>
-            )}
+            </div>
+
+            <AddCategoryModal
+                open={addOpen}
+                onClose={() => { setAddOpen(false); setAddParentId(undefined); }}
+                onCreated={loadCategories}
+                parentCategories={parentCategories}
+            />
         </div>
     );
 }

@@ -8,6 +8,7 @@ import StatusBadge from "@/components/admin/shared/StatusBadge";
 
 type ClaimRow = {
     id: string;
+    notification_id?: string;
     listing_name: string;
     status: string;
     claimed_at: string | null;
@@ -36,6 +37,29 @@ export default function AdminClaimsPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status]);
 
+    async function handleDelete(claim: ClaimRow) {
+        const confirmMsg = claim.status === "rejected"
+            ? "Are you sure you want to delete this historical record?"
+            : "Are you sure you want to delete this claim request and reset the listing?";
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const url = claim.notification_id
+                ? `/api/admin/claims/${claim.id}?notification_id=${claim.notification_id}`
+                : `/api/admin/claims/${claim.id}`;
+
+            const res = await fetch(url, { method: "DELETE" });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || "Failed to delete");
+
+            // Refresh rows
+            load();
+        } catch (err: any) {
+            alert(err.message);
+        }
+    }
+
     const columns = useMemo<Column<ClaimRow>[]>(() => [
         { key: "listing_name", header: "Listing Name", render: (r) => r.listing_name },
         { key: "claimant_name", header: "Claimant Name", render: (r) => r.claimant?.full_name ?? "N/A" },
@@ -46,9 +70,22 @@ export default function AdminClaimsPage() {
             key: "actions",
             header: "Actions",
             render: (r) => (
-                <button type="button" onClick={(e) => { e.stopPropagation(); router.push(`/admin/claims/${r.id}`); }} className="rounded-md border border-border px-2 py-1 text-xs">
-                    Open
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); router.push(`/admin/claims/${r.id}`); }}
+                        className="rounded-lg border border-border bg-background px-3 py-1.5 text-[11px] font-bold shadow-sm transition-all hover:bg-muted hover:scale-105 active:scale-95 cursor-pointer"
+                    >
+                        Open
+                    </button>
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDelete(r); }}
+                        className="rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-1.5 text-[11px] font-bold text-red-600 shadow-sm transition-all hover:bg-red-500 hover:text-white hover:scale-105 active:scale-95 cursor-pointer"
+                    >
+                        Delete
+                    </button>
+                </div>
             ),
         },
     ], [router]);

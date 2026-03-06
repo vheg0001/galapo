@@ -45,18 +45,28 @@ export async function POST(req: NextRequest) {
         const fileExt = proofFile.name.split(".").pop();
         const fileName = `${listingId}/${session.user.id}_proof.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
+        const arrayBuffer = await proofFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const adminClient = createAdminSupabaseClient();
+
+        const { error: uploadError } = await adminClient.storage
             .from("claims")
-            .upload(fileName, proofFile);
+            .upload(fileName, buffer, {
+                contentType: proofFile.type,
+                upsert: false
+            });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+            console.error("[CLAIM_POST] Upload Error:", uploadError);
+            throw new Error("Failed to upload proof document.");
+        }
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data: { publicUrl } } = adminClient.storage
             .from("claims")
             .getPublicUrl(fileName);
 
-        // 3. Update listing status and owner_id
-        const { error: updateError } = await supabase
+        // 3. Update listing status and owner_id using Admin to bypass RLS
+        const { error: updateError } = await adminClient
             .from("listings")
             .update({
                 owner_id: session.user.id,
@@ -69,7 +79,6 @@ export async function POST(req: NextRequest) {
         if (updateError) throw updateError;
 
         // 4. Notify super admin using admin client to bypass RLS
-        const adminClient = createAdminSupabaseClient();
         const { data: admin } = await adminClient
             .from("profiles")
             .select("id")

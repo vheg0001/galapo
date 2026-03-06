@@ -34,7 +34,7 @@ export async function GET() {
             admin.from("listings").select("id", { count: "exact", head: true }).eq("is_active", true).in("status", ["approved", "claimed_pending"]),
             admin.from("listings").select("id", { count: "exact", head: true }).eq("status", "pending"),
             admin.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending"),
-            admin.from("listings").select("id", { count: "exact", head: true }).eq("status", "claimed_pending"),
+            admin.from("listings").select("id", { count: "exact", head: true }).eq("status", "claimed_pending").not("owner_id", "is", null),
             admin.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
             admin.from("listing_analytics").select("id").eq("event_type", "page_view").gte("created_at", startOfMonth),
             admin.from("payments").select("amount").eq("status", "verified").gte("verified_at", startOfMonth),

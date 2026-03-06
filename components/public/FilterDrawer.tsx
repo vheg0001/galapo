@@ -6,7 +6,7 @@ import CategorySidebar from "./CategorySidebar";
 
 interface FilterDrawerProps {
     categoryName: string;
-    subcategories?: { id: string; name: string; slug: string; listingCount: number }[];
+    subcategories?: { id: string; name: string; slug: string; icon?: string | null; listingCount: number }[];
     barangayGroups: { header: string; items: { id: string; name: string; slug: string }[] }[];
     showSubcategoryFilter?: boolean;
     barangayCounts?: Record<string, number>;

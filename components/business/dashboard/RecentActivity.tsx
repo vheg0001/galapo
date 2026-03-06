@@ -80,7 +80,12 @@ export default function RecentActivity({ notifications, loading = false }: Recen
                         <p className={`text-sm ${item.is_read ? "text-gray-600" : "font-semibold text-gray-900"}`}>
                             {item.title}
                         </p>
-                        <p className="mt-0.5 text-xs text-gray-400">
+                        {item.message && (
+                            <p className="mt-1 text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                                {item.message}
+                            </p>
+                        )}
+                        <p className="mt-1.5 text-[10px] font-medium text-gray-400 uppercase tracking-widest">
                             {getRelativeTime(item.created_at)}
                         </p>
                     </div>
