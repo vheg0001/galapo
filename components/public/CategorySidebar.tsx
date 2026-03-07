@@ -115,7 +115,7 @@ export default function CategorySidebar({
                                                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                                         )}
                                     >
-                                        <div className="flex items-center gap-2.5">
+                                        <div className="flex min-w-0 items-center gap-2.5">
                                             <span className={cn(
                                                 "shrink-0 transition-colors",
                                                 activeSubcategory === sub.slug ? "text-primary" : "text-muted-foreground/60"
@@ -124,7 +124,7 @@ export default function CategorySidebar({
                                             </span>
                                             <span className="truncate">{sub.name}</span>
                                         </div>
-                                        <span className="text-xs text-muted-foreground/70 ml-2">{sub.listingCount}</span>
+                                        <span className="shrink-0 ml-2 text-xs text-muted-foreground/70">{sub.listingCount}</span>
                                     </button>
                                 </li>
                             );
@@ -153,16 +153,16 @@ export default function CategorySidebar({
                                 {filteredItems.map((b) => (
                                     <li key={b.id}>
                                         <label className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex min-w-0 items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     checked={activeBarangays.includes(b.slug)}
                                                     onChange={() => handleBarangayToggle(b.slug)}
-                                                    className="h-3.5 w-3.5 rounded border-border text-primary accent-primary"
+                                                    className="h-3.5 w-3.5 shrink-0 rounded border-border text-primary accent-primary"
                                                 />
-                                                {b.name}
+                                                <span className="truncate">{b.name}</span>
                                             </div>
-                                            <span className="text-xs text-muted-foreground/70">{b.count}</span>
+                                            <span className="shrink-0 ml-2 text-xs text-muted-foreground/70">{b.count}</span>
                                         </label>
                                     </li>
                                 ))}

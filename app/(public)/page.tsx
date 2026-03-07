@@ -232,7 +232,7 @@ export default async function HomePage() {
                                     }
                                     isFeatured={listing.is_featured}
                                     isPremium={listing.is_premium}
-                                    priority={index < 3}
+                                    priority={index < 2}
                                 />
                             ))}
                         </div>
@@ -323,7 +323,6 @@ export default async function HomePage() {
                                         (listing as any).listing_image?.[0]?.image_url
                                     }
                                     isNew
-                                    priority={index < 3}
                                 />
                             ))}
                         </div>

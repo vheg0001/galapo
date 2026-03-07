@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import * as Icons from "lucide-react";
-import { Save, Trash2, Loader2 } from "lucide-react";
+import { Save, Trash2, Loader2, ChevronLeft } from "lucide-react";
 import IconPicker from "./IconPicker";
 import DynamicFieldsList from "./DynamicFieldsList";
 
@@ -15,11 +15,13 @@ interface CategoryDetailProps {
     parentCategories: Array<{ id: string; name: string }>;
     onSaved: () => void;
     onDeleted: () => void;
+    onBack?: () => void;
 }
 
-export default function CategoryDetail({ categoryId, parentCategories, onSaved, onDeleted }: CategoryDetailProps) {
+export default function CategoryDetail({ categoryId, parentCategories, onSaved, onDeleted, onBack }: CategoryDetailProps) {
     const [cat, setCat] = useState<any>(null);
     const [fields, setFields] = useState<any[]>([]);
+    const [subs, setSubs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -33,6 +35,7 @@ export default function CategoryDetail({ categoryId, parentCategories, onSaved, 
         if (data.data) {
             setCat(data.data);
             setFields(data.fields || []);
+            setSubs(data.subcategories || []);
         }
         setLoading(false);
     }
@@ -86,11 +89,21 @@ export default function CategoryDetail({ categoryId, parentCategories, onSaved, 
     return (
         <div className="h-full overflow-y-auto space-y-6 p-6">
             {/* Header */}
-            <div className="flex items-center gap-3 pb-2 border-b border-border/50">
-                {Icon && <Icon className="h-6 w-6 text-primary shrink-0" />}
-                <div>
-                    <h3 className="text-lg font-bold">{cat.name}</h3>
-                    <p className="text-xs text-muted-foreground">{cat.listing_count ?? 0} listing(s) in this category</p>
+            <div className="flex items-center gap-3 pb-4 border-b border-border/50">
+                {onBack && (
+                    <button
+                        onClick={onBack}
+                        className="md:hidden flex items-center justify-center h-10 w-10 rounded-xl bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
+                )}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {Icon && <Icon className="h-6 w-6 text-primary shrink-0" />}
+                    <div className="min-w-0">
+                        <h3 className="text-lg font-bold truncate">{cat.name}</h3>
+                        <p className="text-xs text-muted-foreground truncate">{cat.listing_count ?? 0} listing(s) in this category</p>
+                    </div>
                 </div>
             </div>
 
@@ -203,8 +216,9 @@ export default function CategoryDetail({ categoryId, parentCategories, onSaved, 
             <div className="border-t border-border/50 pt-6">
                 <DynamicFieldsList
                     categoryId={categoryId}
+                    isSubcategory={cat.parent_id !== null}
                     fields={fields}
-                    subcategories={[]} /* populated from parent if needed */
+                    subcategories={subs}
                     onRefresh={load}
                 />
             </div>

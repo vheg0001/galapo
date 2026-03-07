@@ -127,7 +127,6 @@ export default function ImageGallery({
                                     fill
                                     className="object-cover"
                                     sizes="96px"
-                                    priority={i < 4}
                                 />
                             </button>
                         ))}

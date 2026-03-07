@@ -12,9 +12,11 @@ import CategoryMegaMenu from "./CategoryMegaMenu";
 
 interface HeaderProps {
     categories?: { id: string; name: string; slug: string; icon?: string | null; listing_count?: number }[];
+    settings?: Record<string, any>;
 }
 
-export default function Header({ categories = [] }: HeaderProps) {
+export default function Header({ categories = [], settings = {} }: HeaderProps) {
+    const siteName = settings.site_name || APP_NAME;
     const { isMobileMenuOpen, toggleMobileMenu, isSearchOpen, toggleSearch } = useAppStore();
     const { session } = useAuthStore();
     const pathname = usePathname();
@@ -48,7 +50,7 @@ export default function Header({ categories = [] }: HeaderProps) {
                             <MapPin className="h-5 w-5" />
                         </div>
                         <span className="text-xl font-bold tracking-tight text-foreground">
-                            {APP_NAME}
+                            {siteName}
                         </span>
                     </Link>
 

@@ -77,8 +77,8 @@ export default function PageEditor({ pageId }: PageEditorProps) {
         }
     }
 
-    const metaTitleCount = form.meta_title.length;
-    const metaDescCount = form.meta_description.length;
+    const metaTitleCount = (form.meta_title || "").length;
+    const metaDescCount = (form.meta_description || "").length;
 
     if (loading) {
         return (
@@ -103,7 +103,7 @@ export default function PageEditor({ pageId }: PageEditorProps) {
                 <div className="flex items-center gap-3">
                     {!isNew && form.slug && (
                         <a
-                            href={`/pages/${form.slug}`}
+                            href={`/${form.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1.5 rounded-xl border border-border/50 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
@@ -171,7 +171,7 @@ export default function PageEditor({ pageId }: PageEditorProps) {
                     <input
                         className="w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                         placeholder="Override page title for search engines..."
-                        value={form.meta_title}
+                        value={form.meta_title || ""}
                         maxLength={80}
                         onChange={(e) => setForm((p) => ({ ...p, meta_title: e.target.value }))}
                     />
@@ -187,7 +187,7 @@ export default function PageEditor({ pageId }: PageEditorProps) {
                     <textarea
                         className="w-full resize-none rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                         placeholder="Brief description for search engines (max 160 chars)..."
-                        value={form.meta_description}
+                        value={form.meta_description || ""}
                         maxLength={200}
                         rows={3}
                         onChange={(e) => setForm((p) => ({ ...p, meta_description: e.target.value }))}

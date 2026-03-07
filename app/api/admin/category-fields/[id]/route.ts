@@ -89,12 +89,12 @@ export async function DELETE(
         const { count } = await admin
             .from("listing_field_values")
             .select("id", { count: "exact", head: true })
-            .eq("category_field_id", id)
+            .eq("field_id", id)
             .throwOnError();
 
         // Delete listing field values first
         if (count && count > 0) {
-            await admin.from("listing_field_values").delete().eq("category_field_id", id);
+            await admin.from("listing_field_values").delete().eq("field_id", id);
         }
 
         const { error } = await admin.from("category_fields").delete().eq("id", id);
@@ -102,6 +102,7 @@ export async function DELETE(
 
         return NextResponse.json({ success: true, cleared_values: count ?? 0 });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("Delete field error:", error);
+        return NextResponse.json({ error: error.message || JSON.stringify(error) }, { status: 500 });
     }
 }

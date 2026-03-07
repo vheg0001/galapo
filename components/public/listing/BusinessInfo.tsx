@@ -103,6 +103,7 @@ export default function BusinessInfo({
                             src={logoUrl}
                             alt={`${businessName} logo`}
                             fill
+                            priority
                             className="object-cover"
                             sizes="(max-width: 1024px) 64px, 80px"
                         />

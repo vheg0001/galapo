@@ -106,10 +106,12 @@ describe("BarangayTable (AdminBarangaysPage)", () => {
         // Click the first one (for East Tapinac)
         fireEvent.click(toggleButtons[0]);
 
-        expect(global.fetch).toHaveBeenCalledWith(`/api/admin/barangays/b1`, expect.objectContaining({
-            method: "PATCH",
-            body: JSON.stringify({ is_active: false })
-        }));
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(`/api/admin/barangays/b1`, expect.objectContaining({
+                method: "PATCH",
+                body: JSON.stringify({ is_active: false })
+            }));
+        });
     });
 
     it("add button opens empty modal", async () => {
@@ -173,7 +175,10 @@ describe("BarangayTable (AdminBarangaysPage)", () => {
         fireEvent.click(deleteButtons[0]);
 
         expect(confirmSpy).toHaveBeenCalledWith(`Delete "East Tapinac"? This can't be undone.`);
-        expect(global.fetch).toHaveBeenCalledWith(`/api/admin/barangays/b1`, { method: "DELETE" });
+
+        await waitFor(() => {
+            expect(global.fetch).toHaveBeenCalledWith(`/api/admin/barangays/b1`, { method: "DELETE" });
+        });
 
         confirmSpy.mockRestore();
     });
@@ -191,11 +196,16 @@ describe("BarangayTable (AdminBarangaysPage)", () => {
 
         fireEvent.change(searchInput, { target: { value: "Tapinac" } });
 
-        expect(screen.getByText("East Tapinac")).toBeInTheDocument();
-        expect(screen.queryByText("Barretto")).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText("East Tapinac")).toBeInTheDocument();
+            expect(screen.queryByText("Barretto")).not.toBeInTheDocument();
+        });
 
         fireEvent.change(searchInput, { target: { value: "barretto" } });
-        expect(screen.getByText("Barretto")).toBeInTheDocument();
-        expect(screen.queryByText("East Tapinac")).not.toBeInTheDocument();
+
+        await waitFor(() => {
+            expect(screen.getByText("Barretto")).toBeInTheDocument();
+            expect(screen.queryByText("East Tapinac")).not.toBeInTheDocument();
+        });
     });
 });

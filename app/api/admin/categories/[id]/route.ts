@@ -15,18 +15,48 @@ export async function GET(
     const admin = createAdminSupabaseClient();
 
     try {
-        const [catRes, fieldsRes] = await Promise.all([
-            admin.from("categories").select("*").eq("id", id).single(),
-            admin.from("category_fields")
-                .select("*")
-                .eq("category_id", id)
-                .order("sort_order", { ascending: true }),
-        ]);
+        const catRes = await admin.from("categories").select("*").eq("id", id).single();
 
         if (catRes.error) throw catRes.error;
         if (!catRes.data) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-        return NextResponse.json({ data: catRes.data, fields: fieldsRes.data ?? [] });
+        const category = catRes.data;
+
+        // Fetch fields:
+        // 1. Fields specific to this subcategory (subcategory_id = id)
+        // 2. Fields specific to this category (category_id = id AND subcategory_id IS NULL)
+        // 3. Inherited fields from parent (parent category_id = parent_id AND subcategory_id IS NULL)
+        const filterOr = [
+            `subcategory_id.eq.${id}`,
+            `and(category_id.eq.${id},subcategory_id.is.null)`
+        ];
+
+        if (category.parent_id) {
+            filterOr.push(`and(category_id.eq.${category.parent_id},subcategory_id.is.null)`);
+
+            // Try to fetch parent of parent as well just in case of deep nesting
+            const { data: parent } = await admin.from("categories").select("parent_id").eq("id", category.parent_id).single();
+            if (parent?.parent_id) {
+                filterOr.push(`and(category_id.eq.${parent.parent_id},subcategory_id.is.null)`);
+            }
+        }
+
+        const [fieldsRes, subsRes] = await Promise.all([
+            admin.from("category_fields")
+                .select("*")
+                .or(filterOr.join(","))
+                .order("sort_order", { ascending: true }),
+            admin.from("categories")
+                .select("id, name")
+                .eq("parent_id", id)
+                .order("sort_order", { ascending: true })
+        ]);
+
+        return NextResponse.json({
+            data: category,
+            fields: fieldsRes.data ?? [],
+            subcategories: subsRes.data ?? []
+        });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

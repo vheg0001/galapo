@@ -12,10 +12,19 @@ interface AdminMobileNavProps {
     pendingPayments?: number;
     pendingClaims?: number;
     adminName?: string;
+    siteName?: string;
+    siteTagline?: string;
 }
 
 export default function AdminMobileNav({
-    open, onClose, pendingListings, pendingPayments, pendingClaims, adminName
+    open,
+    onClose,
+    pendingListings = 0,
+    pendingPayments = 0,
+    pendingClaims = 0,
+    adminName = "Admin",
+    siteName = "GalaPo",
+    siteTagline = "Admin Panel"
 }: AdminMobileNavProps) {
     // Lock page scroll only while the mobile drawer is open.
     useEffect(() => {
@@ -52,20 +61,25 @@ export default function AdminMobileNav({
                     open ? "translate-x-0" : "-translate-x-full"
                 )}
             >
-                <button
-                    onClick={onClose}
-                    className="absolute right-3 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-gray-400 hover:text-white"
-                >
-                    <X className="h-4 w-4" />
-                </button>
-                <AdminSidebar
-                    collapsed={false}
-                    onToggle={onClose}
-                    pendingListings={pendingListings}
-                    pendingPayments={pendingPayments}
-                    pendingClaims={pendingClaims}
-                    adminName={adminName}
-                />
+                <div className="relative h-full w-full">
+                    <button
+                        onClick={onClose}
+                        className="absolute right-3 top-4 z-50 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-gray-400 hover:text-white"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+
+                    <AdminSidebar
+                        collapsed={false}
+                        onToggle={onClose}
+                        pendingListings={pendingListings}
+                        pendingPayments={pendingPayments}
+                        pendingClaims={pendingClaims}
+                        adminName={adminName}
+                        siteName={siteName}
+                        siteTagline={siteTagline}
+                    />
+                </div>
             </div>
         </>
     );

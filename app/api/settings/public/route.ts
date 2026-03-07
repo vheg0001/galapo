@@ -15,13 +15,25 @@ export async function GET() {
             // Fetch only non-sensitive keys. Adjust this list based on actual keys in DB.
             .in("key", [
                 "site_name",
-                "tagline",
+                "site_tagline",
+                "site_description",
                 "contact_email",
                 "contact_phone",
                 "facebook_url",
                 "instagram_url",
+                "tiktok_url",
                 "twitter_url",
-                "gcash_number"
+                "youtube_url",
+                "maintenance_mode",
+                "gcash_number",
+                "price_basic",
+                "premium_listing_monthly_price",
+                "featured_listing_monthly_price",
+                "price_claim",
+                "reactivation_fee_amount",
+                "ad_placement_monthly_price",
+                "top_search_monthly_price",
+                "advertising_packages"
             ]);
 
         if (error) {

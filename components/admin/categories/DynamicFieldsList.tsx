@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { GripVertical, Plus, Pencil, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Pencil, ToggleLeft, ToggleRight, Trash2, Lock } from "lucide-react";
+import * as Icons from "lucide-react";
 import FieldEditorModal from "./FieldEditorModal";
 
 interface Field {
@@ -18,6 +19,7 @@ interface Field {
 
 interface DynamicFieldsListProps {
     categoryId: string;
+    isSubcategory?: boolean;
     fields: Field[];
     subcategories: Array<{ id: string; name: string }>;
     onRefresh: () => void;
@@ -40,7 +42,7 @@ const FIELD_TYPE_LABELS: Record<string, string> = {
     json: "JSON",
 };
 
-export default function DynamicFieldsList({ categoryId, fields, subcategories, onRefresh }: DynamicFieldsListProps) {
+export default function DynamicFieldsList({ categoryId, isSubcategory, fields, subcategories, onRefresh }: DynamicFieldsListProps) {
     const [addOpen, setAddOpen] = useState(false);
     const [editField, setEditField] = useState<Field | null>(null);
     const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -143,48 +145,80 @@ export default function DynamicFieldsList({ categoryId, fields, subcategories, o
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/30">
-                            {localFields.map((field, i) => (
-                                <tr
-                                    key={field.id}
-                                    draggable
-                                    onDragStart={() => setDragIndex(i)}
-                                    onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
-                                    onDragEnd={handleDragEnd}
-                                    className={`transition-colors hover:bg-muted/20 ${dragOverIndex === i && dragIndex !== i ? "bg-primary/5 border-t-2 border-primary/30" : ""} ${!field.is_active ? "opacity-50" : ""}`}
-                                >
-                                    <td className="px-3 py-3">
-                                        <GripVertical className="h-4 w-4 text-muted-foreground/40 cursor-grab active:cursor-grabbing" />
-                                    </td>
-                                    <td className="px-3 py-3 font-medium">{field.field_label}</td>
-                                    <td className="px-3 py-3">
-                                        <span className="rounded-md bg-muted/50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider">
-                                            {FIELD_TYPE_LABELS[field.field_type] || field.field_type}
-                                        </span>
-                                    </td>
-                                    <td className="px-3 py-3 text-center">
-                                        <span className={`text-[10px] font-bold ${field.is_required ? "text-red-500" : "text-muted-foreground"}`}>
-                                            {field.is_required ? "Yes" : "No"}
-                                        </span>
-                                    </td>
-                                    <td className="px-3 py-3 text-center">
-                                        <button type="button" onClick={() => toggleActive(field)} className="cursor-pointer">
-                                            {field.is_active
-                                                ? <ToggleRight className="h-5 w-5 text-emerald-500" />
-                                                : <ToggleLeft className="h-5 w-5 text-muted-foreground/40" />
-                                            }
-                                        </button>
-                                    </td>
-                                    <td className="px-3 py-3 text-right">
-                                        <button
-                                            type="button"
-                                            onClick={() => { setEditField(field); setAddOpen(true); }}
-                                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                                        >
-                                            <Pencil className="h-3.5 w-3.5" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {localFields.map((field, i) => {
+                                const isInherited = field.category_id !== categoryId;
+                                const isSubcategorySpecific = !!field.subcategory_id;
+
+                                return (
+                                    <tr
+                                        key={field.id}
+                                        draggable={!isInherited}
+                                        onDragStart={() => !isInherited && setDragIndex(i)}
+                                        onDragOver={(e) => {
+                                            if (isInherited) return;
+                                            e.preventDefault();
+                                            setDragOverIndex(i);
+                                        }}
+                                        onDragEnd={handleDragEnd}
+                                        className={`transition-colors hover:bg-muted/20 ${dragOverIndex === i && dragIndex !== i ? "bg-primary/5 border-t-2 border-primary/30" : ""} ${!field.is_active ? "opacity-50" : ""}`}
+                                    >
+                                        <td className="px-3 py-3">
+                                            {!isInherited ? (
+                                                <GripVertical className="h-4 w-4 text-muted-foreground/40 cursor-grab active:cursor-grabbing" />
+                                            ) : (
+                                                <Icons.Lock className="h-3.5 w-3.5 text-muted-foreground/30" />
+                                            )}
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">{field.field_label}</span>
+                                                {isInherited && (
+                                                    <span className="text-[10px] text-primary/70 font-bold uppercase tracking-tighter">Inherited from Parent</span>
+                                                )}
+                                                {isSubcategorySpecific && field.subcategory_id === categoryId && (
+                                                    <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">Specific to this Subcategory</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className="rounded-md bg-muted/50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider">
+                                                {FIELD_TYPE_LABELS[field.field_type] || field.field_type}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3 text-center">
+                                            <span className={`text-[10px] font-bold ${field.is_required ? "text-red-500" : "text-muted-foreground"}`}>
+                                                {field.is_required ? "Yes" : "No"}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => !isInherited && toggleActive(field)}
+                                                className={isInherited ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+                                                disabled={isInherited}
+                                            >
+                                                {field.is_active
+                                                    ? <ToggleRight className="h-5 w-5 text-emerald-500" />
+                                                    : <ToggleLeft className="h-5 w-5 text-muted-foreground/40" />
+                                                }
+                                            </button>
+                                        </td>
+                                        <td className="px-3 py-3 text-right">
+                                            {!isInherited ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setEditField(field); setAddOpen(true); }}
+                                                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                                >
+                                                    <Pencil className="h-3.5 w-3.5" />
+                                                </button>
+                                            ) : (
+                                                <span className="text-[10px] text-muted-foreground italic">Read-only</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -196,6 +230,7 @@ export default function DynamicFieldsList({ categoryId, fields, subcategories, o
                 onSave={handleSaveField}
                 onDelete={editField ? handleDeleteField : undefined}
                 categoryId={categoryId}
+                isSubcategory={isSubcategory}
                 subcategories={subcategories}
                 initialData={editField ?? undefined}
             />

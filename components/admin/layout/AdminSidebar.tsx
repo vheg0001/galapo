@@ -21,10 +21,19 @@ interface AdminSidebarProps {
     pendingPayments?: number;
     pendingClaims?: number;
     adminName?: string;
+    siteName?: string;
+    siteTagline?: string;
 }
 
 export default function AdminSidebar({
-    collapsed, onToggle, pendingListings = 0, pendingPayments = 0, pendingClaims = 0, adminName = "Admin"
+    collapsed,
+    onToggle,
+    pendingListings = 0,
+    pendingPayments = 0,
+    pendingClaims = 0,
+    adminName = "Admin",
+    siteName = "GalaPo",
+    siteTagline = "Admin Panel"
 }: AdminSidebarProps) {
     const router = useRouter();
     const [loggingOut, setLoggingOut] = useState(false);
@@ -49,9 +58,9 @@ export default function AdminSidebar({
                 collapsed ? "justify-center px-2" : "justify-between px-5"
             )}>
                 {!collapsed && (
-                    <div>
-                        <span className="text-lg font-extrabold tracking-tight text-white">GalaPo</span>
-                        <p className="text-[10px] font-medium text-[#FF6B35]">Admin Panel</p>
+                    <div className="overflow-hidden">
+                        <span className="block truncate text-lg font-extrabold tracking-tight text-white">{siteName}</span>
+                        <p className="truncate text-[10px] font-medium text-[#FF6B35]">{siteTagline}</p>
                     </div>
                 )}
                 <button
@@ -117,15 +126,6 @@ export default function AdminSidebar({
                     <ExternalLink className="h-4 w-4 shrink-0" />
                     {!collapsed && <span>View Public Site</span>}
                 </a>
-
-                {!collapsed && (
-                    <div className="flex items-center gap-2 rounded-lg px-3 py-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6B35] text-xs font-bold text-white">
-                            {adminName.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="flex-1 truncate text-xs font-medium text-gray-300">{adminName}</span>
-                    </div>
-                )}
 
                 <button
                     onClick={handleLogout}

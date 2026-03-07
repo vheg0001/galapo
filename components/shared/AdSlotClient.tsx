@@ -67,8 +67,6 @@ export default function AdSlotClient({ location, position = 1, className, priori
                     <LazyImage
                         src={ad.image_url}
                         alt={ad.title || "Advertisement"}
-                        width={728}
-                        height={90}
                         className="mx-auto w-full max-w-3xl aspect-[728/90]"
                         priority={priority}
                     />

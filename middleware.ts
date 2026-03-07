@@ -6,6 +6,7 @@
 //   2. Protecting /(business)/* routes (business owners only)
 //   3. Protecting /(admin)/* routes (super admins only)
 //   4. Allowing all /(public)/* routes without auth
+//   5. Maintenance Mode redirection
 
 import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareSupabaseClient } from "@/lib/supabase-middleware";
@@ -24,9 +25,44 @@ export async function middleware(request: NextRequest) {
 
     const { pathname } = request.nextUrl;
     const isAdminLoginRoute = pathname === "/admin/login";
+    const isMaintenanceRoute = pathname === "/maintenance";
     const isBusinessRoute = BUSINESS_ROUTES.test(pathname);
     const isAdminRoute = ADMIN_ROUTES.test(pathname) && !isAdminLoginRoute;
     const isClaimRoute = CLAIM_ROUTES.test(pathname);
+
+    // ── Maintenance Mode Check ─────────────────────────────
+    // Apply to all routes except: maintenance page, admin login, and API routes
+    if (!isMaintenanceRoute && !isAdminLoginRoute && !pathname.startsWith('/api/') && !pathname.startsWith('/_next/')) {
+        const { data: maintenanceSetting } = await supabase
+            .from("site_settings")
+            .select("value")
+            .eq("key", "maintenance_mode")
+            .maybeSingle();
+
+        const isMaintenanceOn = maintenanceSetting?.value === true || maintenanceSetting?.value === "true";
+
+        if (isMaintenanceOn) {
+            const { data: { user } } = await supabase.auth.getUser();
+            let isAdmin = false;
+
+            if (user) {
+                // Trust metadata first for speed, fallback to profile
+                isAdmin = user.user_metadata?.role === "super_admin";
+                if (!isAdmin) {
+                    const { data: profile } = await supabase
+                        .from("profiles")
+                        .select("role")
+                        .eq("id", user.id)
+                        .maybeSingle();
+                    isAdmin = profile?.role === "super_admin";
+                }
+            }
+
+            if (!isAdmin) {
+                return NextResponse.redirect(new URL("/maintenance", request.url));
+            }
+        }
+    }
 
     // ── Only validate session/user for protected routes ─────
     if (isBusinessRoute || isAdminRoute || isClaimRoute) {
@@ -92,7 +128,9 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    // ── Allow public routes — return the response quickly
+    // ── Allow public routes/assets — return the response quickly
+    // Set custom header so server components (layouts) can access the pathname
+    response.headers.set("x-pathname", pathname);
     return response;
 }
 

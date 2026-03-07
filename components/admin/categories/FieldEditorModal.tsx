@@ -35,6 +35,7 @@ interface FieldEditorModalProps {
     onSave: (field: any) => Promise<void>;
     onDelete?: () => Promise<void>;
     categoryId: string;
+    isSubcategory?: boolean;
     subcategories: Array<{ id: string; name: string }>;
     initialData?: any;
 }
@@ -103,7 +104,7 @@ function FieldPreview({ field }: { field: any }) {
 }
 
 export default function FieldEditorModal({
-    open, onClose, onSave, onDelete, categoryId, subcategories, initialData
+    open, onClose, onSave, onDelete, categoryId, isSubcategory, subcategories, initialData
 }: FieldEditorModalProps) {
     const [form, setForm] = useState<any>({
         category_id: categoryId,
@@ -127,6 +128,16 @@ export default function FieldEditorModal({
     useEffect(() => {
         if (initialData) {
             setForm({
+                category_id: categoryId,
+                subcategory_id: "",
+                field_label: "",
+                field_name: "",
+                field_type: "text",
+                is_required: false,
+                placeholder: "",
+                help_text: "",
+                sort_order: 0,
+                is_active: true,
                 ...initialData,
                 options: initialData.options?.values ?? [],
                 validation_rules: initialData.validation_rules ?? {},
@@ -234,7 +245,7 @@ export default function FieldEditorModal({
                             <input
                                 className="w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                                 placeholder="e.g. Cuisine Type"
-                                value={form.field_label}
+                                value={form.field_label || ""}
                                 onChange={(e) => handleLabelChange(e.target.value)}
                             />
                         </div>
@@ -243,7 +254,7 @@ export default function FieldEditorModal({
                             <input
                                 className="w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm font-mono outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                                 placeholder="cuisine_type"
-                                value={form.field_name}
+                                value={form.field_name || ""}
                                 onChange={(e) => { setAutoSlug(false); setForm((p: any) => ({ ...p, field_name: e.target.value })); }}
                             />
                         </div>
@@ -262,19 +273,21 @@ export default function FieldEditorModal({
                                 ))}
                             </select>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Subcategory</label>
-                            <select
-                                className="w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm outline-none transition-all focus:border-primary/50"
-                                value={form.subcategory_id || ""}
-                                onChange={(e) => setForm((p: any) => ({ ...p, subcategory_id: e.target.value || null }))}
-                            >
-                                <option value="">All subcategories</option>
-                                {subcategories.map((s) => (
-                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                ))}
-                            </select>
-                        </div>
+                        {!isSubcategory && (
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Subcategory</label>
+                                <select
+                                    className="w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm outline-none transition-all focus:border-primary/50"
+                                    value={form.subcategory_id || ""}
+                                    onChange={(e) => setForm((p: any) => ({ ...p, subcategory_id: e.target.value || null }))}
+                                >
+                                    <option value="">All subcategories</option>
+                                    {subcategories.map((s) => (
+                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -283,7 +296,7 @@ export default function FieldEditorModal({
                             <input
                                 className="w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                                 placeholder="Placeholder text..."
-                                value={form.placeholder}
+                                value={form.placeholder || ""}
                                 onChange={(e) => setForm((p: any) => ({ ...p, placeholder: e.target.value }))}
                             />
                         </div>
@@ -292,7 +305,7 @@ export default function FieldEditorModal({
                             <input
                                 type="number"
                                 className="w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm outline-none transition-all focus:border-primary/50"
-                                value={form.sort_order}
+                                value={form.sort_order ?? 0}
                                 onChange={(e) => setForm((p: any) => ({ ...p, sort_order: Number(e.target.value) }))}
                             />
                         </div>
@@ -303,7 +316,7 @@ export default function FieldEditorModal({
                         <input
                             className="w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                             placeholder="Shown below the field in forms..."
-                            value={form.help_text}
+                            value={form.help_text || ""}
                             onChange={(e) => setForm((p: any) => ({ ...p, help_text: e.target.value }))}
                         />
                     </div>

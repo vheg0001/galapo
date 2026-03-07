@@ -38,18 +38,44 @@ export default function DynamicFieldsForm({
                 const json = await res.json();
                 const categories = json.data || json;
 
+                // Helper to find a category in the tree
+                const findCategoryById = (nodes: any[], id: string): any => {
+                    for (const node of nodes) {
+                        if (node.id === id) return node;
+                        if (node.subcategories?.length > 0) {
+                            const found = findCategoryById(node.subcategories, id);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                };
+
+                const parent = findCategoryById(categories, categoryId);
                 let foundFields: CategoryField[] = [];
 
-                const parent = categories.find((c: any) => c.id === categoryId);
                 if (parent) {
                     // Add parent fields
                     foundFields = [...(parent.fields || [])];
 
                     // Add subcategory fields if applicable
                     if (subcategoryId) {
-                        const sub = parent.subcategories?.find((s: any) => s.id === subcategoryId);
+                        const sub = findCategoryById(parent.subcategories || [], subcategoryId);
                         if (sub) {
-                            foundFields = [...foundFields, ...(sub.fields || [])];
+                            // Merge subcategory fields, prioritizing subcategory over parent if names collide
+                            const subFields = sub.fields || [];
+                            const parentFieldNames = new Set(foundFields.map(f => f.field_name));
+
+                            // Rebuild foundFields ensuring subcategory fields "win" or are appended
+                            // Actually, let's just combine and then pick unique by field_name
+                            const combined = [...foundFields, ...subFields];
+                            const uniqueFields: Record<string, CategoryField> = {};
+
+                            combined.forEach(f => {
+                                // If collision, subcategory field (which comes later in 'combined') wins
+                                uniqueFields[f.field_name] = f;
+                            });
+
+                            foundFields = Object.values(uniqueFields);
                         }
                     }
                 }

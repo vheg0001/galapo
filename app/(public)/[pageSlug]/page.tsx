@@ -1,7 +1,9 @@
+import React from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import Breadcrumbs from "@/components/shared/Breadcrumbs";
+import PackagesGrid from "@/components/shared/PackagesGrid";
 
 export const revalidate = 1800; // 30 minutes
 
@@ -47,6 +49,19 @@ export default async function StaticPage({ params }: Props) {
         notFound();
     }
 
+    // Fetch site settings to allow placeholder replacement (e.g., {{site_name}}, {{price_featured}})
+    const { data: settingsData } = await supabase
+        .from("site_settings")
+        .select("key, value");
+
+    const settings: Record<string, string> = {};
+    settingsData?.forEach(s => {
+        // Only allow replacing placeholders for simple values (not arrays/objects)
+        if (typeof s.value === "string" || typeof s.value === "number") {
+            settings[s.key] = String(s.value);
+        }
+    });
+
     // Format updatedAt for display
     const updatedAt = page.updated_at
         ? new Date(page.updated_at).toLocaleDateString("en-PH", {
@@ -56,8 +71,22 @@ export default async function StaticPage({ params }: Props) {
         })
         : null;
 
+    // Replace placeholders in content
+    let processedContent = page.content || "";
+    if (processedContent.includes("{{")) {
+        Object.entries(settings).forEach(([key, value]) => {
+            const placeholder = new RegExp(`{{${key}}}`, "g");
+            processedContent = processedContent.replace(placeholder, value);
+        });
+    }
+
+    // Split content if it includes the packages grid placeholder
+    const parts = processedContent.split("{{PACKAGES_GRID}}");
+    const hasGrid = parts.length > 1;
+    const advertisingPackages = settingsData?.find(s => s.key === "advertising_packages")?.value || [];
+
     return (
-        <main className="container mx-auto max-w-4xl px-4 py-10">
+        <main className={`container mx-auto px-4 py-10 transition-all ${hasGrid ? "max-w-6xl" : "max-w-4xl"}`}>
             <Breadcrumbs
                 items={[{ label: page.title }]}
                 className="mb-6"
@@ -75,10 +104,16 @@ export default async function StaticPage({ params }: Props) {
                     )}
                 </header>
 
-                <div
-                    className="prose prose-neutral dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: page.content || "" }}
-                />
+                <div className="prose prose-neutral dark:prose-invert max-w-none">
+                    {parts.map((part: string, i: number) => (
+                        <React.Fragment key={i}>
+                            <div dangerouslySetInnerHTML={{ __html: part }} />
+                            {i < parts.length - 1 && advertisingPackages.length > 0 && (
+                                <PackagesGrid packages={advertisingPackages} />
+                            )}
+                        </React.Fragment>
+                    ))}
+                </div>
             </article>
         </main>
     );

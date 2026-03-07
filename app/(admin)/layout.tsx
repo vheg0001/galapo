@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import AdminAuthGuard from "@/components/admin/auth/AdminAuthGuard";
 import AdminSidebar from "@/components/admin/layout/AdminSidebar";
 import AdminTopBar from "@/components/admin/layout/AdminTopBar";
@@ -20,19 +19,40 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [adminName, setAdminName] = useState("Admin");
     const [adminEmail, setAdminEmail] = useState("");
-    const [stats, setStats] = useState<AdminStats>({ pending_listings: 0, pending_payments: 0, pending_claims: 0 });
+    const [siteName, setSiteName] = useState("GalaPo");
+    const [siteTagline, setSiteTagline] = useState("Admin Panel");
+    const [stats, setStats] = useState<AdminStats>({
+        pending_listings: 0,
+        pending_payments: 0,
+        pending_claims: 0
+    });
 
     useEffect(() => {
         async function loadProfile() {
             const supabase = createBrowserSupabaseClient();
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                const { data: profile } = await supabase.from("profiles").select("full_name, email").eq("id", session.user.id).single();
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("full_name, email")
+                    .eq("id", session.user.id)
+                    .single();
                 if (profile) {
                     setAdminName(profile.full_name || session.user.email?.split("@")[0] || "Admin");
                     setAdminEmail(session.user.email || "");
                 }
             }
+        }
+
+        async function loadSettings() {
+            try {
+                const res = await fetch("/api/admin/settings");
+                if (res.ok) {
+                    const { data } = await res.json();
+                    if (data?.site_name) setSiteName(data.site_name);
+                    if (data?.site_tagline) setSiteTagline(data.site_tagline);
+                }
+            } catch { /* non-critical */ }
         }
 
         async function loadStats() {
@@ -50,6 +70,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         }
 
         loadProfile();
+        loadSettings();
         loadStats();
     }, []);
 
@@ -64,6 +85,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                     pendingPayments={stats.pending_payments}
                     pendingClaims={stats.pending_claims}
                     adminName={adminName}
+                    siteName={siteName}
+                    siteTagline={siteTagline}
                 />
             </div>
 
@@ -75,6 +98,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 pendingPayments={stats.pending_payments}
                 pendingClaims={stats.pending_claims}
                 adminName={adminName}
+                siteName={siteName}
+                siteTagline={siteTagline}
             />
 
             {/* Main content area */}

@@ -70,26 +70,34 @@ export async function GET(request: Request) {
         let responseData = enrichedCategories;
 
         if (!parentOnly) {
-            // Build tree
-            const parentCats = enrichedCategories?.filter((c) => c.parent_id === null) || [];
-            const subCats = enrichedCategories?.filter((c) => c.parent_id !== null) || [];
+            // Recursive function to build the category tree
+            const buildTree = (parentId: string | null): any[] => {
+                const children = enrichedCategories?.filter(c => c.parent_id === parentId) || [];
 
-            parentCats.forEach((parent) => {
-                const children = subCats
-                    .filter((child) => child.parent_id === parent.id)
-                    .map((sub) => ({
-                        ...sub,
-                        fields: includeFields
-                            ? fields.filter((f) => f.subcategory_id === sub.id)
-                            : [],
-                    }));
-                (parent as any).subcategories = children;
-                // Accumulate parent count = direct count + ALL children counts
-                const childCount = children.reduce((sum, child) => sum + child.listing_count, 0);
-                parent.listing_count += childCount;
-            });
+                return children.map(cat => {
+                    const subcategories = buildTree(cat.id);
 
-            responseData = parentCats;
+                    // Attach fields for this category/subcategory
+                    const catFields = includeFields
+                        ? fields.filter(f =>
+                            (f.category_id === cat.id && !f.subcategory_id) ||
+                            (f.subcategory_id === cat.id)
+                        )
+                        : [];
+
+                    // Aggregate counts from subcategories
+                    const subCount = subcategories.reduce((sum, sub) => sum + (sub.listing_count || 0), 0);
+
+                    return {
+                        ...cat,
+                        listing_count: cat.listing_count + subCount,
+                        subcategories,
+                        fields: catFields
+                    };
+                });
+            };
+
+            responseData = buildTree(null);
         }
 
         return successResponse(responseData);

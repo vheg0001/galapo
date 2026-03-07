@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Tag } from "lucide-react";
+import { Plus, Tag, Loader2 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 import CategoryTree from "@/components/admin/categories/CategoryTree";
 import CategoryDetail from "@/components/admin/categories/CategoryDetail";
@@ -26,15 +26,43 @@ export default function AdminCategoriesPage() {
 
     const handleReorder = useCallback(async (reordered: any[]) => {
         setCategories(reordered);
-        // Save reordered sort_order to server
-        await Promise.all(reordered.map((cat, i) =>
-            fetch(`/api/admin/categories/${cat.id}`, {
-                method: "PATCH",
+
+        // Helper to flatten the tree for API
+        const flattenCategories = (cats: any[]): any[] => {
+            let result: any[] = [];
+            cats.forEach(cat => {
+                const { subcategories, ...rest } = cat;
+                result.push({
+                    id: rest.id,
+                    sort_order: rest.sort_order,
+                    parent_id: rest.parent_id
+                });
+                if (subcategories && subcategories.length > 0) {
+                    result = result.concat(flattenCategories(subcategories));
+                }
+            });
+            return result;
+        };
+
+        // Save reordered sort_order to server using bulk API
+        try {
+            const payload = flattenCategories(reordered);
+
+            const res = await fetch("/api/admin/categories/reorder", {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ sort_order: i }),
-            })
-        ));
-    }, []);
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                console.error("Failed to reorder categories:", await res.json());
+                loadCategories(); // Rollback if failed
+            }
+        } catch (error) {
+            console.error("Error reordering categories:", error);
+            loadCategories();
+        }
+    }, [loadCategories]);
 
     const handleAddSubcategory = useCallback((parentId: string) => {
         setAddParentId(parentId);
@@ -44,8 +72,8 @@ export default function AdminCategoriesPage() {
     const parentCategories = categories.filter((c) => !c.parent_id);
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] flex-col">
-            <div className="border-b border-border/50 px-8 py-5">
+        <div className="flex flex-col h-full bg-background">
+            <div className="border-b border-border/50 px-4 md:px-8 py-5">
                 <AdminPageHeader
                     title="Category Management"
                     description="Manage categories, subcategories, and their dynamic fields."
@@ -63,15 +91,14 @@ export default function AdminCategoriesPage() {
                 />
             </div>
 
-            <div className="flex flex-1 overflow-hidden">
-                {/* Left Panel — Category Tree (40%) */}
-                <div className="w-[40%] border-r border-border/50 bg-background/30 overflow-hidden flex flex-col">
+            <div className="flex flex-1 overflow-hidden relative">
+                {/* Left Panel — Category Tree */}
+                <div className={`${selectedId ? "hidden md:flex" : "flex"} w-full md:w-80 lg:w-96 border-r border-border/50 bg-background/30 overflow-hidden flex-col shrink-0`}>
                     {loading ? (
                         <div className="flex flex-1 items-center justify-center">
-                            <div className="space-y-3 w-full px-4">
-                                {[...Array(6)].map((_, i) => (
-                                    <div key={i} className="h-10 rounded-lg bg-muted/40 animate-pulse" />
-                                ))}
+                            <div className="space-y-3 w-full px-4 text-center">
+                                <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary/40 mb-2" />
+                                <p className="text-xs text-muted-foreground">Loading categories...</p>
                             </div>
                         </div>
                     ) : (
@@ -85,8 +112,8 @@ export default function AdminCategoriesPage() {
                     )}
                 </div>
 
-                {/* Right Panel — Detail (60%) */}
-                <div className="flex-1 bg-background/20 overflow-hidden">
+                {/* Right Panel — Detail */}
+                <div className={`${!selectedId ? "hidden md:flex" : "flex"} flex-1 bg-background/20 overflow-hidden`}>
                     {selectedId ? (
                         <CategoryDetail
                             key={selectedId}
@@ -94,9 +121,10 @@ export default function AdminCategoriesPage() {
                             parentCategories={parentCategories}
                             onSaved={loadCategories}
                             onDeleted={() => { setSelectedId(null); loadCategories(); }}
+                            onBack={() => setSelectedId(null)}
                         />
                     ) : (
-                        <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground">
+                        <div className="hidden md:flex h-full flex-col items-center justify-center gap-4 text-muted-foreground w-full">
                             <div className="rounded-full bg-muted/30 p-6 ring-1 ring-border/50">
                                 <Tag className="h-10 w-10 text-muted-foreground/40" />
                             </div>

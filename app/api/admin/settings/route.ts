@@ -20,11 +20,8 @@ export async function GET(request: NextRequest) {
         // Convert array to key-value map
         const settings: Record<string, any> = {};
         (data ?? []).forEach((row) => {
-            try {
-                settings[row.key] = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
-            } catch {
-                settings[row.key] = row.value;
-            }
+            // Supabase returns JSONB columns already parsed as JS objects/primitives
+            settings[row.key] = row.value;
         });
 
         return NextResponse.json({ data: settings });
@@ -46,10 +43,10 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
         }
 
-        // Validate known keys
+        // Validate known keys (synced with frontend price keys)
         const numericKeys = [
-            "price_basic", "price_premium", "price_featured_month",
-            "claim_fee", "reactivation_fee", "ad_price_banner", "ad_price_sidebar",
+            "price_basic", "premium_listing_monthly_price", "featured_listing_monthly_price",
+            "price_claim", "reactivation_fee_amount", "ad_placement_monthly_price", "top_search_monthly_price",
         ];
         const urlKeys = ["og_image_url", "site_logo_url", "site_favicon_url"];
         const adsensePattern = /^(ca-pub-\d+)?$/;
@@ -82,7 +79,7 @@ export async function PATCH(request: NextRequest) {
         // Upsert each key in the body
         const upserts = Object.entries(body).map(([key, value]) => ({
             key,
-            value: typeof value === "string" ? value : JSON.stringify(value),
+            value: value, // Supabase JS client handles serialization to JSONB automatically
             updated_at: new Date().toISOString(),
         }));
 

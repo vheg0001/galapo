@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface LazyImageProps {
     src: string;
     alt: string;
     placeholderSrc?: string;
     className?: string;
-    width?: number | string;
-    height?: number | string;
     priority?: boolean;
+    unoptimized?: boolean;
+    sizes?: string;
 }
 
 export default function LazyImage({
@@ -18,87 +20,45 @@ export default function LazyImage({
     placeholderSrc = "/placeholder-business.svg",
     className = "",
     priority = false,
+    unoptimized,
+    sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
 }: LazyImageProps) {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [isLoaded, setIsLoaded] = useState(priority);
-    const [isInView, setIsInView] = useState(priority);
+    const [isLoaded, setIsLoaded] = useState(false);
     const [hasError, setHasError] = useState(false);
 
-    useEffect(() => {
-        if (priority) {
-            setIsInView(true);
-            setIsLoaded(true);
-            return;
-        }
+    // Light gray solid color as blur placeholder
+    const imgBlur = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PC9zdmc+";
 
-        if (!containerRef.current) return;
+    const displaySrc = (hasError || !src) ? placeholderSrc : src;
 
-        if (typeof IntersectionObserver === "undefined") {
-            setIsInView(true);
-            return;
-        }
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        setIsInView(true);
-                        observer.disconnect();
-                    }
-                });
-            },
-            { rootMargin: "200px" }
-        );
-
-        observer.observe(containerRef.current);
-        return () => observer.disconnect();
-    }, [priority]);
-
-    const handleLoad = () => {
-        setIsLoaded(true);
-        setHasError(false);
-    };
-
-    const handleError = () => {
-        console.error("LazyImage Error for:", src);
-        setHasError(true);
-        setIsLoaded(false);
-    };
-
-    const opacity = (priority || (isLoaded && !hasError)) ? 1 : 0;
+    // Auto-unoptimize external placeholders to avoid 400 errors from next/image optimization
+    const shouldUnoptimize = unoptimized ?? (displaySrc?.includes("placehold.co") || displaySrc?.endsWith(".svg"));
 
     return (
-        <div
-            ref={containerRef}
-            className={`relative w-full h-full ${className} bg-[#f3f4f6]`}
-            style={{ overflow: "hidden" }}
-            data-priority={priority}
-            data-has-error={hasError}
-        >
-            {isInView && (
-                <img
-                    src={src}
-                    alt={alt}
-                    onLoad={handleLoad}
-                    onError={handleError}
-                    style={{
-                        opacity: opacity,
-                        transition: "opacity 0.4s ease-in-out",
-                        objectFit: "cover",
-                    }}
-                    className="absolute inset-0 w-full h-full"
-                    loading="eager"
-                />
-            )}
+        <div className={cn("relative h-full w-full overflow-hidden bg-muted", className)}>
+            <Image
+                src={displaySrc}
+                alt={alt}
+                fill
+                priority={priority}
+                unoptimized={shouldUnoptimize}
+                sizes={sizes}
+                className={cn(
+                    "object-cover transition-all duration-500",
+                    isLoaded ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-105 blur-sm"
+                )}
+                onLoad={() => setIsLoaded(true)}
+                onError={() => {
+                    setHasError(true);
+                    setIsLoaded(true); // Stop loading state
+                }}
+                placeholder="blur"
+                blurDataURL={imgBlur}
+            />
 
-            {/* Placeholder / Error State */}
-            {opacity === 0 && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
-                    <img
-                        src={placeholderSrc}
-                        alt="Placeholder"
-                        className="w-12 h-12 mb-2 opacity-20"
-                    />
+            {!isLoaded && !hasError && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-10 w-10 animate-pulse rounded-full bg-foreground/5" />
                 </div>
             )}
         </div>

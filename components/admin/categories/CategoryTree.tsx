@@ -35,6 +35,7 @@ function CategoryRow({
     setDragIndex,
     dragOverId,
     setDragOverId,
+    onDragEnd,
 }: {
     cat: Category;
     depth: number;
@@ -45,6 +46,7 @@ function CategoryRow({
     setDragIndex: (id: string | null) => void;
     dragOverId: string | null;
     setDragOverId: (id: string | null) => void;
+    onDragEnd: () => void;
 }) {
     const [expanded, setExpanded] = useState(true);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -58,7 +60,7 @@ function CategoryRow({
                 draggable
                 onDragStart={() => setDragIndex(cat.id)}
                 onDragOver={(e) => { e.preventDefault(); setDragOverId(cat.id); }}
-                onDragEnd={() => { setDragIndex(null); setDragOverId(null); }}
+                onDragEnd={() => { onDragEnd(); setDragIndex(null); setDragOverId(null); }}
                 onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY }); }}
                 onClick={() => onSelect(cat)}
                 className={cn(
@@ -141,6 +143,7 @@ function CategoryRow({
                     setDragIndex={setDragIndex}
                     dragOverId={dragOverId}
                     setDragOverId={setDragOverId}
+                    onDragEnd={onDragEnd}
                 />
             ))}
         </>
@@ -162,14 +165,41 @@ export default function CategoryTree({ categories, selectedId, onSelect, onReord
     const handleDragEnd = useCallback(() => {
         if (!dragIndex || !dragOverId || dragIndex === dragOverId) return;
 
-        const reordered = [...categories];
-        const fromIdx = reordered.findIndex((c) => c.id === dragIndex);
-        const toIdx = reordered.findIndex((c) => c.id === dragOverId);
-        if (fromIdx === -1 || toIdx === -1) return;
+        const processReorder = (items: Category[]): Category[] | null => {
+            const fromIdx = items.findIndex((c) => c.id === dragIndex);
+            const toIdx = items.findIndex((c) => c.id === dragOverId);
 
-        const [moved] = reordered.splice(fromIdx, 1);
-        reordered.splice(toIdx, 0, moved);
-        onReorder(reordered);
+            if (fromIdx !== -1 && toIdx !== -1) {
+                const newItems = [...items];
+                const [moved] = newItems.splice(fromIdx, 1);
+                newItems.splice(toIdx, 0, moved);
+
+                return newItems.map((cat, index) => ({
+                    ...cat,
+                    sort_order: index * 10
+                }));
+            }
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].subcategories.length > 0) {
+                    const reorderedSubs = processReorder(items[i].subcategories);
+                    if (reorderedSubs) {
+                        const newItems = [...items];
+                        newItems[i] = { ...items[i], subcategories: reorderedSubs };
+                        return newItems;
+                    }
+                }
+            }
+            return null;
+        };
+
+        const result = processReorder(categories);
+        if (result) {
+            onReorder(result);
+        }
+
+        setDragIndex(null);
+        setDragOverId(null);
     }, [dragIndex, dragOverId, categories, onReorder]);
 
     return (
@@ -199,6 +229,7 @@ export default function CategoryTree({ categories, selectedId, onSelect, onReord
                         setDragIndex={(id) => { setDragIndex(id); }}
                         dragOverId={dragOverId}
                         setDragOverId={(id) => { setDragOverId(id); }}
+                        onDragEnd={handleDragEnd}
                     />
                 ))}
                 {filtered.length === 0 && (

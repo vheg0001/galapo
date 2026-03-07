@@ -109,18 +109,7 @@ export default function Sidebar({ unreadNotifications = 0 }: SidebarProps) {
 
             {/* Bottom Section */}
             <div className="shrink-0 border-t border-white/10 p-3 space-y-1">
-                {/* User Info */}
-                {profile && (
-                    <div className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FF6B35] text-xs font-bold text-white">
-                            {profile.full_name?.charAt(0)?.toUpperCase() ?? "?"}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-medium text-white">{profile.full_name}</p>
-                            <p className="truncate text-xs text-white/50">{profile.email}</p>
-                        </div>
-                    </div>
-                )}
+
 
                 <Link
                     href="/"

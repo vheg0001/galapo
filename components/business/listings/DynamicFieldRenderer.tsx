@@ -121,8 +121,12 @@ export default function DynamicFieldRenderer({ field, value, onChange, listingId
             );
 
         case FieldType.SELECT:
-        case FieldType.MULTI_SELECT:
-            const normalizedOptions = (field.options || []).map((opt: any) => {
+        case FieldType.MULTI_SELECT: {
+            const optionsArray = Array.isArray(field.options)
+                ? field.options
+                : (field.options as any)?.values || [];
+
+            const normalizedOptions = optionsArray.map((opt: any) => {
                 if (typeof opt === "string") {
                     return { value: opt, label: opt };
                 }
@@ -182,6 +186,7 @@ export default function DynamicFieldRenderer({ field, value, onChange, listingId
                     {helpText}
                 </div>
             );
+        }
 
         case FieldType.IMAGE_GALLERY:
             const images = Array.isArray(value) ? value : [];

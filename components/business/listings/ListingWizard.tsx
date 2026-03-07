@@ -129,7 +129,11 @@ export default function ListingWizard({ listingId }: ListingWizardProps) {
                                 value={formData.category_id}
                                 subValue={formData.subcategory_id || ""}
                                 onChange={(cat, sub) => {
-                                    updateFormData({ category_id: cat, subcategory_id: sub });
+                                    updateFormData({
+                                        category_id: cat,
+                                        subcategory_id: sub,
+                                        dynamic_fields: {} // Clear fields on category change to prevent bleeding
+                                    });
                                     setUnsavedChanges(true);
                                 }}
                             />
