@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Metadata } from "next";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import { parseSearchParams } from "@/lib/search-helpers";
-import { buildListingsQuery, resolveBarangaySlugs, getActiveCategories, searchListings, type SearchListingsParams } from "@/lib/queries";
+import { resolveBarangaySlugs, getActiveCategories, searchListings, getListingBadgesByIds } from "@/lib/queries";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
 import SearchPage from "@/components/public/search/SearchPage";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
@@ -19,7 +19,7 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
             .map(([k, v]) => [k, Array.isArray(v) ? v[0] : v ?? ""])
     );
     const q = params.get("q");
-    const hasFilters = !!(params.get("barangay") || params.get("open_now") || params.get("page"));
+    const hasFilters = !!(params.get("barangay") || params.get("badges") || params.get("open_now") || params.get("page"));
 
 
     const title = q
@@ -62,13 +62,14 @@ export default async function SearchRoute({ searchParams }: SearchPageProps) {
         ? await resolveBarangaySlugs(supabase, filters.barangay)
         : [];
 
-    // Fetch listings (via RPC), categories, and barangays in parallel
-    const [searchResult, categoriesResult, barangaysResult] = await Promise.all([
+    // Fetch listings (via RPC), categories, barangays, and badges in parallel
+    const [searchResult, categoriesResult, barangaysResult, badgesResult] = await Promise.all([
         searchListings(supabase, {
             search_query: filters.q || null,
             category_slug: filters.category || null,
             subcategory_slug: filters.subcategory || null,
             barangay_slugs: filters.barangay.length > 0 ? filters.barangay : null,
+            badge_slugs: filters.badges.length > 0 ? filters.badges : null,
             city_slug: filters.city || 'olongapo',
             is_open_now: filters.openNow,
             featured_only: filters.featuredOnly,
@@ -78,32 +79,42 @@ export default async function SearchRoute({ searchParams }: SearchPageProps) {
         }),
         getActiveCategories(supabase, true), // parent categories only
         supabase.from("barangays").select("id, name, slug").eq("is_active", true).order("name"),
+        supabase.from("badges").select("*").eq("is_active", true).eq("is_filterable", true).order("priority", { ascending: true }).order("name", { ascending: true }),
     ]);
 
     const listings = searchResult.listings || [];
     const total = searchResult.total || 0;
 
-    // Normalize listings to match the expected shape (if needed)
-    // The RPC already returns primary_image, category_name, etc.
+    // The RPC returns flattened rows (no listing_badges join).
+    // Hydrate badge data in one extra query keyed by listing_id.
+    const listingIds = listings.map((l: any) => l.id).filter(Boolean);
+    const badgesByListing = await getListingBadgesByIds(supabase, listingIds);
+
+    // Normalize listings to match the expected shape.
     const normalizedListings = listings.map((l: any) => ({
         ...l,
         image_url: l.primary_image || l.image_url || null,
         categories: { name: l.category_name },
         barangays: { name: l.barangay_name },
+        badges: badgesByListing.get(l.id) || [],
     }));
 
-    const categories = categoriesResult.data?.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-        icon: c.icon ?? null,
-    })) || [];
+    const categories = (categoriesResult.data || [])
+        .filter((c: any) => c.parent_id === null)
+        .map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            icon: c.icon ?? null,
+        }));
 
     const barangays = barangaysResult.data?.map((b: any) => ({
         id: b.id,
         name: b.name,
         slug: b.slug,
     })) || [];
+
+    const badges = badgesResult.data || [];
 
     const perPage = ITEMS_PER_PAGE;
     const totalPages = Math.ceil(total / perPage);
@@ -116,6 +127,7 @@ export default async function SearchRoute({ searchParams }: SearchPageProps) {
                 total={total}
                 categories={categories}
                 barangays={barangays}
+                badges={badges}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 initialQ={filters.q || ""}

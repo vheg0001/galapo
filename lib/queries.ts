@@ -146,6 +146,7 @@ interface CategoryListingFilters {
     page?: number;
     perPage?: number;
     searchQuery?: string;
+    badgeSlugs?: string[];
 }
 
 /**
@@ -164,7 +165,8 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
             id, slug, business_name, short_description, phone, logo_url,
             is_featured, is_premium, created_at, address, operating_hours, lat, lng,
             categories!listings_category_id_fkey ( name, slug ),
-            barangays ( name, slug )
+            barangays ( name, slug ),
+            listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
         `, { count: "exact" })
         .eq("is_active", true)
         .in("status", ["approved", "claimed_pending"]);
@@ -199,6 +201,14 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
             query = query.eq("barangay_id", "00000000-0000-0000-0000-000000000000");
         }
     }
+
+    // Badge filter
+    if (filters.badgeSlugs && filters.badgeSlugs.length > 0) {
+        // We use the filter on the joined relation
+        query = query.filter('listing_badges.badges.slug', 'in', `(${filters.badgeSlugs.join(',')})`);
+    }
+
+    // Featured only
 
     // Featured only
     if (filters.featuredOnly) {
@@ -237,8 +247,15 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
 
     const { data, count, error } = await query;
 
+    const mappedListings = (data || []).map((listing: any) => ({
+        ...listing,
+        badges: (listing.listing_badges || [])
+            .map((lb: any) => ({ ...lb, badge: lb.badges || lb.badge }))
+            .filter((lb: any) => lb.badge)
+    }));
+
     return {
-        listings: data || [],
+        listings: mappedListings,
         total: count || 0,
         error,
     };
@@ -332,6 +349,7 @@ const LISTING_FULL_SELECT = `
     subcategories:categories!listings_subcategory_id_fkey ( id, name, slug, icon ),
     barangays ( id, name, slug ),
     listing_images ( image_url, sort_order, is_primary ),
+    listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, description, is_active ) ),
     deals ( id ),
     subscriptions ( plan_type, status, end_date )
 `;
@@ -498,6 +516,7 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
             subcategories:categories!listings_subcategory_id_fkey ( id, name, slug, icon ),
             barangays ( id, name, slug ),
             listing_images ( id, image_url, alt_text, sort_order, is_primary ),
+            listing_badges ( id, is_active, expires_at, created_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, description, is_active ) ),
             listing_field_values (
                 id, value,
                 category_fields (
@@ -538,12 +557,19 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
         .filter((fv: any) => fv.category_fields)
         .sort((a: any, b: any) => a.category_fields.sort_order - b.category_fields.sort_order);
 
+    // Map badges to match frontend types safely
+    const activeBadges = (listing.listing_badges || []).map((lb: any) => ({
+        ...lb,
+        badge: lb.badges || lb.badge
+    })).filter((lb: any) => lb.badge);
+
     return {
         ...listing,
         listing_images: images,
         deals: activeDeals,
         events: upcomingEvents,
         listing_field_values: fieldValues,
+        badges: activeBadges,
     };
 }
 
@@ -565,7 +591,8 @@ export async function getRelatedListings(
             is_featured, is_premium,
             categories!listings_category_id_fkey ( name, slug ),
             barangays ( name, slug ),
-            listing_images ( image_url, is_primary )
+            listing_images ( image_url, is_primary ),
+            listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
         `)
         .eq("is_active", true)
         .in("status", ["approved", "claimed_pending"])
@@ -584,7 +611,12 @@ export async function getRelatedListings(
         .order("created_at", { ascending: false });
 
     const { data } = await query;
-    return data || [];
+    return (data || []).map((listing: any) => ({
+        ...listing,
+        badges: (listing.listing_badges || [])
+            .map((lb: any) => ({ ...lb, badge: lb.badges || lb.badge }))
+            .filter((lb: any) => lb.badge)
+    }));
 }
 
 // ──────────────────────────────────────────────────────────
@@ -597,6 +629,7 @@ export interface SearchListingsParams {
     subcategory_slug?: string | null;
     barangay_slugs?: string[] | null;
     city_slug?: string | null;
+    badge_slugs?: string[] | null;
     is_open_now?: boolean;
     featured_only?: boolean;
     user_lat?: number | null;
@@ -635,7 +668,8 @@ export async function getListingsInBounds(
             created_at, updated_at, lat, lng,
             categories!listings_category_id_fkey ( id, name, slug ),
             barangays ( id, name, slug ),
-            listing_images ( image_url, sort_order, is_primary )
+            listing_images ( image_url, sort_order, is_primary ),
+            listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
         `)
         .in("status", ["approved", "claimed_pending"])
         .eq("is_active", true)
@@ -647,7 +681,12 @@ export async function getListingsInBounds(
 
     if (error) throw error;
 
-    return data || [];
+    return (data || []).map((listing: any) => ({
+        ...listing,
+        badges: (listing.listing_badges || [])
+            .map((lb: any) => ({ ...lb, badge: lb.badges || lb.badge }))
+            .filter((lb: any) => lb.badge)
+    }));
 }
 
 /**
@@ -699,4 +738,35 @@ export async function searchSuggestions(supabase: SupabaseClient, query: string)
         categories: categories || [],
         subcategories: subcategories || []
     };
+}
+
+/**
+ * Fetch listing_badges for a set of listing IDs in one query.
+ * Returns a Map<listing_id, ListingBadge[]> so callers can merge badge data
+ * onto results that don't include badges (e.g. from the search_listings RPC).
+ */
+export async function getListingBadgesByIds(
+    supabase: SupabaseClient,
+    listingIds: string[]
+): Promise<Map<string, any[]>> {
+    if (listingIds.length === 0) return new Map();
+
+    const { data } = await supabase
+        .from("listing_badges")
+        .select(`
+            id, listing_id, is_active, expires_at,
+            badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, description, is_active )
+        `)
+        .in("listing_id", listingIds)
+        .eq("is_active", true);
+
+    const map = new Map<string, any[]>();
+    for (const lb of data || []) {
+        const badge = (lb as any).badges;
+        if (!badge) continue;
+        const entry = map.get(lb.listing_id) ?? [];
+        entry.push({ ...lb, badge });
+        map.set(lb.listing_id, entry);
+    }
+    return map;
 }

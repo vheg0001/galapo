@@ -90,6 +90,10 @@ export default function CategoryDetailClient({
     if (searchParams.get("open_now") === "true") {
         activeFilters.push({ key: "open_now", label: "Open Now", value: "true" });
     }
+    const activeBadges = searchParams.getAll("badges");
+    activeBadges.forEach((b) => {
+        activeFilters.push({ key: "badges", label: `Badge: ${b}`, value: b });
+    });
 
     const handleSortChange = (sort: SortOption) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -105,10 +109,10 @@ export default function CategoryDetailClient({
     const handleRemoveFilter = (key: string, value: string) => {
         const params = new URLSearchParams(searchParams.toString());
         params.delete("page");
-        if (key === "barangay") {
-            const all = params.getAll("barangay").filter((v) => v !== value);
-            params.delete("barangay");
-            all.forEach((v) => params.append("barangay", v));
+        if (key === "barangay" || key === "badges") {
+            const all = params.getAll(key).filter((v) => v !== value);
+            params.delete(key);
+            all.forEach((v) => params.append(key, v));
         } else {
             params.delete(key);
         }

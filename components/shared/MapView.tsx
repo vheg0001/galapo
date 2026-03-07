@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MAP_CENTER } from "@/lib/constants";
+import type { PinTier } from "@/lib/badge-utils";
 
 interface MapPin {
     id: string;
@@ -12,6 +13,8 @@ interface MapPin {
     slug: string;
     is_featured?: boolean;
     is_premium?: boolean;
+    /** Highest badge tier — drives pin colour. Determined by getPinTier() in the caller. */
+    badge_tier?: PinTier;
 }
 
 interface MapViewProps {
@@ -19,6 +22,14 @@ interface MapViewProps {
     className?: string;
     zoom?: number;
 }
+
+// Pin colours per tier
+const PIN_COLORS: Record<PinTier, string> = {
+    premium: "#F59E0B",  // Gold
+    featured: "#FF6B35", // Orange
+    special: "#22C55E",  // Green
+    regular: "#3B82F6",  // Blue
+};
 
 export default function MapView({ pins = [], className = "", zoom }: MapViewProps) {
     const [mapReady, setMapReady] = useState(false);
@@ -77,12 +88,23 @@ function MapInner({ pins, className, zoom }: MapViewProps) {
     const { MapContainer, TileLayer, Marker, Popup, L } = MapComponents;
 
     const createIcon = (pin: MapPin) => {
-        // Colors: Gold (Premium), Orange (Featured), Blue (Regular)
-        const color = pin.is_premium ? "#F59E0B" : pin.is_featured ? "#FF6B35" : "#3B82F6";
-        const size = 32;
+        // Resolve tier: badge_tier takes priority, then fall back to legacy flags
+        const tier: PinTier =
+            pin.badge_tier ??
+            (pin.is_premium ? "premium" : pin.is_featured ? "featured" : "regular");
+
+        const color = PIN_COLORS[tier];
+        const isSpecial = tier === "special";
+        const size = 36;
+
+        // For special tier (Must Visit / Editor's Pick) we add a star inside the pin
+        const starPath = isSpecial
+            ? `<text x="12" y="13" text-anchor="middle" font-size="8" fill="white" font-family="sans-serif">★</text>`
+            : `<circle cx="12" cy="9" r="2.5" fill="white"/>`;
+
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="${color}" stroke="white" stroke-width="1.5"/>
-            <circle cx="12" cy="9" r="2.5" fill="white"/>
+            ${starPath}
         </svg>`;
 
         return L.divIcon({

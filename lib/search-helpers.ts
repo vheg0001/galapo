@@ -12,6 +12,7 @@ export interface ParsedSearchParams {
     category: string | null;
     subcategory: string | null;
     barangay: string[];
+    badges: string[];
     q: string | null;
     featuredOnly: boolean;
     openNow: boolean;
@@ -37,11 +38,15 @@ export function parseSearchParams(searchParams: URLSearchParams): ParsedSearchPa
     const barangayRaw = searchParams.get("barangay");
     const barangay = barangayRaw ? barangayRaw.split(",").map((b) => b.trim()).filter(Boolean) : [];
 
+    const badgesRaw = searchParams.get("badges");
+    const badges = badgesRaw ? badgesRaw.split(",").map((b) => b.trim()).filter(Boolean) : [];
+
     return {
         city: searchParams.get("city") || "olongapo",
         category: searchParams.get("category") || null,
         subcategory: searchParams.get("subcategory") || null,
         barangay,
+        badges,
         q: searchParams.get("q") || null,
         featuredOnly: searchParams.get("featured_only") === "true",
         openNow: searchParams.get("open_now") === "true",
@@ -61,6 +66,7 @@ export function buildFilterUrl(baseUrl: string, filters: Partial<ParsedSearchPar
     if (filters.category) params.set("category", filters.category);
     if (filters.subcategory) params.set("subcategory", filters.subcategory);
     if (filters.barangay && filters.barangay.length > 0) params.set("barangay", filters.barangay.join(","));
+    if (filters.badges && filters.badges.length > 0) params.set("badges", filters.badges.join(","));
     if (filters.q) params.set("q", filters.q);
     if (filters.featuredOnly) params.set("featured_only", "true");
     if (filters.openNow) params.set("open_now", "true");

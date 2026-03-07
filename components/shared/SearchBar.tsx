@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/store/appStore";
+import { useEffect } from "react";
 import { Search } from "lucide-react";
 import { POPULAR_TAGS } from "@/lib/constants";
 import { CustomSelect } from "./CustomSelect";
@@ -15,6 +16,25 @@ interface SearchBarProps {
 export default function SearchBar({ categories = [], barangays = [], variant = "hero" }: SearchBarProps) {
     const router = useRouter();
     const { query, setQuery, categoryId, setCategoryId, barangay, setBarangay } = useAppStore();
+
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    // Sync store with URL params on search page
+    useEffect(() => {
+        const q = searchParams.get("q");
+        const cat = searchParams.get("category");
+        const bar = searchParams.get("barangay");
+
+        if (q !== null) setQuery(q);
+        if (cat !== null) setCategoryId(cat);
+        // Note: activeBarangay in SearchBar is single select, while search page allows multiple.
+        // We sync the first one for the dropdown, or null if multiple are selected but we can't represent them all.
+        if (bar !== null) {
+            const firstBar = bar.split(",")[0];
+            setBarangay(firstBar);
+        }
+    }, [searchParams, setQuery, setCategoryId, setBarangay]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

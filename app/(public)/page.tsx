@@ -64,7 +64,8 @@ export default async function HomePage() {
                 is_featured, is_premium,
                 categories!listings_category_id_fkey ( name ),
                 barangays ( name ),
-                listing_images ( image_url, is_primary )
+                listing_images ( image_url, is_primary ),
+                listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
             `)
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
@@ -79,7 +80,8 @@ export default async function HomePage() {
                 is_featured, is_premium,
                 categories!listings_category_id_fkey ( name ),
                 barangays ( name ),
-                listing_images ( image_url, is_primary )
+                listing_images ( image_url, is_primary ),
+                listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
             `)
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
@@ -190,7 +192,10 @@ export default async function HomePage() {
                         Find restaurants, services, shops, and more in your city
                     </p>
                     <div className="mt-10">
-                        <SearchBar categories={categories || []} barangays={barangays || []} />
+                        <SearchBar
+                            categories={(categories || []).filter(c => c.parent_id === null)}
+                            barangays={barangays || []}
+                        />
                     </div>
                 </div>
             </section>
@@ -233,6 +238,7 @@ export default async function HomePage() {
                                     isFeatured={listing.is_featured}
                                     isPremium={listing.is_premium}
                                     priority={index < 2}
+                                    badges={(listing.listing_badges as any[] || []).map((lb: any) => ({ ...lb, badge: lb.badges || lb.badge })).filter((lb: any) => lb.badge)}
                                 />
                             ))}
                         </div>
@@ -323,6 +329,7 @@ export default async function HomePage() {
                                         (listing as any).listing_image?.[0]?.image_url
                                     }
                                     isNew
+                                    badges={(listing.listing_badges as any[] || []).map((lb: any) => ({ ...lb, badge: lb.badges || lb.badge })).filter((lb: any) => lb.badge)}
                                 />
                             ))}
                         </div>

@@ -192,6 +192,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
                                     isFeatured={listing.is_featured}
                                     isPremium={listing.is_premium}
                                     logoUrl={listing.logo_url}
+                                    badges={listing.badges as any}
                                 />
                             </div>
 

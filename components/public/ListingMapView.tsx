@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MapPin } from "lucide-react";
 import type { ListingItem } from "./ListingGrid";
 import { unwrapJoin } from "./ListingGrid";
+import { getPinTier } from "@/lib/badge-utils";
 
 const MapView = dynamic(() => import("@/components/shared/MapView"), { ssr: false });
 
@@ -26,6 +27,7 @@ export default function ListingMapView({ listings }: ListingMapViewProps) {
                 slug: l.slug,
                 is_featured: l.is_featured,
                 is_premium: l.is_premium || l.isSponsored,
+                badge_tier: getPinTier(l.badges ?? [], l.is_premium || l.isSponsored, l.is_featured),
             };
         });
 

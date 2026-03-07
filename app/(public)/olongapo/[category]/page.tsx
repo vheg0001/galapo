@@ -46,6 +46,9 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     const barangaySlugs = sp.barangay
         ? Array.isArray(sp.barangay) ? sp.barangay : [sp.barangay]
         : [];
+    const badgeSlugs = sp.badges
+        ? Array.isArray(sp.badges) ? sp.badges : [sp.badges]
+        : [];
 
     // Resolve subcategory ID if sub filter is active
     let subcategoryId: string | undefined;
@@ -61,6 +64,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
             categoryId: category.id,
             subcategoryId,
             barangaySlugs: barangaySlugs.length > 0 ? barangaySlugs : undefined,
+            badgeSlugs: badgeSlugs.length > 0 ? badgeSlugs : undefined,
             featuredOnly,
             sort,
             page,
@@ -90,6 +94,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         if (sort !== "featured") queryParts.push(`sort=${sort}`);
         if (featuredOnly) queryParts.push("featured=true");
         barangaySlugs.forEach((b) => queryParts.push(`barangay=${b}`));
+        badgeSlugs.forEach((b) => queryParts.push(`badges=${b}`));
         if (queryParts.length > 0) parts.push(`?${queryParts.join("&")}`);
         return parts.join("");
     };

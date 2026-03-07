@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchFilters } from "@/hooks/useSearchFilters";
+import { Badge } from "@/lib/types";
 import SearchBar from "@/components/shared/SearchBar";
 import SearchFilterBar from "./SearchFilterBar";
 import SearchActiveFilters from "./SearchActiveFilters";
@@ -36,6 +37,7 @@ interface SearchPageProps {
     currentPage: number;
     totalPages: number;
     initialQ: string;
+    badges: Badge[];
 }
 
 export default function SearchPage({
@@ -46,6 +48,7 @@ export default function SearchPage({
     currentPage,
     totalPages,
     initialQ,
+    badges,
 }: SearchPageProps) {
     const {
         filters,
@@ -57,6 +60,7 @@ export default function SearchPage({
         setFeaturedOnly,
         setPage,
         setView,
+        toggleBadge,
         clearAll,
     } = useSearchFilters();
 
@@ -93,6 +97,7 @@ export default function SearchPage({
         isSponsored: l.isSponsored ?? false,
         image_url: l.image_url ?? l.listing_images?.[0]?.image_url ?? null,
         categories: Array.isArray(l.categories) ? l.categories[0] : l.categories,
+        badges: l.badges || [],
     }));
 
     return (
@@ -116,12 +121,15 @@ export default function SearchPage({
                 featuredOnly={filters.featuredOnly}
                 sort={filters.sort}
                 view={filters.view}
+                activeBadges={filters.badges}
+                availableBadges={badges}
                 onCategoryChange={setCategory}
                 onBarangayToggle={toggleBarangay}
                 onOpenNowToggle={() => setOpenNow(!filters.openNow)}
                 onFeaturedOnlyToggle={() => setFeaturedOnly(!filters.featuredOnly)}
                 onSortChange={setSort}
                 onViewChange={setView}
+                onBadgeToggle={toggleBadge}
                 onClearAll={clearAll}
                 className="mb-3"
             />
@@ -133,12 +141,16 @@ export default function SearchPage({
                 barangay={filters.barangay}
                 openNow={filters.openNow}
                 featuredOnly={filters.featuredOnly}
+                badges={filters.badges}
                 categoryName={activeCategoryObj?.name}
+                barangays={barangays}
+                availableBadges={badges}
                 onRemoveQ={() => setQ("")}
                 onRemoveCategory={() => setCategory("")}
                 onRemoveBarangay={(slug) => toggleBarangay(slug)}
                 onRemoveOpenNow={() => setOpenNow(false)}
                 onRemoveFeaturedOnly={() => setFeaturedOnly(false)}
+                onRemoveBadge={(slug) => toggleBadge(slug)}
                 onClearAll={clearAll}
                 className="mb-4"
             />

@@ -22,6 +22,7 @@ export async function GET(request: Request) {
             category_slug: filters.category || null,
             subcategory_slug: filters.subcategory || null,
             barangay_slugs: filters.barangay.length > 0 ? filters.barangay : null,
+            badge_slugs: filters.badges.length > 0 ? filters.badges : null,
             city_slug: filters.city || 'olongapo',
             is_open_now: filters.openNow,
             featured_only: filters.featuredOnly,
@@ -111,6 +112,7 @@ function enrichListing(listing: any, isSponsored: boolean) {
         barangay_name: brgy?.name || null,
         active_deals_count: activeDealCount,
         current_plan: activeSub?.plan_type || "free",
+        badges: listing.listing_badges || [],
         is_sponsored: isSponsored,
     };
 }

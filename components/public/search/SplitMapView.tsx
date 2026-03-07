@@ -18,6 +18,7 @@ export interface MapListing {
     isSponsored?: boolean;
     image_url?: string | null;
     categories?: { name: string; slug: string } | null;
+    badges?: { badge: { type: string; color: string } }[];
 }
 
 interface SplitMapViewProps {
@@ -42,6 +43,15 @@ export default function SplitMapView({ listings, onResultsUpdate, className }: S
     const pinned = listings.filter((l) => l.lat != null && l.lng != null);
 
     const getPinColor = (listing: MapListing) => {
+        // Priority 1: Plan badges
+        const planBadge = listing.badges?.find(b => b.badge.type === 'plan');
+        if (planBadge) return planBadge.badge.color;
+
+        // Priority 2: Admin/System badges
+        const adminBadge = listing.badges?.find(b => b.badge.type === 'admin' || b.badge.type === 'system');
+        if (adminBadge) return adminBadge.badge.color;
+
+        // Fallback to legacy featured/premium
         if (listing.is_premium || listing.isSponsored) return "#F59E0B"; // gold
         if (listing.is_featured) return "#FF6B35";  // orange
         return "#3B82F6";                            // blue
@@ -369,7 +379,9 @@ function MapPanel({
             <MapEvents useMapEvents={useMapEvents} onMove={onMove} />
             {listings.map((listing) => {
                 if (!listing.lat || !listing.lng) return null;
-                const color = (listing.is_premium || listing.isSponsored) ? "#F59E0B" : listing.is_featured ? "#FF6B35" : "#3B82F6";
+                const color = (listing.badges?.find(b => b.badge.type === 'plan')?.badge.color)
+                    || (listing.badges?.find(b => b.badge.type === 'admin' || b.badge.type === 'system')?.badge.color)
+                    || ((listing.is_premium || listing.isSponsored) ? "#F59E0B" : listing.is_featured ? "#FF6B35" : "#3B82F6");
                 const isActive = listing.id === activeId;
 
                 return (

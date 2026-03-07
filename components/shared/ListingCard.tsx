@@ -4,7 +4,10 @@ import Link from "next/link";
 import LazyImage from "./LazyImage";
 import { MapPin, Phone } from "lucide-react";
 import Badge from "./Badge";
+import BadgeDisplay from "./BadgeDisplay";
 import { truncateText } from "@/lib/utils";
+import { ListingBadge } from "@/lib/types";
+import { getCardBadges } from "@/lib/badge-utils";
 
 interface ListingCardProps {
     id: string;
@@ -20,6 +23,7 @@ interface ListingCardProps {
     isPremium?: boolean;
     isNew?: boolean;
     priority?: boolean;
+    badges?: ListingBadge[];
 }
 
 export default function ListingCard({
@@ -31,14 +35,22 @@ export default function ListingCard({
     phone,
     logoUrl,
     imageUrl,
-    isFeatured,
     isPremium,
+    isFeatured,
     isNew,
     priority,
+    badges = [],
 }: ListingCardProps) {
     // We prioritize the primary gallery image (imageUrl) over the logo for the main cover,
     // as users usually want the "Cover" they set in the gallery to be the main visual.
     const displayImage = imageUrl || logoUrl || "/placeholder-business.svg";
+
+    const cardBadges = getCardBadges(badges, isPremium, isFeatured);
+    const planBadges = cardBadges.filter(lb => lb.badge?.type === "plan");
+    const adminBadges = cardBadges.filter(lb => lb.badge?.type !== "plan");
+
+    const hasPlanBadges = planBadges.length > 0 || isPremium || isFeatured;
+    const hasAdminBadges = adminBadges.length > 0;
 
     return (
         <Link
@@ -54,19 +66,38 @@ export default function ListingCard({
                     priority={priority}
                 />
 
-                {/* Badges */}
+                {/* Overlay badges — plan badges only */}
                 <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-                    {isFeatured && <Badge variant="featured">Featured</Badge>}
-                    {isPremium && <Badge variant="premium">Premium</Badge>}
+                    {hasPlanBadges && (
+                        <BadgeDisplay
+                            badges={planBadges}
+                            mode="card"
+                            size="sm"
+                            isPremium={isPremium}
+                            isFeatured={isFeatured}
+                        />
+                    )}
+                    {/* "New" is a UI freshness indicator only — not a stored badge */}
                     {isNew && <Badge variant="new">New</Badge>}
                 </div>
             </div>
 
             {/* Content */}
             <div className="flex flex-1 flex-col p-4">
-                <h3 className="text-base font-semibold text-foreground line-clamp-1 group-hover:text-secondary transition-colors">
+                <h3 className="text-base font-semibold text-foreground line-clamp-1 group-hover:text-secondary transition-colors" title={businessName}>
                     {businessName}
                 </h3>
+
+                {/* Badges moved below title — admin badges only */}
+                {hasAdminBadges && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <BadgeDisplay
+                            badges={adminBadges}
+                            mode="card"
+                            size="sm"
+                        />
+                    </div>
+                )}
 
                 {categoryName && (
                     <span className="mt-1 text-xs font-medium text-secondary">{categoryName}</span>

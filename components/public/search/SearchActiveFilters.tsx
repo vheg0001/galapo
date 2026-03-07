@@ -9,12 +9,16 @@ interface ActiveFiltersDisplayProps {
     barangay: string[];
     openNow: boolean;
     featuredOnly: boolean;
+    badges: string[];
     categoryName?: string;
+    barangays?: { name: string; slug: string }[];
+    availableBadges?: { name: string; slug: string }[];
     onRemoveQ: () => void;
     onRemoveCategory: () => void;
     onRemoveBarangay: (slug: string) => void;
     onRemoveOpenNow: () => void;
     onRemoveFeaturedOnly: () => void;
+    onRemoveBadge: (slug: string) => void;
     onClearAll: () => void;
     className?: string;
 }
@@ -25,16 +29,20 @@ export default function SearchActiveFilters({
     barangay,
     openNow,
     featuredOnly,
+    badges,
     categoryName,
+    barangays = [],
+    availableBadges = [],
     onRemoveQ,
     onRemoveCategory,
     onRemoveBarangay,
     onRemoveOpenNow,
     onRemoveFeaturedOnly,
+    onRemoveBadge,
     onClearAll,
     className,
 }: ActiveFiltersDisplayProps) {
-    const hasFilters = !!q || !!category || barangay.length > 0 || openNow || featuredOnly;
+    const hasFilters = !!q || !!category || barangay.length > 0 || openNow || featuredOnly || badges.length > 0;
     if (!hasFilters) return null;
 
     return (
@@ -45,15 +53,24 @@ export default function SearchActiveFilters({
             {category && (
                 <Chip label={categoryName || category} onRemove={onRemoveCategory} />
             )}
-            {barangay.map((slug) => (
-                <Chip key={slug} label={slug} onRemove={() => onRemoveBarangay(slug)} />
-            ))}
+            {barangay.map((slug) => {
+                const b = barangays.find((item) => item.slug === slug);
+                return (
+                    <Chip key={slug} label={b?.name || slug} onRemove={() => onRemoveBarangay(slug)} />
+                );
+            })}
             {openNow && (
                 <Chip label="Open Now" onRemove={onRemoveOpenNow} variant="green" />
             )}
             {featuredOnly && (
                 <Chip label="Featured Only" onRemove={onRemoveFeaturedOnly} variant="amber" />
             )}
+            {badges.map((slug) => {
+                const b = availableBadges.find((item) => item.slug === slug);
+                return (
+                    <Chip key={slug} label={b?.name || slug} onRemove={() => onRemoveBadge(slug)} />
+                );
+            })}
             <button
                 onClick={onClearAll}
                 className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"

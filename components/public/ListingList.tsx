@@ -5,6 +5,7 @@ import Link from "next/link";
 import LazyImage from "@/components/shared/LazyImage";
 import SponsoredBadge from "./SponsoredBadge";
 import Badge from "@/components/shared/Badge";
+import BadgeDisplay from "@/components/shared/BadgeDisplay";
 import Pagination from "@/components/shared/Pagination";
 import AdSlotClient from "@/components/shared/AdSlotClient";
 import { MapPin, Phone, Clock } from "lucide-react";
@@ -54,11 +55,9 @@ export default function ListingList({ listings, currentPage, totalPages, basePat
                                             priority={index < 4}
                                         />
                                     </div>
-                                    {/* Badges */}
+                                    {/* Badges Overlay */}
                                     <div className="absolute left-3 top-3 flex flex-col gap-1">
                                         {listing.isSponsored && <SponsoredBadge />}
-                                        {listing.is_featured && <Badge variant="featured">Featured</Badge>}
-                                        {listing.is_premium && <Badge variant="premium">Premium</Badge>}
                                         {isNew && <Badge variant="new">New</Badge>}
                                     </div>
                                 </div>
@@ -73,6 +72,16 @@ export default function ListingList({ listings, currentPage, totalPages, basePat
                                         <span className="mt-0.5 text-xs font-medium text-secondary">
                                             {cat.name}
                                         </span>
+                                    )}
+
+                                    {/* Badge Display */}
+                                    {listing.badges && listing.badges.length > 0 && (
+                                        <BadgeDisplay
+                                            badges={listing.badges}
+                                            maxDisplay={3}
+                                            size="sm"
+                                            className="mt-1"
+                                        />
                                     )}
 
                                     <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">

@@ -169,6 +169,9 @@ async function CategoryPageView({ catSlug, sp, supabase }: any) {
     const barangaySlugs = sp.barangay
         ? Array.isArray(sp.barangay) ? sp.barangay : [sp.barangay]
         : [];
+    const badgeSlugs = sp.badges
+        ? Array.isArray(sp.badges) ? sp.badges : [sp.badges]
+        : [];
 
     let subcategoryId: string | undefined;
     if (subSlug) {
@@ -178,7 +181,15 @@ async function CategoryPageView({ catSlug, sp, supabase }: any) {
 
     const [subCounts, listingsData, barangayGroups, brgyCounts] = await Promise.all([
         getSubcategoryCounts(supabase, category.id),
-        getCategoryListings(supabase, { categoryId: category.id, subcategoryId, barangaySlugs: barangaySlugs.length > 0 ? barangaySlugs : undefined, featuredOnly, sort, page }),
+        getCategoryListings(supabase, {
+            categoryId: category.id,
+            subcategoryId,
+            barangaySlugs: barangaySlugs.length > 0 ? barangaySlugs : undefined,
+            badgeSlugs: badgeSlugs.length > 0 ? badgeSlugs : undefined,
+            featuredOnly,
+            sort,
+            page
+        }),
         getBarangaysGrouped(supabase),
         getBarangayCounts(supabase, category.id, subcategoryId),
     ]);
@@ -194,6 +205,7 @@ async function CategoryPageView({ catSlug, sp, supabase }: any) {
         if (sort !== "featured") qp.push(`sort=${sort}`);
         if (featuredOnly) qp.push("featured=true");
         barangaySlugs.forEach((b: string) => qp.push(`barangay=${b}`));
+        badgeSlugs.forEach((b: string) => qp.push(`badges=${b}`));
         if (qp.length > 0) parts.push(`?${qp.join("&")}`);
         return parts.join("");
     };
@@ -228,9 +240,18 @@ async function SubcategoryPageView({ catSlug, subSlug, sp, supabase, category }:
     const sort = (sp.sort as CategorySort) || "featured";
     const featuredOnly = sp.featured === "true";
     const barangaySlugs = sp.barangay ? (Array.isArray(sp.barangay) ? sp.barangay : [sp.barangay]) : [];
+    const badgeSlugs = sp.badges ? (Array.isArray(sp.badges) ? sp.badges : [sp.badges]) : [];
 
     const [{ listings, total }, barangayGroups] = await Promise.all([
-        getCategoryListings(supabase, { categoryId: category.id, subcategoryId: subcategory.id, barangaySlugs: barangaySlugs.length > 0 ? barangaySlugs : undefined, featuredOnly, sort, page }),
+        getCategoryListings(supabase, {
+            categoryId: category.id,
+            subcategoryId: subcategory.id,
+            barangaySlugs: barangaySlugs.length > 0 ? barangaySlugs : undefined,
+            badgeSlugs: badgeSlugs.length > 0 ? badgeSlugs : undefined,
+            featuredOnly,
+            sort,
+            page
+        }),
         getBarangaysGrouped(supabase),
     ]);
 
@@ -241,6 +262,7 @@ async function SubcategoryPageView({ catSlug, subSlug, sp, supabase, category }:
         if (sort !== "featured") qp.push(`sort=${sort}`);
         if (featuredOnly) qp.push("featured=true");
         barangaySlugs.forEach((b: string) => qp.push(`barangay=${b}`));
+        badgeSlugs.forEach((b: string) => qp.push(`badges=${b}`));
         if (qp.length > 0) parts.push(`?${qp.join("&")}`);
         return parts.join("");
     };
@@ -330,6 +352,7 @@ function ListingDetailView({ listing, related, slug }: any) {
                                     operatingHours={hours}
                                     isFeatured={listing.is_featured}
                                     isPremium={listing.is_premium}
+                                    badges={listing.listing_badges || []}
                                 />
                             </div>
                             <ListingTabsClient

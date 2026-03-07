@@ -12,10 +12,11 @@ import ListingMetaCard from "@/components/admin/listings/ListingMetaCard";
 import OwnerInfoCard from "@/components/admin/listings/OwnerInfoCard";
 import AnalyticsSummary from "@/components/admin/listings/AnalyticsSummary";
 import AdminNotesSection from "@/components/admin/listings/AdminNotesSection";
+import BadgeAssignment from "@/components/admin/listings/BadgeAssignment";
 import RejectionModal from "@/components/admin/listings/RejectionModal";
 import ApprovalDialog from "@/components/admin/listings/ApprovalDialog";
 import HardDeleteModal from "@/components/admin/shared/HardDeleteModal";
-import { Trash2 } from "lucide-react";
+import { Trash2, Award } from "lucide-react";
 
 export default function AdminListingDetailPage() {
     const params = useParams<{ id: string }>();
@@ -271,6 +272,7 @@ export default function AdminListingDetailPage() {
                         onApproveClaim={() => runAction("approve")}
                         onRejectClaim={() => setShowReject(true)}
                     />
+                    <BadgeAssignment listingId={listing.id} />
                     <div className="rounded-xl border border-border bg-background p-4">
                         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Subscription</h3>
                         {subscription ? (

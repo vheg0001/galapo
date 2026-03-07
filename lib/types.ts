@@ -41,6 +41,8 @@ export enum PlanType {
     PREMIUM = "premium",
 }
 
+export type BadgeType = "admin" | "system" | "plan";
+
 export enum SubscriptionStatus {
     ACTIVE = "active",
     EXPIRED = "expired",
@@ -152,6 +154,38 @@ export interface CategoryField {
     validation_rules?: any | null; // JSONB
     sort_order: number;
     is_active: boolean;
+}
+
+export interface Badge {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    icon: string;
+    icon_lucide: string | null;
+    color: string;
+    text_color: string;
+    type: BadgeType;
+    priority: number;
+    auto_expires: boolean;
+    default_expiry_days: number | null;
+    is_filterable: boolean;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ListingBadge {
+    id: string;
+    listing_id: string;
+    badge_id: string;
+    badge: Badge;
+    assigned_by: string | null;
+    assigned_at: string;
+    expires_at: string | null;
+    note: string | null;
+    is_active: boolean;
+    created_at: string;
 }
 
 export interface BusinessListing {
@@ -503,6 +537,7 @@ export interface ListingDetail extends BusinessListing {
     current_plan: PlanType;
     is_claimed: boolean;
     has_owner: boolean;
+    badges: ListingBadge[];
 }
 
 export interface ListingAnalyticsEvent {

@@ -3,6 +3,8 @@
 import { Search, LayoutGrid, List, Map, SlidersHorizontal, Zap, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type SortValue, type ViewMode } from "@/hooks/useSearchFilters";
+import { Badge } from "@/lib/types";
+import { useEffect, useState } from "react";
 
 interface Category {
     id: string;
@@ -26,12 +28,15 @@ interface SearchFilterBarProps {
     featuredOnly: boolean;
     sort: SortValue;
     view: ViewMode;
+    activeBadges: string[];
+    availableBadges: Badge[];
     onCategoryChange: (slug: string) => void;
     onBarangayToggle: (slug: string) => void;
     onOpenNowToggle: () => void;
     onFeaturedOnlyToggle: () => void;
     onSortChange: (sort: SortValue) => void;
     onViewChange: (view: ViewMode) => void;
+    onBadgeToggle: (slug: string) => void;
     onClearAll: () => void;
     className?: string;
 }
@@ -58,15 +63,19 @@ export default function SearchFilterBar({
     featuredOnly,
     sort,
     view,
+    activeBadges,
+    availableBadges,
     onCategoryChange,
     onBarangayToggle,
     onOpenNowToggle,
     onFeaturedOnlyToggle,
     onSortChange,
     onViewChange,
+    onBadgeToggle,
     onClearAll,
     className,
 }: SearchFilterBarProps) {
+
     return (
         <div className={cn("space-y-3", className)}>
             <div className="flex flex-wrap items-center gap-2">
@@ -100,6 +109,27 @@ export default function SearchFilterBar({
                         {barangays.map((b) => (
                             <option key={b.id} value={b.slug}>
                                 {activeBarangays.includes(b.slug) ? "✓ " : "  "}
+                                {b.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Badge multi-select Dropdown */}
+                <div className="relative">
+                    <select
+                        value=""
+                        onChange={(e) => { if (e.target.value) onBadgeToggle(e.target.value); }}
+                        className="h-9 cursor-pointer appearance-none rounded-lg border border-border bg-card pl-3 pr-8 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary/30"
+                    >
+                        <option value="">
+                            {activeBadges.length > 0
+                                ? `Badges (${activeBadges.length})`
+                                : "Filter by Badges"}
+                        </option>
+                        {availableBadges.map((b) => (
+                            <option key={b.id} value={b.slug}>
+                                {activeBadges.includes(b.slug) ? "✓ " : "  "}
                                 {b.name}
                             </option>
                         ))}

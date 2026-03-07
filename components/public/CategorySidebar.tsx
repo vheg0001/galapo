@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Badge } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface Subcategory {
@@ -37,9 +38,20 @@ export default function CategorySidebar({
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const [availableBadges, setAvailableBadges] = useState<Badge[]>([]);
+
+    useEffect(() => {
+        fetch("/api/badges")
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) setAvailableBadges(res.data);
+            })
+            .catch(err => console.error("Failed to fetch badges", err));
+    }, []);
 
     const activeSubcategory = searchParams.get("sub") || "";
     const activeBarangays = searchParams.getAll("barangay");
+    const activeBadges = searchParams.getAll("badges");
     const openNow = searchParams.get("open_now") === "true";
     const featuredOnly = searchParams.get("featured") === "true";
 
@@ -73,6 +85,13 @@ export default function CategorySidebar({
             ? activeBarangays.filter((b) => b !== slug)
             : [...activeBarangays, slug];
         updateParams({ barangay: next.length > 0 ? next : null });
+    };
+
+    const handleBadgeToggle = (slug: string) => {
+        const next = activeBadges.includes(slug)
+            ? activeBadges.filter((b) => b !== slug)
+            : [...activeBadges, slug];
+        updateParams({ badges: next.length > 0 ? next : null });
     };
 
     const handleClearAll = () => {
@@ -171,6 +190,36 @@ export default function CategorySidebar({
                     );
                 })}
             </div>
+
+            {/* Badges Filter */}
+            {availableBadges.length > 0 && (
+                <div>
+                    <h4 className="mb-3 text-sm font-semibold text-foreground uppercase tracking-wider">
+                        Badges
+                    </h4>
+                    <ul className="space-y-0.5">
+                        {availableBadges.map((b) => (
+                            <li key={b.id}>
+                                <label className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={activeBadges.includes(b.slug)}
+                                            onChange={() => handleBadgeToggle(b.slug)}
+                                            className="h-3.5 w-3.5 shrink-0 rounded border-border text-primary accent-primary"
+                                        />
+                                        <span className="truncate">{b.name}</span>
+                                    </div>
+                                    <span
+                                        className="h-2 w-2 rounded-full"
+                                        style={{ backgroundColor: b.color }}
+                                    />
+                                </label>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             {/* Toggles */}
             <div className="space-y-3">

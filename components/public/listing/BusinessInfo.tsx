@@ -5,6 +5,8 @@ import Link from "next/link";
 import { MapPin, Clock, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemo, useState, useEffect } from "react";
+import BadgeDisplay from "@/components/shared/BadgeDisplay";
+import { ListingBadge } from "@/lib/types";
 
 interface BusinessInfoProps {
     businessName: string;
@@ -14,6 +16,7 @@ interface BusinessInfoProps {
     operatingHours: Record<string, { open: string; close: string; closed: boolean }> | null;
     isFeatured: boolean;
     isPremium: boolean;
+    badges?: ListingBadge[];
     logoUrl?: string | null;
 }
 
@@ -64,6 +67,7 @@ export default function BusinessInfo({
     operatingHours,
     isFeatured,
     isPremium,
+    badges = [],
     logoUrl
 }: BusinessInfoProps) {
     const [mounted, setMounted] = useState(false);
@@ -80,19 +84,13 @@ export default function BusinessInfo({
     return (
         <div className="space-y-4">
             {/* Badges row */}
-            {(isPremium || isFeatured) && (
-                <div className="flex gap-2 mb-2">
-                    {isPremium && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                            ⭐ Premium
-                        </span>
-                    )}
-                    {isFeatured && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-3 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                            🔥 Featured
-                        </span>
-                    )}
-                </div>
+            {badges.length > 0 && (
+                <BadgeDisplay
+                    badges={badges}
+                    maxDisplay={10}
+                    size="md"
+                    className="mb-2"
+                />
             )}
 
             {/* Logo and Business name side-by-side */}

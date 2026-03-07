@@ -10,6 +10,7 @@ export interface SearchFilters {
     q: string;
     category: string;
     barangay: string[]; // comma-separated slugs
+    badges: string[]; // comma-separated slugs
     sort: SortValue;
     openNow: boolean;
     featuredOnly: boolean;
@@ -22,6 +23,7 @@ export interface UseSearchFiltersReturn {
     setQ: (q: string) => void;
     setCategory: (category: string) => void;
     toggleBarangay: (slug: string) => void;
+    toggleBadge: (slug: string) => void;
     setSort: (sort: SortValue) => void;
     setOpenNow: (value: boolean) => void;
     setFeaturedOnly: (value: boolean) => void;
@@ -38,6 +40,7 @@ export function useSearchFilters(): UseSearchFiltersReturn {
 
     const filters = useMemo((): SearchFilters => {
         const barangayRaw = searchParams.get("barangay") || "";
+        const badgesRaw = searchParams.get("badges") || "";
         const sortRaw = searchParams.get("sort") || "featured";
         const validSorts: SortValue[] = ["featured", "newest", "name_asc", "name_desc"];
         const validViews: ViewMode[] = ["grid", "list", "map"];
@@ -46,6 +49,7 @@ export function useSearchFilters(): UseSearchFiltersReturn {
             q: searchParams.get("q") || "",
             category: searchParams.get("category") || "",
             barangay: barangayRaw ? barangayRaw.split(",").filter(Boolean) : [],
+            badges: badgesRaw ? badgesRaw.split(",").filter(Boolean) : [],
             sort: validSorts.includes(sortRaw as SortValue) ? (sortRaw as SortValue) : "featured",
             openNow: searchParams.get("open_now") === "true",
             featuredOnly: searchParams.get("featured_only") === "true",
@@ -93,6 +97,16 @@ export function useSearchFilters(): UseSearchFiltersReturn {
         [filters.barangay, push]
     );
 
+    const toggleBadge = useCallback(
+        (slug: string) => {
+            const next = filters.badges.includes(slug)
+                ? filters.badges.filter((b) => b !== slug)
+                : [...filters.badges, slug];
+            push({ badges: next.length > 0 ? next.join(",") : null });
+        },
+        [filters.badges, push]
+    );
+
     const clearAll = useCallback(() => {
         router.push(pathname, { scroll: false });
     }, [router, pathname]);
@@ -103,6 +117,7 @@ export function useSearchFilters(): UseSearchFiltersReturn {
             if ("q" in partial) updates.q = partial.q || null;
             if ("category" in partial) updates.category = partial.category || null;
             if ("barangay" in partial) updates.barangay = partial.barangay?.join(",") || null;
+            if ("badges" in partial) updates.badges = partial.badges?.join(",") || null;
             if ("sort" in partial) updates.sort = partial.sort === "featured" ? null : partial.sort || null;
             if ("openNow" in partial) updates.open_now = partial.openNow ? "true" : null;
             if ("featuredOnly" in partial) updates.featured_only = partial.featuredOnly ? "true" : null;
@@ -118,6 +133,7 @@ export function useSearchFilters(): UseSearchFiltersReturn {
         setQ,
         setCategory,
         toggleBarangay,
+        toggleBadge,
         setSort,
         setOpenNow,
         setFeaturedOnly,

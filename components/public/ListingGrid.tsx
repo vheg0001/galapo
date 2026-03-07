@@ -34,6 +34,7 @@ export interface ListingItem {
     categories?: JoinResult;
     barangays?: JoinResult;
     isSponsored?: boolean;
+    badges?: any[];
 }
 
 interface ListingGridProps {
@@ -81,6 +82,7 @@ export default function ListingGrid({ listings, currentPage, totalPages, basePat
                                 isPremium={listing.is_premium}
                                 isNew={mounted && new Date(listing.created_at) > sevenDaysAgo}
                                 priority={index < 6}
+                                badges={listing.badges || []}
                             />
                             {/* Inline ad after every 5th listing */}
                             {(index + 1) % 5 === 0 && (
