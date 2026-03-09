@@ -111,7 +111,7 @@ export default function ListingsTable({ listings, loading = false }: ListingsTab
                         <tr key={listing.id} className="bg-white transition hover:bg-gray-50/50">
                             <td className="px-4 py-3">
                                 <Link
-                                    href={`/listing/${listing.slug}`}
+                                    href={`/olongapo/${listing.slug}`}
                                     target="_blank"
                                     className="font-medium text-gray-900 hover:text-[#FF6B35] transition"
                                 >

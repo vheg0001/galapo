@@ -15,7 +15,7 @@ import Breadcrumbs from "@/components/shared/Breadcrumbs";
 import AdSlot from "@/components/shared/AdSlot";
 import SocialShareButtons from "@/components/shared/SocialShareButtons";
 import Image from "next/image";
-import CategoryDetailClient from "../[category]/CategoryDetailClient";
+import CategoryDetailClient from "@/components/public/category/CategoryDetailClient";
 
 // Listing-specific imports
 import ImageGallery from "@/components/public/listing/ImageGallery";
@@ -41,30 +41,42 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const supabase = await createServerSupabaseClient();
 
     if (slugs.length === 1) {
-        // Category page
+        // Could be a Category OR a Listing
         const category = await getCategoryBySlug(supabase, slugs[0]);
-        if (!category) return { title: "Not Found | GalaPo" };
-        return {
-            title: `Best ${category.name} in Olongapo City | GalaPo`,
-            description: `Find the best ${category.name.toLowerCase()} in Olongapo City.`,
-        };
+        if (category) {
+            return {
+                title: `Best ${category.name} in Olongapo City | GalaPo`,
+                description: `Find the best ${category.name.toLowerCase()} in Olongapo City.`,
+            };
+        }
+
+        const listing = await getListingBySlug(supabase, slugs[0]);
+        if (listing) {
+            const cat = listing.categories as any;
+            const brgy = listing.barangays as any;
+            return {
+                title: `${listing.business_name} | ${cat?.name || "Business"} in ${brgy?.name || "Olongapo"} | GalaPo`,
+                description: listing.short_description,
+            };
+        }
     }
 
     if (slugs.length === 2) {
         const [catSlug, seg2] = slugs;
         const category = await getCategoryBySlug(supabase, catSlug);
-        if (!category) return { title: "Not Found | GalaPo" };
 
-        // Check if seg2 is a subcategory
-        const sub = category.subcategories.find((s: any) => s.slug === seg2);
-        if (sub) {
-            return {
-                title: `Best ${sub.name} in Olongapo City | GalaPo`,
-                description: `Find the best ${sub.name.toLowerCase()} in Olongapo City.`,
-            };
+        if (category) {
+            // Check if seg2 is a subcategory
+            const sub = category.subcategories.find((s: any) => s.slug === seg2);
+            if (sub) {
+                return {
+                    title: `Best ${sub.name} in Olongapo City | GalaPo`,
+                    description: `Find the best ${sub.name.toLowerCase()} in Olongapo City.`,
+                };
+            }
         }
 
-        // Otherwise might be a listing slug
+        // Seg2 might be a listing slug (regardless of category match)
         const listing = await getListingBySlug(supabase, seg2);
         if (listing) {
             const cat = listing.categories as any;
@@ -74,8 +86,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
                 description: listing.short_description,
             };
         }
-
-        return { title: "Not Found | GalaPo" };
     }
 
     if (slugs.length === 3) {
@@ -85,7 +95,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             const cat = listing.categories as any;
             const sub = listing.subcategories as any;
             const brgy = listing.barangays as any;
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://galapo.ph";
             const primaryImage = (listing.listing_images as any[])?.[0]?.image_url;
             return {
                 title: `${listing.business_name} | ${sub?.name || cat?.name} in ${brgy?.name || "Olongapo"} | GalaPo`,
@@ -96,7 +105,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
                 twitter: { card: "summary_large_image" },
             };
         }
-        return { title: "Not Found | GalaPo" };
     }
 
     return { title: "Not Found | GalaPo" };
@@ -109,23 +117,39 @@ export default async function CatchAllOlongapoPage({ params, searchParams }: Pag
     const sp = await searchParams;
     const supabase = await createServerSupabaseClient();
 
-    // ── 1 SLUG → Category Page ──────────────────────────────────────────────
+    // ── 1 SLUG → Category OR Listing ──────────────────────────────────────────
     if (slugs.length === 1) {
-        return <CategoryPageView catSlug={slugs[0]} sp={sp} supabase={supabase} />;
+        const category = await getCategoryBySlug(supabase, slugs[0]);
+        if (category) {
+            return <CategoryPageView catSlug={slugs[0]} sp={sp} supabase={supabase} />;
+        }
+
+        const listing = await getListingBySlug(supabase, slugs[0]);
+        if (listing) {
+            const related = await getRelatedListings(supabase, {
+                categoryId: (listing.categories as any)?.id,
+                subcategoryId: (listing.subcategories as any)?.id,
+                excludeSlug: slugs[0],
+            });
+            return <ListingDetailView listing={listing} related={related} slug={slugs[0]} />;
+        }
+
+        notFound();
     }
 
     // ── 2 SLUGS → Subcategory page OR Listing detail ────────────────────────
     if (slugs.length === 2) {
         const [catSlug, seg2] = slugs;
         const category = await getCategoryBySlug(supabase, catSlug);
-        if (!category) notFound();
 
-        const isSub = category.subcategories.find((s: any) => s.slug === seg2);
-        if (isSub) {
-            return <SubcategoryPageView catSlug={catSlug} subSlug={seg2} sp={sp} supabase={supabase} category={category} />;
+        if (category) {
+            const isSub = category.subcategories.find((s: any) => s.slug === seg2);
+            if (isSub) {
+                return <SubcategoryPageView catSlug={catSlug} subSlug={seg2} sp={sp} supabase={supabase} category={category} />;
+            }
         }
 
-        // Try as listing slug
+        // Try seg2 as listing slug
         const listing = await getListingBySlug(supabase, seg2);
         if (listing) {
             const related = await getRelatedListings(supabase, {

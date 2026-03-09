@@ -5,8 +5,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const supabase = await createServerSupabaseClient();
     try {
         const { data, error } = await supabase
@@ -20,7 +21,7 @@ export async function GET(
                     owner:profiles (*)
                 )
             `)
-            .eq("id", params.id)
+            .eq("id", id)
             .single();
 
         if (error) throw error;
@@ -32,15 +33,16 @@ export async function GET(
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const supabase = await createServerSupabaseClient();
     try {
         const body = await request.json();
         const { data, error } = await supabase
             .from("deals")
             .update(body)
-            .eq("id", params.id)
+            .eq("id", id)
             .select()
             .single();
 
@@ -53,14 +55,15 @@ export async function PATCH(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const supabase = await createServerSupabaseClient();
     try {
         const { error } = await supabase
             .from("deals")
             .delete()
-            .eq("id", params.id);
+            .eq("id", id);
 
         if (error) throw error;
         return NextResponse.json({ success: true });

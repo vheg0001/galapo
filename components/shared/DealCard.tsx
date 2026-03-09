@@ -69,7 +69,7 @@ export default function DealCard({
                     <div className="flex items-center justify-between gap-2">
                         <Link
                             href={`/olongapo/${listingSlug}`}
-                            className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                            className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline line-clamp-1"
                         >
                             {businessName}
                         </Link>
@@ -79,13 +79,13 @@ export default function DealCard({
                             isFeatured={isFeatured}
                             mode="card"
                             size="sm"
-                            className="scale-90 origin-right"
+                            className="scale-90 origin-right shrink-0"
                         />
                     </div>
-                    <h3 className="text-lg font-bold leading-tight text-foreground line-clamp-1">
+                    <h3 className="text-lg font-bold leading-tight text-foreground line-clamp-1 min-h-[1.5rem]">
                         {title}
                     </h3>
-                    <p className="text-sm font-medium text-muted-foreground/80 line-clamp-2 leading-relaxed">
+                    <p className="text-sm font-medium text-muted-foreground/80 line-clamp-2 leading-relaxed min-h-[2.8rem]">
                         {description}
                     </p>
                 </div>
@@ -113,7 +113,7 @@ export default function DealCard({
 
                     {/* View Button */}
                     <Link
-                        href={`/listing/${listingSlug}?tab=deals&id=${id}`}
+                        href={`/olongapo/${listingSlug}?tab=deals&id=${id}`}
                         className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-95"
                     >
                         View Deal

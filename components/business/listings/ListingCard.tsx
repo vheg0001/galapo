@@ -85,7 +85,7 @@ export default function ListingCard({ listing, onDelete, isDeleting }: ListingCa
                             Edit
                         </Link>
                         <Link
-                            href={`/listing/${listing.slug}`}
+                            href={`/olongapo/${listing.slug}`}
                             target="_blank"
                             className="flex items-center justify-center rounded-lg bg-gray-50 px-3 py-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-900"
                             title="View Public Page"

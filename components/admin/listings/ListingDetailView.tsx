@@ -342,7 +342,7 @@ export default function ListingDetailView({ listing, deals, events }: ListingDet
 
             <div className="px-2">
                 <Link
-                    href={`/listing/${listing.slug}`}
+                    href={`/olongapo/${listing.slug}`}
                     className="group inline-flex items-center gap-2 rounded-xl bg-muted/30 px-4 py-3 text-xs font-bold text-muted-foreground ring-1 ring-border/50 transition-all hover:bg-muted/50 hover:text-foreground active:scale-95 shadow-sm"
                     target="_blank"
                 >

@@ -47,7 +47,7 @@ export default function ListingMapView({ listings }: ListingMapViewProps) {
                     return (
                         <Link
                             key={listing.id}
-                            href={`/listing/${listing.slug}`}
+                            href={`/olongapo/${listing.slug}`}
                             className="flex items-center gap-3 rounded-lg p-2.5 transition-colors hover:bg-accent"
                         >
                             <div className="flex-1 min-w-0">

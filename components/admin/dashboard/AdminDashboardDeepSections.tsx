@@ -137,7 +137,7 @@ export default async function AdminDashboardDeepSections() {
                         breakdown={[
                             { label: "Subscriptions", amount: breakdown.subscriptions, color: "bg-blue-500" },
                             { label: "Ad Placements", amount: breakdown.ad_placements, color: "bg-purple-500" },
-                            { label: "Top Search", amount: breakdown.top_search, color: "bg-[#FF6B35]" },
+                            { label: "Featured", amount: breakdown.top_search, color: "bg-[#FF6B35]" },
                             { label: "Reactivation Fees", amount: breakdown.reactivation_fees, color: "bg-emerald-500" },
                         ]}
                     />

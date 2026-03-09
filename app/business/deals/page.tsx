@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, Search, Tag, Loader2, AlertCircle, MoreVertical, Edit2, Trash2, Copy, Power } from "lucide-react";
 import PlanLimitIndicator from "@/components/business/deals/PlanLimitIndicator";
@@ -10,7 +10,14 @@ import { cn } from "@/lib/utils";
 
 export default function BusinessDealsPage() {
     const [deals, setDeals] = useState<any[]>([]);
-    const [limitInfo, setLimitInfo] = useState({ used: 0, total: 0 });
+    const [limits, setLimits] = useState<Array<{
+        listing_id: string;
+        business_name: string;
+        plan: "free" | "featured" | "premium";
+        max: number;
+        used: number;
+        remaining: number;
+    }>>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
 
@@ -23,7 +30,7 @@ export default function BusinessDealsPage() {
             const res = await fetch("/api/business/deals");
             const data = await res.json();
             setDeals(data.data || []);
-            setLimitInfo(data.limitInfo || { used: 0, total: 0 });
+            setLimits(Array.isArray(data.limits) ? data.limits : []);
         } catch (err) {
             console.error("Failed to fetch deals", err);
         } finally {
@@ -58,6 +65,41 @@ export default function BusinessDealsPage() {
         d.listing?.business_name.toLowerCase().includes(search.toLowerCase())
     );
 
+    const hasAvailableSlots = limits.some((l) => l.remaining > 0);
+
+    const usageByPlan = useMemo(() => {
+        const grouped = limits.reduce((acc, current) => {
+            const existing = acc[current.plan] || {
+                plan: current.plan,
+                used: 0,
+                total: 0,
+                listingsCount: 0,
+            };
+
+            existing.used += current.used;
+            existing.total += current.max;
+            existing.listingsCount += 1;
+
+            acc[current.plan] = existing;
+            return acc;
+        }, {} as Record<string, { plan: string; used: number; total: number; listingsCount: number }>);
+
+        const orderedPlans = ["free", "featured", "premium"] as const;
+        const planLabels: Record<(typeof orderedPlans)[number], string> = {
+            free: "Free",
+            featured: "Featured",
+            premium: "Premium",
+        };
+
+        return orderedPlans
+            .map((plan) => grouped[plan])
+            .filter(Boolean)
+            .map((plan) => ({
+                ...plan,
+                label: planLabels[plan.plan as keyof typeof planLabels],
+            }));
+    }, [limits]);
+
     return (
         <div className="space-y-8 p-6 lg:p-10">
             {/* Header */}
@@ -71,11 +113,11 @@ export default function BusinessDealsPage() {
                         href="/business/deals/new"
                         className={cn(
                             "flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold shadow-lg transition active:scale-95",
-                            limitInfo.used >= limitInfo.total
+                            !hasAvailableSlots
                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                 : "bg-[#FF6B35] text-white shadow-[#FF6B35]/20 hover:bg-[#FF6B35]/90"
                         )}
-                        onClick={(e) => limitInfo.used >= limitInfo.total && e.preventDefault()}
+                        onClick={(e) => !hasAvailableSlots && e.preventDefault()}
                     >
                         <Plus size={18} />
                         Create New Deal
@@ -191,7 +233,15 @@ export default function BusinessDealsPage() {
 
                 {/* Right: Info/Limits */}
                 <div className="space-y-6">
-                    <PlanLimitIndicator used={limitInfo.used} total={limitInfo.total} />
+                    {usageByPlan.map((usage) => (
+                        <PlanLimitIndicator
+                            key={usage.plan}
+                            used={usage.used}
+                            total={usage.total}
+                            title={`${usage.label} Deal Slot Usage`}
+                            subtitle={`${usage.listingsCount} ${usage.listingsCount === 1 ? "listing" : "listings"}`}
+                        />
+                    ))}
 
                     <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6 text-blue-900">
                         <h4 className="text-sm font-bold uppercase tracking-wider">Quick Tip</h4>

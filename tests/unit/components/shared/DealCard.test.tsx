@@ -1,14 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import DealCard from "../../../components/shared/DealCard";
+import DealCard from "@/components/shared/DealCard";
 import "@testing-library/jest-dom";
 
 // Self-contained mocks for components that might use window/navigation
-vi.mock("../../../components/shared/ExpiryCountdown", () => ({
+vi.mock("@/components/shared/ExpiryCountdown", () => ({
     default: ({ endDate }: any) => <div data-testid="expiry-countdown">{endDate}</div>
 }));
 
-vi.mock("../../../components/shared/BadgeDisplay", () => ({
+vi.mock("@/components/shared/BadgeDisplay", () => ({
     default: ({ isPremium, isFeatured }: any) => (
         <div data-testid="badge-display">
             {isPremium && <span>Premium</span>}

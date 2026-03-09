@@ -138,7 +138,7 @@ function MapInner({ pins, className, zoom }: MapViewProps) {
                         <div className="text-sm">
                             <strong>{pin.name}</strong>
                             {pin.category && <p className="text-gray-500">{pin.category}</p>}
-                            <a href={`/listing/${pin.slug}`} className="text-blue-600 hover:underline">
+                            <a href={`/olongapo/${pin.slug}`} className="text-blue-600 hover:underline">
                                 View Details →
                             </a>
                         </div>

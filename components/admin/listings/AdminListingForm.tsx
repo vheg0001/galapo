@@ -547,7 +547,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                     </div>
                     <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Subscription</p>
-                        <p className="text-sm font-bold">{form.is_featured ? "Top" : form.is_premium ? "Pro" : "Free Plan"}</p>
+                        <p className="text-sm font-bold">{form.is_featured ? "Featured" : form.is_premium ? "Premium" : "Free"}</p>
                     </div>
                 </div>
 
@@ -1092,7 +1092,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                                         : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
                                 )}
                             >
-                                Top
+                                Featured
                             </button>
                             <button
                                 type="button"
@@ -1104,7 +1104,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                                         : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
                                 )}
                             >
-                                Pro
+                                Premium
                             </button>
                         </div>
                     </div>

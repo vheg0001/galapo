@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, CreditCard, ShieldCheck, Plus, MonitorPlay, Calendar } from "lucide-react";
+import { Building2, CreditCard, ShieldCheck, Plus, MonitorPlay, Calendar, Tag } from "lucide-react";
 
 interface QuickActionsProps {
     pendingListings: number;
@@ -38,6 +38,13 @@ export default function QuickActions({ pendingListings, pendingPayments, pending
             color: "bg-[#0F1A2E] hover:bg-[#1a2d4f]",
         },
         {
+            href: "/admin/deals/new",
+            label: "Create Deal",
+            count: null,
+            icon: Tag,
+            color: "bg-rose-600 hover:bg-rose-700",
+        },
+        {
             href: "/admin/events",
             label: "Create Event",
             count: null,
@@ -54,7 +61,7 @@ export default function QuickActions({ pendingListings, pendingPayments, pending
     ];
 
     return (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
             {actions.map((action) => (
                 <Link
                     key={action.href}

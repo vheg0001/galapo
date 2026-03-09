@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { getActiveCategories } from "@/lib/queries";
+import { getActiveCategories, resolveCategorySlug, resolveBarangaySlugs } from "@/lib/queries";
 import DealsGrid from "@/components/public/deals/DealsGrid";
 import FeaturedDeals from "@/components/public/deals/FeaturedDeals";
 import DealFilterBar from "@/components/public/deals/DealFilterBar";
@@ -25,6 +25,12 @@ interface DealsPageProps {
 export default async function DealsPage({ searchParams }: DealsPageProps) {
     const supabase = await createServerSupabaseClient();
 
+    // Resolve filter IDs if slugs are provided
+    const [resolvedCategory, resolvedBarangays] = await Promise.all([
+        searchParams.category ? resolveCategorySlug(supabase, searchParams.category) : Promise.resolve(null),
+        searchParams.barangay ? resolveBarangaySlugs(supabase, [searchParams.barangay]) : Promise.resolve([])
+    ]);
+
     // Fetch Categories & Barangays for filters
     const [categoriesRes, barangaysRes] = await Promise.all([
         getActiveCategories(supabase, true),
@@ -34,19 +40,28 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
     const categories = categoriesRes.data || [];
     const barangays = barangaysRes.data || [];
 
+    const today = new Date().toISOString().split("T")[0];
+
     // Base query for deals
+    // Only use !inner if we are actually filtering by listing properties to avoid 
+    // hiding deals without perfect metadata in the default view.
+    const isFiltered = !!(resolvedCategory || resolvedBarangays.length > 0);
+    const listingJoin = isFiltered ? "!inner" : "";
+
     let query = supabase
         .from("deals")
         .select(`
             *,
-            listing:listings (
+            listing:listings${listingJoin} (
                 id,
                 business_name,
                 slug,
                 is_featured,
                 is_premium,
-                category:categories!listings_category_id_fkey (name, slug),
-                barangay:barangays (name, slug),
+                category_id,
+                barangay_id,
+                category:categories!listings_category_id_fkey (id, name, slug),
+                barangay:barangays (id, name, slug),
                 listing_badges (
                     id,
                     badge:badges (*)
@@ -54,14 +69,14 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
             )
         `, { count: "exact" })
         .eq("is_active", true)
-        .gte("end_date", new Date().toISOString());
+        .gte("end_date", today);
 
-    // Apply filters from searchParams
-    if (searchParams.category) {
-        query = query.eq("listing.category.slug", searchParams.category);
+    // Apply filters from searchParams using resolved IDs
+    if (resolvedCategory) {
+        query = query.eq("listing.category_id", resolvedCategory.id);
     }
-    if (searchParams.barangay) {
-        query = query.eq("listing.barangay.slug", searchParams.barangay);
+    if (resolvedBarangays.length > 0) {
+        query = query.eq("listing.barangay_id", resolvedBarangays[0]);
     }
 
     // Apply Sorting
@@ -72,7 +87,11 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
         query = query.order("created_at", { ascending: false });
     }
 
-    const { data: allDeals, count } = await query;
+    const { data: allDeals, count, error: dealsError } = await query;
+
+    if (dealsError) {
+        console.error("[Public Deals Page] Failed to fetch deals", dealsError);
+    }
 
     // Safety check: Filter out deals that might be orphaned (missing listing)
     const validDeals = (allDeals || []).filter((d: any) => d.listing);

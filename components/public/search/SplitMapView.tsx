@@ -256,7 +256,7 @@ export default function SplitMapView({ listings, onResultsUpdate, className }: S
                                 {/* Info */}
                                 <div className="min-w-0 flex-1">
                                     <Link
-                                        href={`/listing/${listing.slug}`}
+                                        href={`/olongapo/${listing.slug}`}
                                         onClick={(e) => e.stopPropagation()}
                                         className="text-sm font-semibold text-foreground line-clamp-1 hover:text-secondary transition-colors"
                                     >
@@ -408,7 +408,7 @@ function MapPanel({
                                     <p className="text-xs text-gray-500">{listing.categories.name}</p>
                                 )}
                                 <a
-                                    href={`/listing/${listing.slug}`}
+                                    href={`/olongapo/${listing.slug}`}
                                     className="mt-1.5 inline-block text-xs font-medium text-blue-600 hover:underline"
                                 >
                                     View details →

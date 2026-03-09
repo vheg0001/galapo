@@ -23,7 +23,7 @@ describe("ListingCard Component", () => {
 
         // Link wrapper
         const link = screen.getByRole("link");
-        expect(link).toHaveAttribute("href", "/listing/test-business");
+        expect(link).toHaveAttribute("href", "/olongapo/test-business");
     });
 
     it("renders featured badge when isFeatured is true", () => {

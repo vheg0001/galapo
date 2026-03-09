@@ -54,7 +54,7 @@ export default function ListingCard({
 
     return (
         <Link
-            href={`/listing/${slug}`}
+            href={`/olongapo/${slug}`}
             className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg hover:-translate-y-1"
         >
             {/* Image */}

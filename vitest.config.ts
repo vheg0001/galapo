@@ -4,10 +4,15 @@ import { resolve } from "path";
 
 export default defineConfig({
     plugins: [react()],
+    resolve: {
+        alias: {
+            "@": resolve(__dirname, "."),
+        },
+    },
     test: {
         environment: "jsdom",
         globals: true,
-        // setupFiles: ["./tests/setup.ts"],
+        setupFiles: ["./tests/setup.ts"],
         include: ["tests/**/*.{test,spec}.{ts,tsx}"],
         coverage: {
             provider: "v8",
@@ -22,9 +27,6 @@ export default defineConfig({
                 "tests/mocks/",
                 "**/*.d.ts",
             ],
-        },
-        alias: {
-            "@": ".",
         },
     },
 });

@@ -42,7 +42,7 @@ export default function ListingList({ listings, currentPage, totalPages, basePat
                     return (
                         <div key={listing.id}>
                             <Link
-                                href={`/listing/${listing.slug}`}
+                                href={`/olongapo/${listing.slug}`}
                                 className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-lg sm:flex-row"
                             >
                                 {/* Image */}

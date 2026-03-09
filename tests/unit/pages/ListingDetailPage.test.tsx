@@ -10,12 +10,12 @@ vi.mock("@/lib/queries", () => ({
     getRelatedListings: vi.fn(),
 }));
 
-// Mock Supabase
-vi.mock("@/lib/supabase", () => ({
-    createServerSupabaseClient: vi.fn(),
-}));
+// Mocks handled by tests/setup.ts:
+// - next/navigation
+// - @/lib/supabase
+// - @testing-library/jest-dom
 
-// Mock components that cause issues in unit tests
+// Specific component mocks for this test
 vi.mock("@/components/public/listing/LocationMap", () => ({
     default: () => <div data-testid="location-map">Map</div>
 }));
@@ -35,6 +35,7 @@ describe("ListingDetailPage", () => {
             owner_id: null,
             lat: 14.8386,
             lng: 120.2842,
+            is_pre_populated: true,
         }),
         categories: { id: "c1", name: "Food", slug: "food", icon: "🍽️" },
         subcategories: { id: "s1", name: "Seafood", slug: "seafood" },

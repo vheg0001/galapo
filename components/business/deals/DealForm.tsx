@@ -42,8 +42,8 @@ export default function DealForm({ listings, initialData, isEditing = false }: D
         title: initialData?.title || "",
         description: initialData?.description || "",
         discount_text: initialData?.discount_text || "",
-        start_date: initialData?.start_date || new Date().toISOString().split('T')[0],
-        end_date: initialData?.end_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        start_date: initialData?.start_date ? initialData.start_date.split('T')[0] : new Date().toISOString().split('T')[0],
+        end_date: initialData?.end_date ? initialData.end_date.split('T')[0] : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         image_url: initialData?.image_url || "",
         terms_conditions: initialData?.terms_conditions || "Valid for dine-in only. Cannot be combined with other promos."
     });
