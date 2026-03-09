@@ -176,6 +176,15 @@ export default function AdminListingDetailPage() {
                         </button>
                     )}
 
+                    {listing.status === "approved" && (
+                        <Link
+                            href={`/admin/deals/new?listing_id=${id}`}
+                            className="flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-95 whitespace-nowrap"
+                        >
+                            Add Deal
+                        </Link>
+                    )}
+
                     <div className="h-8 w-px bg-border/50 mx-1" />
 
                     <Link

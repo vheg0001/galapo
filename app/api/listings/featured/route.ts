@@ -30,9 +30,9 @@ export async function GET(request: Request) {
             `)
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
-            .eq("is_featured", true)
-            // Order by premium first, then newest
+            .or("is_featured.eq.true,is_premium.eq.true")
             .order("is_premium", { ascending: false })
+            .order("is_featured", { ascending: false })
             .order("created_at", { ascending: false })
             .limit(limit);
 

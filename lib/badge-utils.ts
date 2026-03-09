@@ -53,10 +53,9 @@ export function getCardBadges(
     const result: ListingBadge[] = [];
     let planSlotTaken = false;
 
-    if (planBadges.length > 0) {
-        result.push(planBadges[0]);
-        planSlotTaken = true;
-    } else if (isPremium || isFeatured) {
+    // Add all plan badges (usually one, but allow multiple if both exist)
+    result.push(...planBadges);
+    if (planBadges.length > 0 || isPremium || isFeatured) {
         planSlotTaken = true;
     }
 

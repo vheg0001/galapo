@@ -30,7 +30,7 @@ export const THEME = {
 export const NAV_LINKS = [
     { label: "Home", href: "/" },
     { label: "Categories", href: "/olongapo/categories" },
-    { label: "Deals", href: "/deals" },
+    { label: "Deals", href: "/olongapo/deals" },
     { label: "Events", href: "/events" },
     { label: "Blog", href: "/blog" },
 ] as const;
@@ -39,7 +39,7 @@ export const NAV_LINKS = [
 export const FOOTER_QUICK_LINKS = [
     { label: "Home", href: "/" },
     { label: "Categories", href: "/olongapo/categories" },
-    { label: "Deals", href: "/deals" },
+    { label: "Deals", href: "/olongapo/deals" },
     { label: "Events", href: "/events" },
     { label: "Blog", href: "/blog" },
 ] as const;

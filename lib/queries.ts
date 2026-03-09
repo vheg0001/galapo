@@ -43,7 +43,7 @@ export function getListingsQuery(supabase: SupabaseClient, filters: ListingFilte
     }
 
     if (filters.isFeatured) {
-        query = query.eq("is_featured", true);
+        query = query.or("is_featured.eq.true,is_premium.eq.true");
     }
 
     if (filters.categoryId) {
@@ -212,7 +212,7 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
 
     // Featured only
     if (filters.featuredOnly) {
-        query = query.eq("is_featured", true);
+        query = query.or("is_featured.eq.true,is_premium.eq.true");
     }
 
     // Text search
@@ -413,7 +413,7 @@ export async function buildListingsQuery(supabase: SupabaseClient, options: Buil
 
     // Featured only
     if (filters.featuredOnly) {
-        query = query.eq("is_featured", true);
+        query = query.or("is_featured.eq.true,is_premium.eq.true");
     }
 
     // Text search
@@ -606,8 +606,8 @@ export async function getRelatedListings(
     }
 
     query = query
-        .order("is_featured", { ascending: false })
         .order("is_premium", { ascending: false })
+        .order("is_featured", { ascending: false })
         .order("created_at", { ascending: false });
 
     const { data } = await query;

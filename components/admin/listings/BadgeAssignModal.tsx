@@ -33,6 +33,12 @@ export default function BadgeAssignModal({
     useEffect(() => {
         if (!isOpen) return;
 
+        // Reset state when modal opens
+        setSelectedBadge(null);
+        setNote("");
+        setExpiresAt(null);
+        setSearch("");
+
         async function fetchBadges() {
             setLoading(true);
             try {

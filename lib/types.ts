@@ -253,7 +253,29 @@ export interface Deal {
     start_date: string;
     end_date: string;
     is_active: boolean;
+    terms_conditions?: string | null;
     created_at: string;
+}
+
+export type DealStatus = "active" | "expired" | "scheduled" | "inactive";
+
+export interface DealWithListing extends Deal {
+    listing: {
+        business_name: string;
+        slug: string;
+        category: { name: string };
+        barangay: { name: string };
+        is_featured: boolean;
+        is_premium: boolean;
+        listing_badges: ListingBadge[];
+    };
+}
+
+export interface DealLimits {
+    max: number;
+    used: number;
+    remaining: number;
+    plan: PlanType;
 }
 
 export interface Event {

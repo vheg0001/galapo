@@ -48,7 +48,7 @@ export function parseSearchParams(searchParams: URLSearchParams): ParsedSearchPa
         barangay,
         badges,
         q: searchParams.get("q") || null,
-        featuredOnly: searchParams.get("featured_only") === "true",
+        featuredOnly: searchParams.get("featured_only") === "true" || searchParams.get("featured") === "true",
         openNow: searchParams.get("open_now") === "true",
         sort,
         page,

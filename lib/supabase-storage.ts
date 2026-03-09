@@ -109,3 +109,9 @@ export async function uploadBlogImage(file: File, postId: string) {
     const fileName = `${postId}/featured-${Date.now()}.${ext}`;
     return uploadFile("blog", fileName, file);
 }
+
+export async function uploadDealBanner(file: File, listingId: string) {
+    const ext = file.name.split('.').pop();
+    const fileName = `${listingId}/deal-${Date.now()}.${ext}`;
+    return uploadFile("deals", fileName, file);
+}

@@ -69,8 +69,9 @@ export default async function HomePage() {
             `)
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
-            .eq("is_featured", true)
+            .or("is_featured.eq.true,is_premium.eq.true")
             .order("is_premium", { ascending: false })
+            .order("is_featured", { ascending: false })
             .order("created_at", { ascending: false })
             .limit(6),
         adminSupabase
@@ -214,7 +215,7 @@ export default async function HomePage() {
                                 </h2>
                                 <p className="mt-1 text-muted-foreground">Top-rated businesses in Olongapo</p>
                             </div>
-                            <Link href="/search?featured=true" className="hidden sm:flex items-center gap-1 text-sm font-medium text-secondary hover:underline">
+                            <Link href="/search?featured_only=true" className="hidden sm:flex items-center gap-1 text-sm font-medium text-secondary hover:underline">
                                 View All <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
@@ -242,7 +243,7 @@ export default async function HomePage() {
                                 />
                             ))}
                         </div>
-                        <Link href="/search?featured=true" className="mt-4 flex sm:hidden items-center justify-center gap-1 text-sm font-medium text-secondary hover:underline">
+                        <Link href="/search?featured_only=true" className="mt-4 flex sm:hidden items-center justify-center gap-1 text-sm font-medium text-secondary hover:underline">
                             View All Featured <ArrowRight className="h-4 w-4" />
                         </Link>
                     </div>
@@ -384,7 +385,7 @@ export default async function HomePage() {
                                 </h2>
                                 <p className="mt-1 text-muted-foreground">Save big with these local deals</p>
                             </div>
-                            <Link href="/deals" className="hidden sm:flex items-center gap-1 text-sm font-medium text-secondary hover:underline">
+                            <Link href="/olongapo/deals" className="hidden sm:flex items-center gap-1 text-sm font-medium text-secondary hover:underline">
                                 View All Deals <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
@@ -395,10 +396,12 @@ export default async function HomePage() {
                                     id={deal.id}
                                     listingSlug={(deal.listings as any)?.slug || ""}
                                     title={deal.title}
+                                    description={deal.description}
                                     businessName={(deal.listings as any)?.business_name || ""}
                                     discountText={deal.discount_text}
                                     imageUrl={deal.image_url}
                                     endDate={deal.end_date}
+                                    className="w-[280px] sm:w-[320px] shrink-0 snap-start"
                                 />
                             ))}
                         </div>

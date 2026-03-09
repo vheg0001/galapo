@@ -203,7 +203,7 @@ async function CategoryPageView({ catSlug, sp, supabase }: any) {
         const qp: string[] = [];
         if (subSlug) qp.push(`sub=${subSlug}`);
         if (sort !== "featured") qp.push(`sort=${sort}`);
-        if (featuredOnly) qp.push("featured=true");
+        if (featuredOnly) qp.push("featured_only=true");
         barangaySlugs.forEach((b: string) => qp.push(`barangay=${b}`));
         badgeSlugs.forEach((b: string) => qp.push(`badges=${b}`));
         if (qp.length > 0) parts.push(`?${qp.join("&")}`);
@@ -260,7 +260,7 @@ async function SubcategoryPageView({ catSlug, subSlug, sp, supabase, category }:
         const parts = [`/olongapo/${catSlug}/${subSlug}`];
         const qp: string[] = [];
         if (sort !== "featured") qp.push(`sort=${sort}`);
-        if (featuredOnly) qp.push("featured=true");
+        if (featuredOnly) qp.push("featured_only=true");
         barangaySlugs.forEach((b: string) => qp.push(`barangay=${b}`));
         badgeSlugs.forEach((b: string) => qp.push(`badges=${b}`));
         if (qp.length > 0) parts.push(`?${qp.join("&")}`);
@@ -362,6 +362,7 @@ function ListingDetailView({ listing, related, slug }: any) {
                                 paymentMethods={listing.payment_methods || []}
                                 fieldValues={fieldValues}
                                 categoryName={cat?.name}
+                                businessName={listing.business_name}
                                 hours={hours}
                                 deals={deals}
                                 events={events}

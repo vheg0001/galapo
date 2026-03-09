@@ -92,7 +92,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         const queryParts: string[] = [];
         if (subSlug) queryParts.push(`sub=${subSlug}`);
         if (sort !== "featured") queryParts.push(`sort=${sort}`);
-        if (featuredOnly) queryParts.push("featured=true");
+        if (featuredOnly) queryParts.push("featured_only=true");
         barangaySlugs.forEach((b) => queryParts.push(`barangay=${b}`));
         badgeSlugs.forEach((b) => queryParts.push(`badges=${b}`));
         if (queryParts.length > 0) parts.push(`?${queryParts.join("&")}`);

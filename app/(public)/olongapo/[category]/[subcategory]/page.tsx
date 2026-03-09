@@ -66,7 +66,7 @@ export default async function SubcategoryPage({ params, searchParams }: PageProp
         const parts = [`/olongapo/${catSlug}/${subSlug}`];
         const queryParts: string[] = [];
         if (sort !== "featured") queryParts.push(`sort=${sort}`);
-        if (featuredOnly) queryParts.push("featured=true");
+        if (featuredOnly) queryParts.push("featured_only=true");
         barangaySlugs.forEach((b) => queryParts.push(`barangay=${b}`));
         if (queryParts.length > 0) parts.push(`?${queryParts.join("&")}`);
         return parts.join("");

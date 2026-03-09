@@ -46,14 +46,24 @@ export default function BadgeDisplay({
         ));
 
         // Inject legacy plan badge if no DB plan badge explicitly exists
+        // Inject legacy plan badge if no DB plan badge explicitly exists
         const hasPlanBadgeInDb = cardBadges.some(lb => lb.badge?.type === "plan");
         if (!hasPlanBadgeInDb) {
-            if (isPremium) {
-                displayItems.unshift(<Badge key="legacy-premium" variant="premium">Premium</Badge>);
-            } else if (isFeatured) {
+            // Ensure Featured shows for both isFeatured and isPremium
+            if (isFeatured || isPremium) {
                 displayItems.unshift(<Badge key="legacy-featured" variant="featured">Featured</Badge>);
             }
+            // Premium shows only if isPremium
+            if (isPremium) {
+                displayItems.unshift(<Badge key="legacy-premium" variant="premium">Premium</Badge>);
+            }
         }
+
+        // Remove duplicate Featured if it was already unshifted via isPremium
+        // (Wait, the logic above already handles it: 
+        // if both true: unshift Featured, then unshift Premium -> [Premium, Featured])
+        // if only Premium: unshift Featured, then unshift Premium -> [Premium, Featured])
+        // if only Featured: unshift Featured -> [Featured])
 
         if (displayItems.length === 0) return null;
 
@@ -73,12 +83,15 @@ export default function BadgeDisplay({
     ));
 
     // Inject legacy plan badge if no DB plan badge explicitly exists
+    // Inject legacy plan badge if no DB plan badge explicitly exists
+    // Inject legacy plan badge if no DB plan badge explicitly exists
     const hasPlanBadgeInDb = sortedBadges.some(lb => lb.badge?.type === "plan");
     if (!hasPlanBadgeInDb) {
+        if (isFeatured || isPremium) {
+            allItems.unshift(<Badge key="legacy-featured" variant="featured">Featured</Badge>);
+        }
         if (isPremium) {
             allItems.unshift(<Badge key="legacy-premium" variant="premium">Premium</Badge>);
-        } else if (isFeatured) {
-            allItems.unshift(<Badge key="legacy-featured" variant="featured">Featured</Badge>);
         }
     }
 

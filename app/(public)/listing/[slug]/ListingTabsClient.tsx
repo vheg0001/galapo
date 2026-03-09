@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import OperatingHours from "@/components/public/listing/OperatingHours";
 import DynamicFields from "@/components/public/listing/DynamicFields";
@@ -30,6 +31,7 @@ interface ListingTabsClientProps {
     paymentMethods: string[];
     fieldValues: any[];
     categoryName?: string;
+    businessName: string;
     hours: any;
     deals: any[];
     events: any[];
@@ -42,11 +44,22 @@ export default function ListingTabsClient({
     paymentMethods,
     fieldValues,
     categoryName,
+    businessName,
     hours,
     deals,
     events,
 }: ListingTabsClientProps) {
-    const [activeTab, setActiveTab] = useState(tabs[0]?.id || "about");
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get("tab");
+
+    const [activeTab, setActiveTab] = useState(tabParam || tabs[0]?.id || "about");
+
+    // Sync state if URL param changes
+    useEffect(() => {
+        if (tabParam && tabs.some(t => t.id === tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam, tabs]);
 
     return (
         <div className="space-y-0">
@@ -151,7 +164,7 @@ export default function ListingTabsClient({
 
                 {/* DEALS */}
                 {activeTab === "deals" && (
-                    <DealsList deals={deals} />
+                    <DealsList deals={deals} businessName={businessName} />
                 )}
 
                 {/* EVENTS */}

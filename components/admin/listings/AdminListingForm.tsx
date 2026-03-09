@@ -547,7 +547,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                     </div>
                     <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Subscription</p>
-                        <p className="text-sm font-bold">{form.is_featured ? "Featured" : form.is_premium ? "Premium" : "Free Plan"}</p>
+                        <p className="text-sm font-bold">{form.is_featured ? "Top" : form.is_premium ? "Pro" : "Free Plan"}</p>
                     </div>
                 </div>
 
@@ -1084,18 +1084,6 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setForm({ ...form, is_premium: true, is_featured: false })}
-                                className={cn(
-                                    "flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                    form.is_premium
-                                        ? "bg-violet-600 text-white shadow-md scale-[1.02] ring-1 ring-violet-400/20"
-                                        : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                Pro
-                            </button>
-                            <button
-                                type="button"
                                 onClick={() => setForm({ ...form, is_featured: true, is_premium: false })}
                                 className={cn(
                                     "flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
@@ -1105,6 +1093,18 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                                 )}
                             >
                                 Top
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setForm({ ...form, is_premium: true, is_featured: false })}
+                                className={cn(
+                                    "flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                    form.is_premium
+                                        ? "bg-violet-600 text-white shadow-md scale-[1.02] ring-1 ring-violet-400/20"
+                                        : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+                                )}
+                            >
+                                Pro
                             </button>
                         </div>
                     </div>

@@ -31,8 +31,10 @@ export async function middleware(request: NextRequest) {
     const isClaimRoute = CLAIM_ROUTES.test(pathname);
 
     // ── Maintenance Mode Check ─────────────────────────────
-    // Apply to all routes except: maintenance page, admin login, and API routes
-    if (!isMaintenanceRoute && !isAdminLoginRoute && !pathname.startsWith('/api/') && !pathname.startsWith('/_next/')) {
+    // Apply to all routes except: maintenance page, admin login, API, and system routes
+    const isStaticAsset = pathname.includes('.') || pathname.startsWith('/_next/') || pathname.startsWith('/favicon.ico');
+
+    if (!isMaintenanceRoute && !isAdminLoginRoute && !pathname.startsWith('/api/') && !isStaticAsset) {
         const { data: maintenanceSetting } = await supabase
             .from("site_settings")
             .select("value")
@@ -46,7 +48,6 @@ export async function middleware(request: NextRequest) {
             let isAdmin = false;
 
             if (user) {
-                // Trust metadata first for speed, fallback to profile
                 isAdmin = user.user_metadata?.role === "super_admin";
                 if (!isAdmin) {
                     const { data: profile } = await supabase
@@ -70,6 +71,11 @@ export async function middleware(request: NextRequest) {
             data: { user },
         } = await supabase.auth.getUser();
 
+        // ── Maintenance Mode Check (Admin bypass) ──────────────
+        // Only run maintenance check for protected routes if not already checked
+        // OR run it here for admins to allow bypass. 
+        // For simplicity, we'll keep the main check above but optimize it.
+
         // Protect Claim Routes (Guest -> /register)
         if (isClaimRoute && !user) {
             const registerUrl = new URL("/register", request.url);
@@ -91,7 +97,7 @@ export async function middleware(request: NextRequest) {
                     .from("profiles")
                     .select("role")
                     .eq("id", user.id)
-                    .single();
+                    .maybeSingle();
                 role = profile?.role;
             }
             if (role !== "business_owner" && role !== "super_admin") {
@@ -116,7 +122,7 @@ export async function middleware(request: NextRequest) {
                     .from("profiles")
                     .select("role")
                     .eq("id", user.id)
-                    .single();
+                    .maybeSingle();
                 role = profile?.role;
             }
             if (role !== "super_admin") {
@@ -129,8 +135,12 @@ export async function middleware(request: NextRequest) {
     }
 
     // ── Allow public routes/assets — return the response quickly
-    // Set custom header so server components (layouts) can access the pathname
-    response.headers.set("x-pathname", pathname);
+    // Set custom header only for pages (not assets like favicon or images)
+    // to allow server components to access the current pathname
+    if (!pathname.includes('.') && !pathname.startsWith('/api/')) {
+        response.headers.set("x-pathname", pathname);
+    }
+
     return response;
 }
 
@@ -140,9 +150,10 @@ export const config = {
          * Match all routes except:
          * - _next/static (static files)
          * - _next/image (image optimization)
-         * - favicon.ico, sitemap.xml, robots.txt
-         * - Public assets (icons, images, etc.)
+         * - favicon.ico, sitemap.xml, robots.txt, manifest.json
+         * - Common image/asset extensions
+         * - Public assets in /icons or /images
          */
-        "/((?!_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt|icons/|manifest\\.json|sw\\.js|workbox-.*).*)",
+        "/((?!_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt|manifest\\.json|sw\\.js|workbox-.*|.*\\.(?:svg|png|jpg|jpeg|webp|gif|ico|woff2?|css|js)|icons/|images/|assets/).*)",
     ],
 };

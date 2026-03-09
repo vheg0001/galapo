@@ -162,7 +162,7 @@ BEGIN
           AND (array_length(v_barangay_ids, 1) IS NULL OR l.barangay_id = ANY(v_barangay_ids))
           
           -- Featured Only Filter
-          AND (NOT featured_only OR l.is_featured = true)
+          AND (NOT featured_only OR l.is_featured = true OR l.is_premium = true)
           
           -- Search Filter (Strictly restricts by query if provided)
           AND (search_query IS NULL OR 
