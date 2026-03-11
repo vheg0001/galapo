@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import DealForm from "../../../components/business/deals/DealForm";
+import DealForm from "@/components/business/deals/DealForm";
 import "@testing-library/jest-dom";
 
 // Self-contained mock to bypass global setup failures on Windows
@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock DealCard specifically for preview
-vi.mock("../../../components/shared/DealCard", () => ({
+vi.mock("@/components/shared/DealCard", () => ({
     default: ({ title, businessName, discountText }: any) => (
         <div data-testid="deal-preview">
             <span>{title}</span>

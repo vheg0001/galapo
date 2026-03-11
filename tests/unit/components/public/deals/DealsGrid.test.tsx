@@ -1,14 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import DealsGrid from "../../../components/public/deals/DealsGrid";
+import DealsGrid from "@/components/public/deals/DealsGrid";
 import "@testing-library/jest-dom";
 
 // Mock DealCard and AdSlot to keep tests focused on grid logic
-vi.mock("../../../components/shared/DealCard", () => ({
+vi.mock("@/components/shared/DealCard", () => ({
     default: ({ title }: any) => <div data-testid="deal-card">{title}</div>
 }));
 
-vi.mock("../../../components/shared/AdSlot", () => ({
+vi.mock("@/components/shared/AdSlot", () => ({
     default: ({ location }: any) => <div data-testid="ad-slot">{location}</div>
 }));
 
@@ -19,6 +19,7 @@ describe("DealsGrid", () => {
         description: `Description ${i}`,
         discount_text: `${i}% OFF`,
         image_url: null,
+        start_date: "2024-01-01",
         end_date: "2024-12-31",
         listing: {
             business_name: `Business ${i}`,

@@ -18,15 +18,16 @@ async function validateOwnership(supabase: any, dealId: string, userId: string) 
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const supabase = await createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const { deal, error, status } = await validateOwnership(supabase, params.id, session.user.id);
+        const { deal, error, status } = await validateOwnership(supabase, id, session.user.id);
         if (error) return NextResponse.json({ error }, { status });
 
         return NextResponse.json({ data: deal });
@@ -37,8 +38,9 @@ export async function GET(
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const supabase = await createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
 
@@ -46,13 +48,13 @@ export async function PATCH(
 
     try {
         const body = await request.json();
-        const { error, status } = await validateOwnership(supabase, params.id, session.user.id);
+        const { error, status } = await validateOwnership(supabase, id, session.user.id);
         if (error) return NextResponse.json({ error }, { status });
 
         const { data, error: updateError } = await supabase
             .from("deals")
             .update(body)
-            .eq("id", params.id)
+            .eq("id", id)
             .select()
             .single();
 
@@ -65,21 +67,22 @@ export async function PATCH(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const supabase = await createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const { error, status } = await validateOwnership(supabase, params.id, session.user.id);
+        const { error, status } = await validateOwnership(supabase, id, session.user.id);
         if (error) return NextResponse.json({ error }, { status });
 
         const { error: deleteError } = await supabase
             .from("deals")
             .delete()
-            .eq("id", params.id);
+            .eq("id", id);
 
         if (deleteError) throw deleteError;
         return NextResponse.json({ success: true });

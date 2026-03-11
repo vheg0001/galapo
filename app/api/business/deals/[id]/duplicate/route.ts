@@ -6,8 +6,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const supabase = await createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
 
@@ -25,7 +26,7 @@ export async function POST(
         const { data: original, error: fetchError } = await supabase
             .from("deals")
             .select("*, listings(owner_id)")
-            .eq("id", params.id)
+            .eq("id", id)
             .single();
 
         if (fetchError || !original) return NextResponse.json({ error: "Original deal not found" }, { status: 404 });

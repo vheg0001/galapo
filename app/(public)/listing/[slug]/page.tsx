@@ -198,6 +198,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
                             {/* ── TABS ── */}
                             <ListingTabs
+                                businessName={listing.business_name}
                                 description={listing.full_description}
                                 tags={listing.tags as string[]}
                                 paymentMethods={listing.payment_methods as string[]}
@@ -297,6 +298,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
 // is handled via URL-friendly tab IDs using native CSS trick.
 
 interface ListingTabsProps {
+    businessName: string;
     description: string | null;
     tags: string[];
     paymentMethods: string[];
@@ -322,6 +324,7 @@ const PAYMENT_METHOD_ICONS: Record<string, string> = {
 };
 
 function ListingTabs({
+    businessName,
     description,
     tags,
     paymentMethods,
@@ -345,6 +348,7 @@ function ListingTabs({
     return (
         <ListingTabsClient
             tabs={tabs}
+            businessName={businessName}
             description={description}
             tags={tags}
             paymentMethods={paymentMethods}

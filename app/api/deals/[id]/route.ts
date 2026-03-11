@@ -5,8 +5,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     const supabase = await createServerSupabaseClient();
     const today = new Date().toISOString();
 
@@ -26,7 +27,7 @@ export async function GET(
                     listing_images (*)
                 )
             `)
-            .eq("id", params.id)
+            .eq("id", id)
             .eq("is_active", true)
             .gte("end_date", today)
             .single();

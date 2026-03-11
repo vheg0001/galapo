@@ -79,7 +79,8 @@ describe("SearchPage Component", () => {
         barangays: mockBarangays,
         currentPage: 1,
         totalPages: 1,
-        initialQ: "hotel"
+        initialQ: "hotel",
+        badges: []
     };
 
     it("renders core components (SearchBar, FilterBar, ActiveFilters, ResultsHeader)", () => {

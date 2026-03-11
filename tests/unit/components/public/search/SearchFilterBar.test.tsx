@@ -50,6 +50,9 @@ describe("SearchFilterBar Component", () => {
                 onSortChange={mockSortChange}
                 onViewChange={mockViewChange}
                 onClearAll={mockClearAll}
+                activeBadges={[]}
+                availableBadges={[]}
+                onBadgeToggle={vi.fn()}
                 {...props}
             />
         );
