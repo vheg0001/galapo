@@ -146,7 +146,7 @@ export default function DynamicFieldsList({ categoryId, isSubcategory, fields, s
                         </thead>
                         <tbody className="divide-y divide-border/30">
                             {localFields.map((field, i) => {
-                                const isInherited = field.category_id !== categoryId;
+                                const isInherited = field.category_id !== categoryId && !field.subcategory_id;
                                 const isSubcategorySpecific = !!field.subcategory_id;
 
                                 return (
