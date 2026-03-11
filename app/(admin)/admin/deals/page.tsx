@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { MoreHorizontal, Power, Trash2, ExternalLink, Pencil } from "lucide-react";
+import { Power, Trash2, Pencil } from "lucide-react";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 import DataTable, { Column } from "@/components/admin/shared/DataTable";
-import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 
 type DealRow = {
@@ -28,7 +27,7 @@ export default function AdminDealsPage() {
     const [search, setSearch] = useState("");
     const [total, setTotal] = useState(0);
 
-    async function loadRows() {
+    const loadRows = useCallback(async () => {
         setLoading(true);
         const params = new URLSearchParams();
         if (search) params.set("search", search);
@@ -43,25 +42,58 @@ export default function AdminDealsPage() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [search]);
 
     useEffect(() => {
         loadRows();
-    }, [search]);
+    }, [loadRows]);
 
-    async function toggleActive(id: string, current: boolean) {
+    const toggleActive = useCallback(async (id: string, current: boolean) => {
         await fetch(`/api/admin/deals/${id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ is_active: !current })
         });
         loadRows();
-    }
+    }, [loadRows]);
 
-    async function deleteDeal(id: string) {
+    const deleteDeal = useCallback(async (id: string) => {
         if (!confirm("Are you sure you want to delete this deal?")) return;
         await fetch(`/api/admin/deals/${id}`, { method: "DELETE" });
         loadRows();
+    }, [loadRows]);
+
+    async function bulk(action: "deactivate" | "delete", selectedRows: DealRow[]) {
+        if (!selectedRows.length) return;
+
+        if (action === "delete") {
+            const confirmed = window.confirm(
+                `Are you sure you want to delete ${selectedRows.length} selected deal${selectedRows.length === 1 ? "" : "s"}?`
+            );
+
+            if (!confirmed) return;
+        }
+
+        try {
+            const res = await fetch("/api/admin/deals/bulk", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action,
+                    deal_ids: selectedRows.map((row) => row.id),
+                }),
+            });
+
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                throw new Error(json.error || `Failed to ${action} selected deals.`);
+            }
+
+            await loadRows();
+        } catch (error) {
+            console.error(`Failed to ${action} deals`, error);
+            alert(action === "delete" ? "Failed to delete selected deals." : "Failed to deactivate selected deals.");
+        }
     }
 
     const columns = useMemo<Column<DealRow>[]>(() => [
@@ -212,7 +244,7 @@ export default function AdminDealsPage() {
                 </div>
             )
         }
-    ], []);
+    ], [deleteDeal, toggleActive]);
 
     return (
         <div className="space-y-6">
@@ -247,6 +279,10 @@ export default function AdminDealsPage() {
                     columns={columns}
                     keyField="id"
                     isLoading={loading}
+                    bulkActions={[
+                        { label: "Deactivate Selected", onClick: (selected) => bulk("deactivate", selected) },
+                        { label: "Delete Selected", onClick: (selected) => bulk("delete", selected), variant: "destructive" },
+                    ]}
                     emptyMessage="No deals or offers found in the system."
                     className="p-4"
                 />

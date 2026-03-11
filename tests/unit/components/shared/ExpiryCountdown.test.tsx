@@ -1,62 +1,69 @@
 import { render, screen, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import ExpiryCountdown from "../../../components/shared/ExpiryCountdown";
+import ExpiryCountdown from "@/components/shared/ExpiryCountdown";
 import "@testing-library/jest-dom";
 
 describe("ExpiryCountdown", () => {
     beforeEach(() => {
         vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-03-11T12:00:00+08:00"));
     });
 
     afterEach(() => {
         vi.useRealTimers();
     });
 
-    it("renders 'Expired' for past dates", () => {
-        const pastDate = new Date();
-        pastDate.setDate(pastDate.getDate() - 1);
-        render(<ExpiryCountdown endDate={pastDate.toISOString()} />);
-        expect(screen.getByText(/Expired/i)).toBeInTheDocument();
+    it("renders nothing for expired deals", () => {
+        const { container } = render(<ExpiryCountdown endDate="2026-03-10" />);
+        expect(container).toBeEmptyDOMElement();
     });
 
-    it("renders 'Ends today' with red styling for same-day expiry", () => {
-        const today = new Date();
-        today.setHours(today.getHours() + 5);
-        render(<ExpiryCountdown endDate={today.toISOString()} />);
+    it("renders a live countdown for deals expiring later today", () => {
+        vi.setSystemTime(new Date("2026-03-11T18:30:00+08:00"));
+        render(<ExpiryCountdown endDate="2026-03-11" />);
 
-        const element = screen.getByText(/Ends today/i);
+        const element = screen.getByText(/EXPIRES:\s*05:29:59/i);
         expect(element).toBeInTheDocument();
-        expect(element.parentElement).toHaveClass("text-red-500");
+        expect(element.closest("div")).toHaveClass("text-red-600");
     });
 
-    it("renders 'Ends in X days' for upcoming expiry (> 1 day)", () => {
-        const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + 3);
-        render(<ExpiryCountdown endDate={futureDate.toISOString()} />);
+    it("counts down to the start date for upcoming deals", () => {
+        vi.setSystemTime(new Date("2026-03-11T10:00:00+08:00"));
+        render(<ExpiryCountdown startDate="2026-03-12" endDate="2026-03-15" />);
 
-        expect(screen.getByText(/Ends in 2 days/i)).toBeInTheDocument();
+        expect(screen.getByText(/Starts in 14:00:00/i)).toBeInTheDocument();
     });
 
-    it("renders 'Ends in 1 day' for expiry between 24-48 hours", () => {
-        const tomorrow = new Date();
-        tomorrow.setHours(tomorrow.getHours() + 30);
-        render(<ExpiryCountdown endDate={tomorrow.toISOString()} />);
+    it("renders 'Expires in X days' for multi-day expiry", () => {
+        render(<ExpiryCountdown endDate="2026-03-14" />);
 
-        expect(screen.getByText(/Ends in 1 day/i)).toBeInTheDocument();
+        expect(screen.getByText(/Expires in 3 days/i)).toBeInTheDocument();
     });
 
-    it("updates countdown every minute", () => {
-        const futureDate = new Date();
-        futureDate.setMinutes(futureDate.getMinutes() + 65);
-        render(<ExpiryCountdown endDate={futureDate.toISOString()} />);
+    it("treats date-only end dates as the end of the local day", () => {
+        vi.setSystemTime(new Date("2026-03-12T23:30:00+08:00"));
+        render(<ExpiryCountdown endDate="2026-03-12" />);
 
-        expect(screen.getByText(/Ends in 1 hour/i)).toBeInTheDocument();
+        expect(screen.getByText(/EXPIRES:\s*00:29:59/i)).toBeInTheDocument();
+    });
+
+    it("treats midnight timestamps with timezone offsets as all-day deal end dates", () => {
+        vi.setSystemTime(new Date("2026-03-12T21:00:00+08:00"));
+        render(<ExpiryCountdown endDate="2026-03-12T00:00:00+08:00" />);
+
+        expect(screen.getByText(/EXPIRES:\s*02:59:59/i)).toBeInTheDocument();
+    });
+
+    it("updates the live countdown every second when less than a day remains", () => {
+        vi.setSystemTime(new Date("2026-03-11T23:58:55+08:00"));
+        render(<ExpiryCountdown endDate="2026-03-11" />);
+
+        expect(screen.getByText(/EXPIRES:\s*00:01:04/i)).toBeInTheDocument();
 
         act(() => {
-            vi.advanceTimersByTime(60 * 1000 * 10); // Advance 10 mins
+            vi.advanceTimersByTime(1000);
         });
 
-        // Should still be 'Ends in 1 hour' or specific minutes if we added that, 
-        // but current component logic is simplified.
+        expect(screen.getByText(/EXPIRES:\s*00:01:03/i)).toBeInTheDocument();
     });
 });

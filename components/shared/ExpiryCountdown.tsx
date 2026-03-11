@@ -4,6 +4,23 @@ import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const MIDNIGHT_TIMESTAMP_REGEX = /^\d{4}-\d{2}-\d{2}T00:00:00(?:\.000)?(?:Z|[+-]\d{2}:\d{2})?$/i;
+
+function parseDealBoundary(dateValue: string, boundary: "start" | "end") {
+    const shouldTreatAsAllDay = DATE_ONLY_REGEX.test(dateValue) || MIDNIGHT_TIMESTAMP_REGEX.test(dateValue);
+
+    if (shouldTreatAsAllDay) {
+        const [year, month, day] = dateValue.slice(0, 10).split("-").map(Number);
+
+        return boundary === "start"
+            ? new Date(year, month - 1, day, 0, 0, 0, 0)
+            : new Date(year, month - 1, day, 23, 59, 59, 999);
+    }
+
+    return new Date(dateValue);
+}
+
 interface ExpiryCountdownProps {
     endDate: string;
     startDate?: string;
@@ -25,17 +42,11 @@ export default function ExpiryCountdown({ endDate, startDate, className }: Expir
 
         const calculateTime = () => {
             const now = new Date();
-            const start = startDate ? new Date(startDate) : null;
-            const end = new Date(endDate);
-            
-            // If the date is exactly at midnight UTC, treat it as expiring at the very end of the day.
-            const isMidnightUTC = (date: Date) => 
-                date.getUTCHours() === 0 && 
-                date.getUTCMinutes() === 0 && 
-                date.getUTCSeconds() === 0;
+            const start = startDate ? parseDealBoundary(startDate, "start") : null;
+            const end = parseDealBoundary(endDate, "end");
 
-            if (isMidnightUTC(end)) {
-                end.setUTCHours(23, 59, 59, 999);
+            if (isNaN(end.getTime()) || (start && isNaN(start.getTime()))) {
+                return { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0, isUpcoming: false };
             }
 
             let targetDate = end;
@@ -80,6 +91,8 @@ export default function ExpiryCountdown({ endDate, startDate, className }: Expir
 
     if (timeLeft.total <= 0) return null;
 
+    const parsedEndDate = parseDealBoundary(endDate, "end");
+
     const isToday = timeLeft.days === 0;
     const isUrgent = timeLeft.days <= 7;
 
@@ -109,7 +122,7 @@ export default function ExpiryCountdown({ endDate, startDate, className }: Expir
                     </span>
                 ) :
                     timeLeft.days <= 7 ? `Expires in ${timeLeft.days} ${timeLeft.days === 1 ? 'day' : 'days'}` :
-                        `Expires ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                        `Expires ${parsedEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
             </span>
         </div>
     );
