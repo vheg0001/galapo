@@ -271,6 +271,29 @@ export interface DealWithListing extends Deal {
     };
 }
 
+export interface EventListingSummary {
+    id: string;
+    business_name: string;
+    slug: string;
+    address?: string | null;
+    lat?: number | null;
+    lng?: number | null;
+    is_featured: boolean;
+    is_premium: boolean;
+    category?: {
+        id?: string;
+        name: string;
+        slug: string;
+        parent_id?: string | null;
+    } | null;
+    barangay?: {
+        id?: string;
+        name: string;
+        slug: string;
+    } | null;
+    listing_badges?: ListingBadge[];
+}
+
 export interface DealLimits {
     max: number;
     used: number;
@@ -296,6 +319,7 @@ export interface Event {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+    listing?: EventListingSummary | null;
 }
 
 export interface BlogPost {
@@ -604,4 +628,5 @@ export interface ActivityItem {
     listing_id?: string | null;
     listing_name?: string | null;
 }
+
 

@@ -115,3 +115,9 @@ export async function uploadDealBanner(file: File, listingId: string) {
     const fileName = `${listingId}/deal-${Date.now()}.${ext}`;
     return uploadFile("deals", fileName, file);
 }
+
+export async function uploadEventBanner(file: File, listingId: string = "city-wide") {
+    const ext = file.name.split('.').pop();
+    const fileName = `${listingId}/event-${Date.now()}.${ext}`;
+    return uploadFile("events", fileName, file);
+}

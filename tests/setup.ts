@@ -1,5 +1,6 @@
+/// <reference types="vitest/globals" />
+
 import "@testing-library/jest-dom";
-import { beforeAll, afterEach, afterAll, vi } from "vitest";
 import { server } from "./mocks/server";
 
 // Establish API mocking before all tests
@@ -18,7 +19,7 @@ afterAll(() => server.close());
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: vi.fn().mockImplementation(query => ({
+    value: vi.fn().mockImplementation((query: string) => ({
         matches: false,
         media: query,
         onchange: null,
@@ -70,7 +71,7 @@ vi.mock("@/lib/supabase", () => {
         range: vi.fn().mockReturnThis(),
         single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
         maybeSingle: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
-        then: vi.fn().mockImplementation(function (onFulfilled) {
+        then: vi.fn().mockImplementation(function (onFulfilled: (value: { data: never[]; error: null }) => unknown) {
             return Promise.resolve({ data: [], error: null }).then(onFulfilled);
         }),
     };

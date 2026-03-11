@@ -524,7 +524,7 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
                 )
             ),
             deals ( id, title, description, image_url, discount_text, start_date, end_date, is_active ),
-            events ( id, title, slug, description, image_url, event_date, start_time, end_time, venue, venue_address, is_active )
+            events ( id, title, slug, description, image_url, event_date, start_time, end_time, venue, venue_address, is_city_wide, is_featured, is_active )
         `)
         .eq("slug", slug)
         .eq("is_active", true)
@@ -569,6 +569,7 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
         deals: activeDeals,
         events: upcomingEvents,
         listing_field_values: fieldValues,
+        listing_badges: activeBadges,
         badges: activeBadges,
     };
 }

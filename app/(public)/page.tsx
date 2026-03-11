@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase";
 import { APP_NAME } from "@/lib/constants";
+import { fetchPublicEvents } from "@/lib/event-helpers";
 import SearchBar from "@/components/shared/SearchBar";
 import ListingCard from "@/components/shared/ListingCard";
 import EventCard from "@/components/shared/EventCard";
@@ -41,7 +42,7 @@ export default async function HomePage() {
         { data: barangays },
         { data: featuredListings },
         { data: latestListings },
-        { data: events },
+        featuredEventsResult,
         { data: deals },
         { data: blogPosts },
         { data: mapListings },
@@ -88,13 +89,7 @@ export default async function HomePage() {
             .eq("is_active", true)
             .order("created_at", { ascending: false })
             .limit(6),
-        supabase
-            .from("events")
-            .select("id, slug, title, image_url, event_date, start_time, end_time, venue")
-            .eq("is_active", true)
-            .gte("event_date", new Date().toISOString().split("T")[0])
-            .order("event_date", { ascending: true })
-            .limit(4),
+        fetchPublicEvents(supabase, { period: "upcoming", featuredOnly: true, limit: 4 }),
         supabase
             .from("deals")
             .select(`
@@ -126,6 +121,8 @@ export default async function HomePage() {
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true),
     ]);
+
+    const events = featuredEventsResult.data;
 
     const countMap: Record<string, number> = {};
     categoryCounts?.forEach((l) => {
@@ -352,7 +349,7 @@ export default async function HomePage() {
                                 </h2>
                                 <p className="mt-1 text-muted-foreground">Upcoming events and activities</p>
                             </div>
-                            <Link href="/events" className="hidden sm:flex items-center gap-1 text-sm font-medium text-secondary hover:underline">
+                            <Link href="/olongapo/events" className="hidden sm:flex items-center gap-1 text-sm font-medium text-secondary hover:underline">
                                 View All Events <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
@@ -362,11 +359,22 @@ export default async function HomePage() {
                                     key={event.id}
                                     slug={event.slug}
                                     title={event.title}
+                                    description={event.description}
                                     imageUrl={event.image_url}
                                     eventDate={event.event_date}
                                     startTime={event.start_time}
                                     endTime={event.end_time}
                                     venue={event.venue}
+                                    venueAddress={event.venue_address}
+                                    isCityWide={event.is_city_wide}
+                                    isFeatured={Boolean(event.is_featured || event.listing?.is_featured || event.listing?.is_premium)}
+                                    listing={event.listing ? {
+                                        businessName: event.listing.business_name,
+                                        slug: event.listing.slug,
+                                        badges: event.listing.listing_badges,
+                                        isFeatured: event.listing.is_featured,
+                                        isPremium: event.listing.is_premium,
+                                    } : null}
                                 />
                             ))}
                         </div>

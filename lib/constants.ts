@@ -31,7 +31,7 @@ export const NAV_LINKS = [
     { label: "Home", href: "/" },
     { label: "Categories", href: "/olongapo/categories" },
     { label: "Deals", href: "/olongapo/deals" },
-    { label: "Events", href: "/events" },
+    { label: "Events", href: "/olongapo/events" },
     { label: "Blog", href: "/blog" },
 ] as const;
 
@@ -40,7 +40,7 @@ export const FOOTER_QUICK_LINKS = [
     { label: "Home", href: "/" },
     { label: "Categories", href: "/olongapo/categories" },
     { label: "Deals", href: "/olongapo/deals" },
-    { label: "Events", href: "/events" },
+    { label: "Events", href: "/olongapo/events" },
     { label: "Blog", href: "/blog" },
 ] as const;
 
