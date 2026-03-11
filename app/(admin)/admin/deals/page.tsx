@@ -18,6 +18,8 @@ type DealRow = {
     owner_name: string | null;
     owner_email: string | null;
     listing_id: string;
+    start_date: string;
+    end_date: string;
 };
 
 export default function AdminDealsPage() {
@@ -106,6 +108,72 @@ export default function AdminDealsPage() {
                     </span>
                 </div>
             )
+        },
+        {
+            key: "start_date",
+            header: "Goes Live",
+            render: (r) => {
+                if (!r.start_date) return (
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase italic pb-1">N/A</span>
+                );
+
+                const start = new Date(r.start_date);
+                if (isNaN(start.getTime())) return (
+                    <span className="text-[10px] font-bold text-red-400 uppercase italic pb-1">Invalid</span>
+                );
+
+                const isFuture = start > new Date();
+                return (
+                    <div className="flex flex-col">
+                        <span className={cn("text-xs font-bold", isFuture ? "text-amber-600" : "text-emerald-600")}>
+                            {start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        {isFuture && (
+                            <span className="text-[10px] uppercase font-black tracking-widest text-amber-500 animate-pulse">
+                                Scheduled
+                            </span>
+                        )}
+                    </div>
+                );
+            }
+        },
+        {
+            key: "end_date",
+            header: "Expires On",
+            render: (r) => {
+                if (!r.end_date) return (
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase italic pb-1">N/A</span>
+                );
+
+                const end = new Date(r.end_date);
+                if (isNaN(end.getTime())) return (
+                    <span className="text-[10px] font-bold text-red-400 uppercase italic pb-1">Invalid</span>
+                );
+
+                const isToday = end.toISOString().split("T")[0] === new Date().toISOString().split("T")[0];
+                const isExpired = end < new Date() && !isToday;
+
+                return (
+                    <div className="flex flex-col">
+                        <span className={cn(
+                            "text-xs font-bold",
+                            isExpired ? "text-red-500" : isToday ? "text-amber-600" : "text-gray-600"
+                        )}>
+                            {end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        {isToday && (
+                            <span className="text-[10px] uppercase font-black tracking-widest text-amber-500 animate-pulse">
+                                Expiring Today
+                            </span>
+                        )}
+                        {isExpired && (
+                            <span className="text-[10px] uppercase font-black tracking-widest text-red-400">
+                                Expired
+                            </span>
+                        )}
+                    </div>
+                );
+            }
         },
         {
             key: "created_at",

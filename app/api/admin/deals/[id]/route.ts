@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
+import { simplifyError } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export async function GET(
         if (error) throw error;
         return NextResponse.json({ data });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: simplifyError(error) }, { status: 500 });
     }
 }
 
@@ -49,7 +50,7 @@ export async function PATCH(
         if (error) throw error;
         return NextResponse.json({ data });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: simplifyError(error) }, { status: 500 });
     }
 }
 
@@ -68,6 +69,6 @@ export async function DELETE(
         if (error) throw error;
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: simplifyError(error) }, { status: 500 });
     }
 }

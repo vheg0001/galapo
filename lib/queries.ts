@@ -540,14 +540,14 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
         return a.sort_order - b.sort_order;
     });
 
-    // Filter active deals (not expired)
-    const now = new Date();
+    // Filter active and upcoming deals (not expired)
+    // Use PH timezone for consistent "today" comparison
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
     const activeDeals = (listing.deals || []).filter((d: any) => {
-        return d.is_active && new Date(d.end_date) >= now;
-    });
+        return d.is_active && d.end_date >= today;
+    }).sort((a: any, b: any) => a.start_date.localeCompare(b.start_date));
 
     // Filter upcoming events
-    const today = new Date().toISOString().split("T")[0];
     const upcomingEvents = (listing.events || []).filter((e: any) => {
         return e.is_active && e.event_date >= today;
     }).sort((a: any, b: any) => a.event_date.localeCompare(b.event_date));

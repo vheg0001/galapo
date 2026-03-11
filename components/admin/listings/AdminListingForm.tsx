@@ -837,17 +837,35 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                 <div className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Short Description</label>
+                            <div className="flex items-center justify-between ml-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Short Description</label>
+                                <span className={cn(
+                                    "text-[10px] font-bold tracking-widest",
+                                    (form.short_description?.length || 0) > 160 ? "text-red-500" : 
+                                    (form.short_description?.length || 0) > 150 ? "text-amber-500" : 
+                                    "text-muted-foreground/40"
+                                )}>
+                                    {form.short_description?.length || 0} / 160
+                                </span>
+                            </div>
                             <textarea
                                 value={form.short_description}
                                 onChange={(e) => setForm({ ...form, short_description: e.target.value })}
                                 placeholder="A punchy one-liner for search results..."
                                 rows={3}
-                                className="w-full rounded-2xl border border-border/50 bg-background p-4 text-sm font-medium transition-all focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm resize-none"
+                                className={cn(
+                                    "w-full rounded-2xl border border-border/50 bg-background p-4 text-sm font-medium transition-all focus:border-primary focus:ring-4 focus:ring-primary/5 shadow-sm resize-none",
+                                    (form.short_description?.length || 0) > 160 && "border-red-500/50 focus:border-red-500 focus:ring-red-500/5"
+                                )}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Full Description</label>
+                            <div className="flex items-center justify-between ml-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Full Description</label>
+                                <span className="text-[10px] font-bold tracking-widest text-muted-foreground/40">
+                                    {form.full_description?.length || 0} characters
+                                </span>
+                            </div>
                             <textarea
                                 value={form.full_description}
                                 onChange={(e) => setForm({ ...form, full_description: e.target.value })}
@@ -961,7 +979,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                                 placeholder="@username"
                                 className="h-11 w-full rounded-xl border border-border/50 bg-background pl-10 pr-3 text-sm font-medium transition-all focus:border-primary focus:ring-4 focus:ring-primary/5"
                             />
-                            <Twitter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground" />
+                            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
                         </div>
                     </div>
                     <div className="space-y-2">

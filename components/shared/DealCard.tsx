@@ -21,6 +21,7 @@ interface DealCardProps {
     badges?: ListingBadge[];
     isPremium?: boolean;
     isFeatured?: boolean;
+    startDate?: string;
     className?: string;
 }
 
@@ -33,6 +34,7 @@ export default function DealCard({
     discountText,
     imageUrl,
     endDate,
+    startDate,
     categoryName,
     barangayName,
     badges = [],
@@ -93,7 +95,7 @@ export default function DealCard({
                 <div className="mt-auto space-y-4">
                     {/* Expiry & Tags */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 border-t border-border/40">
-                        <ExpiryCountdown endDate={endDate} />
+                        <ExpiryCountdown endDate={endDate} startDate={startDate} />
 
                         <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
                             {categoryName && (

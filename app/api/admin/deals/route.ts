@@ -26,7 +26,16 @@ export async function GET(request: NextRequest) {
         let query = supabase
             .from("deals")
             .select(`
-                *,
+                id,
+                title,
+                description,
+                image_url,
+                discount_text,
+                start_date,
+                end_date,
+                is_active,
+                created_at,
+                listing_id,
                 listings (
                     business_name,
                     slug,
@@ -58,24 +67,31 @@ export async function GET(request: NextRequest) {
         // Manual filtering for listing search if needed (PostgREST limitations)
         let filteredData = data || [];
         if (listingSearch) {
-            filteredData = filteredData.filter(d =>
-                d.listings?.business_name.toLowerCase().includes(listingSearch.toLowerCase())
-            );
+            filteredData = filteredData.filter(d => {
+                const listing = Array.isArray(d.listings) ? d.listings[0] : d.listings;
+                return listing?.business_name.toLowerCase().includes(listingSearch.toLowerCase());
+            });
         }
 
         return NextResponse.json({
-            data: (filteredData as any[]).map(d => ({
-                id: d.id,
-                title: d.title,
-                discount_text: d.discount_text,
-                is_active: d.is_active,
-                created_at: d.created_at,
-                listing_id: d.listing_id,
-                business_name: d.listings?.business_name || "Unknown",
-                owner_name: d.listings?.owner?.full_name || "N/A",
-                owner_email: d.listings?.owner?.email || "No Email",
-                end_date: d.end_date
-            })),
+            data: (filteredData as any[]).map(d => {
+                const listing = Array.isArray(d.listings) ? d.listings[0] : d.listings;
+                const owner = Array.isArray(listing?.owner) ? listing.owner[0] : listing?.owner;
+                
+                return {
+                    id: d.id,
+                    title: d.title,
+                    discount_text: d.discount_text,
+                    is_active: d.is_active,
+                    created_at: d.created_at,
+                    listing_id: d.listing_id,
+                    business_name: listing?.business_name || "Unknown",
+                    owner_name: owner?.full_name || "N/A",
+                    owner_email: owner?.email || "No Email",
+                    end_date: d.end_date,
+                    start_date: d.start_date
+                };
+            }),
             pagination: {
                 total: count || 0,
                 page,

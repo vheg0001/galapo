@@ -26,13 +26,15 @@ export default function ListingCard({ listing, onDelete, isDeleting }: ListingCa
 
     const planColors: Record<string, string> = {
         free: "bg-gray-50 text-gray-500 border-gray-100",
-        basic: "bg-blue-50 text-blue-500 border-blue-100",
+        featured: "bg-orange-50 text-orange-700 border-orange-100",
         premium: "bg-purple-50 text-purple-600 border-purple-100",
-        enterprise: "bg-amber-50 text-amber-600 border-amber-100",
     };
 
-    const isPremium = listing.is_premium;
-    const planType = isPremium ? "premium" : "free";
+    const planType = listing.is_premium
+        ? "premium"
+        : listing.is_featured
+            ? "featured"
+            : "free";
 
     return (
         <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white transition hover:border-[#FF6B35]/20 hover:shadow-xl hover:shadow-[#FF6B35]/5">

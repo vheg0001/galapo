@@ -352,22 +352,11 @@ function ListingDetailView({ listing, related, slug }: any) {
 
                     <div className="relative mb-8">
                         <ImageGallery images={images} businessName={listing.business_name} categoryIcon={cat?.icon} />
-                        {listing.logo_url && (
-                            <div className="absolute -bottom-6 left-6 h-20 w-20 overflow-hidden rounded-2xl border-4 border-background bg-background shadow-xl">
-                                <Image
-                                    src={listing.logo_url}
-                                    alt={`${listing.business_name} logo`}
-                                    fill
-                                    className="object-cover"
-                                    sizes="80px"
-                                />
-                            </div>
-                        )}
                     </div>
 
                     <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
                         <div className="min-w-0 flex-1 space-y-8">
-                            <div className={listing.logo_url ? "pt-8" : ""}>
+                            <div>
                                 <BusinessInfo
                                     businessName={listing.business_name}
                                     address={listing.address}
@@ -377,6 +366,7 @@ function ListingDetailView({ listing, related, slug }: any) {
                                     isFeatured={listing.is_featured}
                                     isPremium={listing.is_premium}
                                     badges={listing.listing_badges || []}
+                                    logoUrl={listing.logo_url}
                                 />
                             </div>
                             <ListingTabsClient

@@ -22,7 +22,8 @@ interface DealsPageProps {
     };
 }
 
-export default async function DealsPage({ searchParams }: DealsPageProps) {
+export default async function DealsPage(props: DealsPageProps) {
+    const searchParams = await props.searchParams;
     const supabase = await createServerSupabaseClient();
 
     // Resolve filter IDs if slugs are provided
@@ -40,7 +41,7 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
     const categories = categoriesRes.data || [];
     const barangays = barangaysRes.data || [];
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 
     // Base query for deals
     // Only use !inner if we are actually filtering by listing properties to avoid 
@@ -71,12 +72,24 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
         .eq("is_active", true)
         .gte("end_date", today);
 
+
     // Apply filters from searchParams using resolved IDs
     if (resolvedCategory) {
-        query = query.eq("listing.category_id", resolvedCategory.id);
+        if (!resolvedCategory.parent_id) {
+            // If it's a parent category, include all its subcategories
+            const { data: subs } = await supabase
+                .from("categories")
+                .select("id")
+                .eq("parent_id", resolvedCategory.id);
+            
+            const categoryIds = [resolvedCategory.id, ...(subs?.map(s => s.id) || [])];
+            query = query.in("listing.category_id", categoryIds);
+        } else {
+            query = query.eq("listing.category_id", resolvedCategory.id);
+        }
     }
     if (resolvedBarangays.length > 0) {
-        query = query.eq("listing.barangay_id", resolvedBarangays[0]);
+        query = query.in("listing.barangay_id", resolvedBarangays);
     }
 
     // Apply Sorting
@@ -134,7 +147,7 @@ export default async function DealsPage({ searchParams }: DealsPageProps) {
                 </div>
 
                 {/* Filter Bar */}
-                <div className="sticky top-20 z-30 mb-12 -mx-4 px-4 py-4 bg-background/80 backdrop-blur-md border-y border-border/40 md:static md:bg-transparent md:backdrop-blur-none md:border-none md:p-0">
+                <div className="sticky top-16 z-30 mb-8 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-md border-b border-border/40 md:static md:top-auto md:mb-12 md:bg-transparent md:backdrop-blur-none md:border-none md:px-0 md:py-0">
                     <DealFilterBar
                         categories={categories as any}
                         barangays={barangays as any}

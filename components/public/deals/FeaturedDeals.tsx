@@ -12,6 +12,7 @@ interface Deal {
     discount_text: string;
     image_url: string | null;
     end_date: string;
+    start_date: string;
     listing: {
         business_name: string;
         slug: string;
@@ -80,6 +81,7 @@ export default function FeaturedDeals({ deals }: FeaturedDealsProps) {
                             discountText={deal.discount_text}
                             imageUrl={deal.image_url}
                             endDate={deal.end_date}
+                            startDate={deal.start_date}
                             listingSlug={deal.listing?.slug}
                             businessName={deal.listing?.business_name}
                             categoryName={deal.listing?.category?.name || "Uncategorized"}

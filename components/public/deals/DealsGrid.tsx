@@ -1,7 +1,7 @@
 "use client";
 
 import DealCard from "@/components/shared/DealCard";
-import AdSlot from "@/components/shared/AdSlot";
+import AdSlotClient from "@/components/shared/AdSlotClient";
 import { Fragment } from "react";
 
 interface Deal {
@@ -11,6 +11,7 @@ interface Deal {
     discount_text: string;
     image_url: string | null;
     end_date: string;
+    start_date: string;
     listing: {
         business_name: string;
         slug: string;
@@ -54,6 +55,7 @@ export default function DealsGrid({ deals }: DealsGridProps) {
                         discountText={deal.discount_text}
                         imageUrl={deal.image_url}
                         endDate={deal.end_date}
+                        startDate={deal.start_date}
                         listingSlug={deal.listing?.slug}
                         businessName={deal.listing?.business_name}
                         categoryName={deal.listing?.category?.name || "Uncategorized"}
@@ -66,7 +68,7 @@ export default function DealsGrid({ deals }: DealsGridProps) {
                     {/* Ad Slot after every 6th card */}
                     {(index + 1) % 6 === 0 && (
                         <div className="col-span-full py-8">
-                            <AdSlot location="search_inline" />
+                            <AdSlotClient location="search_inline" position={Math.ceil((index + 1) / 6)} />
                         </div>
                     )}
                 </Fragment>

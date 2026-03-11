@@ -98,11 +98,11 @@ export default async function HomePage() {
         supabase
             .from("deals")
             .select(`
-                id, title, description, image_url, discount_text, end_date,
+                id, title, description, image_url, discount_text, end_date, start_date,
                 listings ( slug, business_name )
             `)
             .eq("is_active", true)
-            .gte("end_date", new Date().toISOString())
+            .gte("end_date", new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }))
             .order("end_date", { ascending: true })
             .limit(6),
         supabase

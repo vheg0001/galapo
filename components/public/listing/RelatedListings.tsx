@@ -28,11 +28,6 @@ export default function RelatedListings({ listings, categoryName }: RelatedListi
                 <h2 className="text-xl font-bold text-foreground">
                     Similar Businesses in Olongapo
                 </h2>
-                {categoryName && (
-                    <span className="text-sm text-muted-foreground">
-                        in {categoryName}
-                    </span>
-                )}
             </div>
 
             {/* Grid: 2 cols on mobile (horizontal scroll), 4 cols on desktop */}

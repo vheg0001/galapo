@@ -52,12 +52,12 @@ export default function DealFilterBar({ categories, barangays }: DealFilterBarPr
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-6">
-                {/* Row 1: Category Chips */}
-                <div className="flex flex-wrap items-center gap-2">
+                {/* Row 1: Category Chips - Scrollable on mobile */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide md:flex-wrap md:pb-0">
                     <button
                         onClick={() => updateFilter("category", null)}
                         className={cn(
-                            "rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-widest transition-all",
+                            "whitespace-nowrap rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-widest transition-all shrink-0",
                             !selectedCategory
                                 ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
                                 : "bg-background border border-border/50 text-muted-foreground hover:bg-muted"
@@ -70,7 +70,7 @@ export default function DealFilterBar({ categories, barangays }: DealFilterBarPr
                             key={cat.id}
                             onClick={() => updateFilter("category", cat.slug)}
                             className={cn(
-                                "rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-widest transition-all",
+                                "whitespace-nowrap rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-widest transition-all shrink-0",
                                 selectedCategory === cat.slug
                                     ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20 scale-105"
                                     : "bg-background border border-border/50 text-muted-foreground hover:bg-muted"

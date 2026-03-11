@@ -118,15 +118,27 @@ export default function DealForm({ listings, initialData, isEditing = false }: D
                             />
                         </div>
 
-                        {/* Title */}
                         <div className="space-y-2">
-                            <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Deal Title</Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Deal Title</Label>
+                                <span className={cn(
+                                    "text-[10px] font-bold tracking-widest",
+                                    formData.title.length > 255 ? "text-red-500" : 
+                                    formData.title.length > 240 ? "text-amber-500" : 
+                                    "text-muted-foreground/40"
+                                )}>
+                                    {formData.title.length} / 255
+                                </span>
+                            </div>
                             <Input
                                 required
                                 placeholder="e.g. Summer Weekend Sale"
                                 value={formData.title}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, title: e.target.value })}
-                                className="rounded-2xl border-gray-100 bg-gray-50/50 h-12 text-sm font-bold focus:bg-white"
+                                className={cn(
+                                    "rounded-2xl border-gray-100 bg-gray-50/50 h-12 text-sm font-bold focus:bg-white",
+                                    formData.title.length > 255 && "border-red-500/50 focus:border-red-500 focus:ring-red-500/5"
+                                )}
                             />
                         </div>
 
@@ -159,9 +171,13 @@ export default function DealForm({ listings, initialData, isEditing = false }: D
                             </div>
                         </div>
 
-                        {/* Description */}
                         <div className="space-y-2">
-                            <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Offer Details</Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Offer Details</Label>
+                                <span className="text-[10px] font-bold tracking-widest text-muted-foreground/40">
+                                    {formData.description.length} characters
+                                </span>
+                            </div>
                             <Textarea
                                 required
                                 placeholder="Describe your offer in detail to attract customers..."

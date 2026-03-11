@@ -97,7 +97,7 @@ export default function DealsList({ deals, businessName }: DealsListProps) {
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                             <div className="flex-1 space-y-4">
                                 <div className="flex flex-wrap items-center gap-4">
-                                    <ExpiryCountdown endDate={deal.end_date} className="scale-110 origin-left" />
+                                    <ExpiryCountdown endDate={deal.end_date} startDate={deal.start_date} className="scale-110 origin-left" />
                                     <div className="h-1 w-1 rounded-full bg-border" />
                                     <span className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">
                                         Valid: {new Date(deal.start_date).toLocaleDateString()} - {new Date(deal.end_date).toLocaleDateString()}

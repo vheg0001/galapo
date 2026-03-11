@@ -96,13 +96,13 @@ export default function BusinessInfo({
             {/* Logo and Business name side-by-side */}
             <div className="flex items-center gap-4">
                 {logoUrl && (
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-border/50 bg-background shadow-sm lg:h-20 lg:w-20">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-border/50 bg-white shadow-sm lg:h-20 lg:w-20">
                         <Image
                             src={logoUrl}
                             alt={`${businessName} logo`}
                             fill
                             priority
-                            className="object-cover"
+                            className="object-contain p-1"
                             sizes="(max-width: 1024px) 64px, 80px"
                         />
                     </div>

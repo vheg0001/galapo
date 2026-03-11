@@ -123,3 +123,25 @@ export async function requireAdmin() {
         };
     }
 }
+/**
+ * Simplifies database errors into human-readable messages.
+ */
+export function simplifyError(error: any): string {
+    if (!error) return "An unknown error occurred.";
+    
+    const message = error.message || String(error);
+
+    // Handle character varying(N) length errors
+    if (message.includes("value too long for type character varying")) {
+        const match = message.match(/character varying\((\d+)\)/);
+        const limit = match ? match[1] : "";
+        
+        if (message.includes("short_description")) return `Short description is too long (max ${limit} characters).`;
+        if (message.includes("title")) return `Title is too long (max ${limit} characters).`;
+        if (message.includes("description")) return `Description is too long (max ${limit} characters).`;
+        
+        return `One of the fields is too long (max ${limit} characters).`;
+    }
+
+    return message;
+}

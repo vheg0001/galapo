@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-helpers";
 import { createAdminSupabaseClient } from "@/lib/supabase";
+import { simplifyError } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -305,7 +306,7 @@ export async function PUT(
         return NextResponse.json({ data });
     } catch (error: any) {
         console.error("[admin/listings/[id] PUT]", error);
-        return NextResponse.json({ error: error.message ?? "Failed to save listing" }, { status: 500 });
+        return NextResponse.json({ error: simplifyError(error) }, { status: 500 });
     }
 }
 
