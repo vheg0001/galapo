@@ -124,7 +124,7 @@ export default function SearchBar({ categories = [], barangays = [], variant = "
                         key={tag}
                         onClick={() => {
                             setQuery(tag);
-                            router.push(`/olongapo/search?q=${encodeURIComponent(tag)}`);
+                            router.push(`/olongapo/search?q=${encodeURIComponent(tag)}`, { scroll: false });
                         }}
                         className="rounded-full bg-white/10 px-3 py-1 text-xs text-primary-foreground/80 transition-colors hover:bg-white/20 hover:text-white backdrop-blur-sm border border-white/10"
                     >

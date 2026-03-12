@@ -53,7 +53,7 @@ export default function EventsCalendarView({ events, month, year }: EventsCalend
         params.set("month", `${nextMonth}`);
         params.set("year", `${nextYear}`);
         params.delete("page");
-        router.push(`${pathname}?${params.toString()}`);
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     const prev = () => {
@@ -118,20 +118,23 @@ export default function EventsCalendarView({ events, month, year }: EventsCalend
                                 className={cn(
                                     "min-h-28 rounded-2xl border p-3 text-left transition-all",
                                     selected ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "border-border bg-background hover:bg-muted/40",
-                                    today && "ring-2 ring-primary/20"
+                                    today && "ring-2 ring-[#FF7F50]/30 border-[#FF7F50]/50"
                                 )}
                             >
                                 <div className="flex items-start justify-between gap-2">
-                                    <span className={cn("text-sm font-black", today ? "text-primary" : "text-foreground")}>{day.getDate()}</span>
+                                    <span className={cn("text-sm font-black", today ? "text-[#FF7F50]" : "text-foreground")}>{day.getDate()}</span>
                                     {dayEvents.length > 0 && (
-                                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-secondary/15 px-2 text-[11px] font-black text-secondary">
+                                        <span 
+                                            data-testid="event-count"
+                                            className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-secondary/15 px-2 text-[11px] font-black text-secondary"
+                                        >
                                             {dayEvents.length}
                                         </span>
                                     )}
                                 </div>
 
                                 {today && (
-                                    <span className="mt-1 block text-[10px] font-black uppercase tracking-[0.18em] text-primary">Today</span>
+                                    <span className="mt-1 block text-[10px] font-black uppercase tracking-[0.18em] text-[#FF7F50]">Today</span>
                                 )}
 
                                 {dayEvents.length > 0 && (

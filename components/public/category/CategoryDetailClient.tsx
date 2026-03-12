@@ -103,7 +103,7 @@ export default function CategoryDetailClient({
         } else {
             params.set("sort", sort);
         }
-        router.push(`${pathname}?${params.toString()}`);
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     const handleRemoveFilter = (key: string, value: string) => {
@@ -116,11 +116,11 @@ export default function CategoryDetailClient({
         } else {
             params.delete(key);
         }
-        router.push(`${pathname}?${params.toString()}`);
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     const handleClearAll = () => {
-        router.push(pathname);
+        router.push(pathname, { scroll: false });
     };
 
     return (

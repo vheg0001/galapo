@@ -52,7 +52,7 @@ export default function EventFilterBar({ categories, barangays }: EventFilterBar
             else params.set(key, value);
         });
         params.delete("page");
-        router.push(`${pathname}?${params.toString()}`);
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -171,7 +171,7 @@ export default function EventFilterBar({ categories, barangays }: EventFilterBar
                             setSearchValue("");
                             const params = new URLSearchParams(searchParams.toString());
                             ["period", "type", "category", "barangay", "search", "page"].forEach((key) => params.delete(key));
-                            router.push(`${pathname}?${params.toString()}`);
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false });
                         }}
                         className="mt-[1.7rem] inline-flex h-11 items-center justify-center rounded-2xl border border-border bg-background px-4 text-sm font-bold text-foreground transition hover:bg-muted"
                     >

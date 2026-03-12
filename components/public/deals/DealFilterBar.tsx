@@ -40,11 +40,11 @@ export default function DealFilterBar({ categories, barangays }: DealFilterBarPr
             params.delete(key);
         }
         params.delete("page"); // Reset to page 1 on filter change
-        router.push(`${pathname}?${params.toString()}`);
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     const clearFilters = () => {
-        router.push(pathname);
+        router.push(pathname, { scroll: false });
     };
 
     const hasFilters = selectedCategory || selectedBarangay || selectedSort !== "expiring_soon";

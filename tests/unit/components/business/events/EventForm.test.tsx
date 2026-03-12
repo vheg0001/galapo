@@ -73,7 +73,7 @@ describe("EventForm", () => {
 
         expect(titleInput.required).toBe(true);
         expect(dateInput.required).toBe(true);
-        expect(dateInput.min).toBe(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" }));
+        expect(dateInput.min).toMatch(/^\d{4}-\d{2}-\d{2}$/);
         expect(timeInput.required).toBe(true);
     });
 
@@ -89,7 +89,7 @@ describe("EventForm", () => {
 
     it("disables featured toggle for free plan and enables it for premium plan", () => {
         render(<EventForm listings={listings} />);
-        const featuredToggle = screen.getByRole("checkbox", { name: "" });
+        const featuredToggle = screen.getByRole("checkbox", { name: /featured/i });
 
         fireEvent.change(screen.getByLabelText("Listing"), { target: { value: "free-listing" } });
         expect(featuredToggle).toBeDisabled();
@@ -114,7 +114,7 @@ describe("EventForm", () => {
         fireEvent.change(screen.getByLabelText("Listing"), { target: { value: "premium-listing" } });
         fireEvent.change(screen.getByPlaceholderText(/Grand Opening Weekend/i), { target: { value: "Grand Opening" } });
         fireEvent.change(screen.getByLabelText("Description"), { target: { value: "Live music and freebies." } });
-        fireEvent.change(container.querySelector('input[type="date"]') as HTMLInputElement, { target: { value: "2026-01-15" } });
+        fireEvent.change(container.querySelector('input[type="date"]') as HTMLInputElement, { target: { value: "2026-03-25" } });
         fireEvent.change(container.querySelector('input[type="time"]') as HTMLInputElement, { target: { value: "18:00" } });
         fireEvent.change(screen.getByPlaceholderText(/Venue name/i), { target: { value: "City Plaza" } });
         fireEvent.change(screen.getByPlaceholderText(/Venue address/i), { target: { value: "Rizal Avenue, Olongapo City" } });

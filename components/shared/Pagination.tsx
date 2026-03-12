@@ -40,6 +40,7 @@ export default function Pagination({ currentPage, totalPages, basePath, classNam
         <nav className={cn("flex items-center justify-center gap-1", className)} aria-label="Pagination">
             <Link
                 href={getHref(Math.max(1, currentPage - 1))}
+                scroll={false}
                 className={cn(
                     "inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm transition-colors",
                     currentPage === 1
@@ -58,6 +59,7 @@ export default function Pagination({ currentPage, totalPages, basePath, classNam
                     <Link
                         key={page}
                         href={getHref(page)}
+                        scroll={false}
                         className={cn(
                             "inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors",
                             page === currentPage
@@ -73,6 +75,7 @@ export default function Pagination({ currentPage, totalPages, basePath, classNam
 
             <Link
                 href={getHref(Math.min(totalPages, currentPage + 1))}
+                scroll={false}
                 className={cn(
                     "inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm transition-colors",
                     currentPage === totalPages

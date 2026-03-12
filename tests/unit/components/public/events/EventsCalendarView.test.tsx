@@ -61,7 +61,7 @@ describe("EventsCalendarView", () => {
             />
         );
 
-        expect(screen.getByText("2")).toBeInTheDocument();
+        expect(screen.getByTestId("event-count")).toHaveTextContent("2");
         expect(container.querySelectorAll('span.h-2\\.5.w-2\\.5')).toHaveLength(2);
     });
 
