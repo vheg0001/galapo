@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CalendarDays, CheckCircle2, ImagePlus, Loader2, Sparkles } from "lucide-react";
 import RichTextEditor from "@/components/admin/pages/RichTextEditor";
 import ListingSearchSelect from "@/components/business/deals/ListingSearchSelect";
+import PlanLimitIndicator from "@/components/business/deals/PlanLimitIndicator";
 import EventCard from "@/components/shared/EventCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ interface ListingOption {
     slug?: string;
     is_featured?: boolean;
     is_premium?: boolean;
+    active_event_count?: number;
 }
 
 interface EventFormProps {
@@ -38,7 +40,6 @@ export default function EventForm({ listings, initialData, isEditing = false, ad
     const [error, setError] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(initialData?.image_url || null);
-
     const [formData, setFormData] = useState({
         listing_id: initialData?.listing_id || "",
         title: initialData?.title || "",
@@ -72,10 +73,13 @@ export default function EventForm({ listings, initialData, isEditing = false, ad
     }, [sameAsBusiness, selectedListing]);
 
     useEffect(() => {
-        if (!canRequestFeatured && !adminMode) {
-            setFormData((current) => ({ ...current, is_featured: false }));
+        if (!adminMode) {
+            setFormData((current) => ({
+                ...current,
+                is_featured: Boolean(selectedListing?.is_featured || selectedListing?.is_premium)
+            }));
         }
-    }, [adminMode, canRequestFeatured]);
+    }, [adminMode, selectedListing]);
 
     useEffect(() => {
         if (formData.is_city_wide && adminMode) {
@@ -140,6 +144,15 @@ export default function EventForm({ listings, initialData, isEditing = false, ad
             setLoading(false);
         }
     };
+
+    const PLAN_LIMITS = {
+        free: 1,
+        featured: 3,
+        premium: 5
+    };
+
+    const currentLimit = selectedListing?.is_premium ? PLAN_LIMITS.premium : selectedListing?.is_featured ? PLAN_LIMITS.featured : PLAN_LIMITS.free;
+    const isOverLimit = !adminMode && !isEditing && selectedListing && (selectedListing.active_event_count || 0) >= currentLimit;
 
     return (
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_24rem]">
@@ -289,28 +302,6 @@ export default function EventForm({ listings, initialData, isEditing = false, ad
                                 <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                             </label>
                         </div>
-
-                        <label className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-background px-5 py-4">
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <Sparkles className="h-4 w-4 text-secondary" />
-                                    <p className="text-sm font-bold text-foreground">{adminMode ? "Featured Event" : "Request Featured Event"}</p>
-                                </div>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    Featured events appear on the homepage. This is a premium feature.
-                                </p>
-                                {!canRequestFeatured && !adminMode && (
-                                    <p className="mt-2 text-xs font-bold text-secondary">Upgrade to get featured events.</p>
-                                )}
-                            </div>
-                            <input
-                                type="checkbox"
-                                checked={formData.is_featured}
-                                disabled={!canRequestFeatured && !adminMode}
-                                onChange={(e) => setFormData((current) => ({ ...current, is_featured: e.target.checked }))}
-                                className="mt-1 h-5 w-5 accent-primary disabled:opacity-50"
-                            />
-                        </label>
                     </div>
 
                     {error && (
@@ -322,7 +313,7 @@ export default function EventForm({ listings, initialData, isEditing = false, ad
                     <div className="mt-8 flex flex-wrap items-center gap-3">
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || isOverLimit}
                             className="inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-black uppercase tracking-[0.18em] text-primary-foreground shadow-lg shadow-primary/15 transition hover:bg-primary/90 disabled:opacity-60"
                         >
                             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -335,30 +326,63 @@ export default function EventForm({ listings, initialData, isEditing = false, ad
                             Cancel
                         </Link>
                     </div>
+
+                    {isOverLimit && (
+                        <div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4">
+                            <div className="flex items-center gap-2 text-orange-700">
+                                <Sparkles className="h-4 w-4" />
+                                <p className="text-sm font-black uppercase tracking-widest">Limit Reached</p>
+                            </div>
+                            <p className="mt-1 text-xs text-orange-600 font-medium">
+                                This listing has reached its limit of {currentLimit} active event{currentLimit > 1 ? 's' : ''}. 
+                                Upgrade your plan or deactivate an existing event to publish a new one.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </form>
 
-            <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
-                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-muted-foreground">Live Preview</p>
-                <EventCard
-                    slug={initialData?.slug || "preview"}
-                    title={formData.title || "Your event title"}
-                    description={formData.description || "Describe your event and what attendees can expect."}
-                    imageUrl={previewUrl || undefined}
-                    eventDate={formData.event_date || todayString()}
-                    startTime={formData.start_time || ""}
-                    endTime={formData.end_time || ""}
-                    venue={formData.venue || selectedListing?.business_name || "Venue"}
-                    venueAddress={formData.venue_address || selectedListing?.address || "Olongapo City"}
-                    isCityWide={adminMode ? formData.is_city_wide : false}
-                    isFeatured={formData.is_featured}
-                    listing={!adminMode || !formData.is_city_wide ? selectedListing ? {
-                        businessName: selectedListing.business_name,
-                        slug: selectedListing.slug || selectedListing.id,
-                        isFeatured: selectedListing.is_featured,
-                        isPremium: selectedListing.is_premium,
-                    } : null : null}
-                />
+            <div className="space-y-6 lg:sticky lg:top-24 lg:h-fit">
+                {selectedListing && !adminMode && (
+                    <PlanLimitIndicator
+                        used={selectedListing.active_event_count || 0}
+                        total={currentLimit}
+                        title="Event Slot Usage"
+                        subtitle={selectedListing.business_name}
+                    />
+                )}
+
+                {selectedListing && !adminMode && (
+                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6 text-blue-900">
+                        <h4 className="text-sm font-bold uppercase tracking-wider">Quick Tip</h4>
+                        <p className="mt-2 text-sm leading-relaxed opacity-80">
+                            Events from <strong>Premium</strong> and <strong>Featured</strong> listings also appear in the "What's On" section for extra visibility!
+                        </p>
+                    </div>
+                )}
+
+                <div className="space-y-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-muted-foreground">Live Preview</p>
+                    <EventCard
+                        slug={initialData?.slug || "preview"}
+                        title={formData.title || "Your event title"}
+                        description={formData.description || "Describe your event and what attendees can expect."}
+                        imageUrl={previewUrl || undefined}
+                        eventDate={formData.event_date || todayString()}
+                        startTime={formData.start_time || ""}
+                        endTime={formData.end_time || ""}
+                        venue={formData.venue || selectedListing?.business_name || "Venue"}
+                        venueAddress={formData.venue_address || selectedListing?.address || "Olongapo City"}
+                        isCityWide={adminMode ? formData.is_city_wide : false}
+                        isFeatured={formData.is_featured}
+                        listing={!adminMode || !formData.is_city_wide ? selectedListing ? {
+                            businessName: selectedListing.business_name,
+                            slug: selectedListing.slug || selectedListing.id,
+                            isFeatured: selectedListing.is_featured,
+                            isPremium: selectedListing.is_premium,
+                        } : null : null}
+                    />
+                </div>
             </div>
         </div>
     );

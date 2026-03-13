@@ -3,10 +3,8 @@ import RegisterForm from "@/components/auth/RegisterForm";
 import { CheckCircle, Star } from "lucide-react";
 
 export const metadata: Metadata = {
-    title: "Register Your Business | GalaPo - Olongapo City Directory",
-    description:
-        "List your Olongapo business on GalaPo for free. Reach thousands of local residents and tourists. Set up your business profile today.",
-    robots: { index: false, follow: false },
+    title: "Register Your Business",
+    description: "Add your business to Olongapo's most comprehensive local directory. Reach more customers today.",
 };
 
 const BENEFITS = [

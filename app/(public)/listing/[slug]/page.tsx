@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const supabase = await createServerSupabaseClient();
     const listing = await getListingBySlug(supabase, slug);
 
-    if (!listing) return { title: "Listing Not Found | GalaPo" };
+    if (!listing) return { title: "Listing Not Found" };
 
     const cat = listing.categories as any;
     const sub = listing.subcategories as any;

@@ -37,6 +37,24 @@ export default async function EditBusinessEventPage({ params }: EditBusinessEven
         .eq("is_active", true)
         .order("business_name", { ascending: true });
 
+    // Get active/upcoming event counts for these listings to show usage
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+    const { data: activeEvents } = await supabase
+        .from("events")
+        .select("listing_id")
+        .in("listing_id", listings?.map(l => l.id) || [])
+        .gte("event_date", today);
+
+    const eventCounts = activeEvents?.reduce((acc: Record<string, number>, event: any) => {
+        acc[event.listing_id] = (acc[event.listing_id] || 0) + 1;
+        return acc;
+    }, {}) || {};
+
+    const listingsWithCounts = listings?.map(l => ({
+        ...l,
+        active_event_count: eventCounts[l.id] || 0
+    })) || [];
+
     return (
         <div className="mx-auto max-w-7xl space-y-8 p-6 lg:p-10">
             <div className="flex items-center gap-4">
@@ -49,7 +67,7 @@ export default async function EditBusinessEventPage({ params }: EditBusinessEven
                 </div>
             </div>
 
-            <EventForm listings={listings || []} initialData={event} isEditing />
+            <EventForm listings={listingsWithCounts} initialData={event} isEditing />
         </div>
     );
 }

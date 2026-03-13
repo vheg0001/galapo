@@ -51,7 +51,10 @@ export default function FeaturedEvents({ events }: FeaturedEventsProps) {
                 </div>
             </div>
 
-            <div ref={scrollRef} className="flex gap-5 overflow-x-auto pb-3 scrollbar-hide">
+            <div 
+                ref={scrollRef} 
+                className="grid grid-flow-col auto-cols-[18rem] md:auto-cols-[22rem] lg:auto-cols-[25rem] items-stretch gap-6 overflow-x-auto pb-8 scrollbar-hide"
+            >
                 {events.map((event) => (
                     <EventCard
                         key={event.id}

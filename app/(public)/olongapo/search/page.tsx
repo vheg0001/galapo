@@ -23,8 +23,8 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
 
 
     const title = q
-        ? `Search "${q}" in Olongapo City | GalaPo`
-        : "Search Businesses in Olongapo City | GalaPo";
+        ? `Search "${q}" in Olongapo City`
+        : "Search Businesses in Olongapo City";
 
     const description = q
         ? `Find ${q} businesses in Olongapo City. Browse verified listings with contact info, hours, and directions.`

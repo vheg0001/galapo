@@ -97,8 +97,6 @@ export default function EventDetail({ event, relatedEvents }: EventDetailProps) 
                                     </div>
                                     <BadgeDisplay
                                         badges={event.listing.listing_badges || []}
-                                        isFeatured={event.listing.is_featured}
-                                        isPremium={event.listing.is_premium}
                                         mode="card"
                                     />
                                 </div>

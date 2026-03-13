@@ -37,38 +37,88 @@ export default function EventsList({ events, onToggleActive, onDelete }: EventsL
         <div className="space-y-4">
             {events.map((event) => {
                 const status = getStatus(event);
+                const isActive = event.is_active;
+
                 return (
-                    <article key={event.id} className="flex flex-col gap-4 rounded-[2rem] border border-border bg-card p-5 shadow-sm md:flex-row md:items-center">
-                        <div className="relative h-24 w-full overflow-hidden rounded-2xl bg-muted md:w-32 md:shrink-0">
+                    <article
+                        key={event.id}
+                        className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-card p-4 transition hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 sm:flex-row sm:items-center"
+                    >
+                        {/* Image */}
+                        <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-xl bg-muted sm:h-20 sm:w-32">
                             {event.image_url ? (
                                 <Image src={event.image_url} alt={event.title} fill className="object-cover" unoptimized />
                             ) : (
-                                <div className="flex h-full items-center justify-center text-3xl">🎉</div>
+                                <div className="flex h-full items-center justify-center text-2xl">🎉</div>
                             )}
-                        </div>
-
-                        <div className="min-w-0 flex-1 space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span className={cn("rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em]", status.className)}>{status.label}</span>
-                                {event.is_featured && <span className="rounded-full bg-secondary/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-secondary">Featured</span>}
-                            </div>
-                            <h3 className="truncate text-lg font-black tracking-tight text-foreground">{event.title}</h3>
-                            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-                                <span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" />{new Date(`${event.event_date.split("T")[0]}T00:00:00`).toLocaleDateString()}</span>
-                                <span className="inline-flex items-center gap-2"><Clock3 className="h-4 w-4 text-primary" />{formatEventTime(event.start_time, event.end_time)}</span>
-                                <span>{event.venue}</span>
-                                <span>{event.listing?.business_name || "City-wide event"}</span>
+                            <div className="absolute left-1 top-1">
+                                <span
+                                    className={cn(
+                                        "rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm",
+                                        isActive ? "bg-emerald-500" : "bg-slate-400"
+                                    )}
+                                >
+                                    {isActive ? "Active" : "Inactive"}
+                                </span>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 md:self-stretch">
-                            <Link href={`/business/events/${event.id}/edit`} className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest", status.className)}>
+                                    {status.label}
+                                </span>
+                                {event.is_featured && (
+                                    <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-secondary">
+                                        Featured
+                                    </span>
+                                )}
+                            </div>
+                            <h3 className="truncate text-base font-black tracking-tight text-foreground">{event.title}</h3>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                                <span className="inline-flex items-center gap-1.5 font-medium">
+                                    <CalendarDays className="h-3 w-3 text-primary" />
+                                    {new Date(`${event.event_date.split("T")[0]}T00:00:00`).toLocaleDateString()}
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 font-medium">
+                                    <Clock3 className="h-3 w-3 text-primary" />
+                                    {formatEventTime(event.start_time, event.end_time)}
+                                </span>
+                                <span className="truncate">
+                                    Listing: <span className="font-bold text-foreground/70">{event.listing?.business_name || "City-wide"}</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 border-t border-border pt-3 sm:border-0 sm:pt-0">
+                            <Link
+                                href={`/business/events/${event.id}/edit`}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+                                title="Edit Event"
+                            >
                                 <Pencil className="h-4 w-4" />
                             </Link>
-                            <button type="button" onClick={() => onToggleActive(event)} className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                            <button
+                                type="button"
+                                onClick={() => onToggleActive(event)}
+                                className={cn(
+                                    "flex h-9 w-9 items-center justify-center rounded-xl transition",
+                                    isActive
+                                        ? "bg-amber-50 text-amber-600 hover:bg-amber-100"
+                                        : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                                )}
+                                title={isActive ? "Deactivate" : "Activate"}
+                            >
                                 <Power className="h-4 w-4" />
                             </button>
-                            <button type="button" onClick={() => onDelete(event)} className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100">
+                            <button
+                                type="button"
+                                onClick={() => onDelete(event)}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600 transition hover:bg-red-100"
+                                title="Delete Event"
+                            >
                                 <Trash2 className="h-4 w-4" />
                             </button>
                         </div>

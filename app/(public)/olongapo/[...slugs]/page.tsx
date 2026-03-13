@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         const category = await getCategoryBySlug(supabase, slugs[0]);
         if (category) {
             return {
-                title: `Best ${category.name} in Olongapo City | GalaPo`,
+                title: `Best ${category.name} in Olongapo City`,
                 description: `Find the best ${category.name.toLowerCase()} in Olongapo City.`,
             };
         }
@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             const cat = listing.categories as any;
             const brgy = listing.barangays as any;
             return {
-                title: `${listing.business_name} | ${cat?.name || "Business"} in ${brgy?.name || "Olongapo"} | GalaPo`,
+                title: `${listing.business_name} | ${cat?.name || "Business"} in ${brgy?.name || "Olongapo"}`,
                 description: listing.short_description,
             };
         }
@@ -70,7 +70,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             const sub = category.subcategories.find((s: any) => s.slug === seg2);
             if (sub) {
                 return {
-                    title: `Best ${sub.name} in Olongapo City | GalaPo`,
+                    title: `Best ${sub.name} in Olongapo City`,
                     description: `Find the best ${sub.name.toLowerCase()} in Olongapo City.`,
                 };
             }
@@ -82,7 +82,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             const cat = listing.categories as any;
             const brgy = listing.barangays as any;
             return {
-                title: `${listing.business_name} | ${cat?.name || "Business"} in ${brgy?.name || "Olongapo"} | GalaPo`,
+                title: `${listing.business_name} | ${cat?.name || "Business"} in ${brgy?.name || "Olongapo"}`,
                 description: listing.short_description,
             };
         }
@@ -97,7 +97,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             const brgy = listing.barangays as any;
             const primaryImage = (listing.listing_images as any[])?.[0]?.image_url;
             return {
-                title: `${listing.business_name} | ${sub?.name || cat?.name} in ${brgy?.name || "Olongapo"} | GalaPo`,
+                title: `${listing.business_name} | ${sub?.name || cat?.name} in ${brgy?.name || "Olongapo"}`,
                 description: listing.short_description,
                 openGraph: {
                     images: primaryImage ? [{ url: primaryImage }] : [],
@@ -107,7 +107,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         }
     }
 
-    return { title: "Not Found | GalaPo" };
+    return { title: "Not Found" };
 }
 
 // ── Main Page ────────────────────────────────────────────────────────────────

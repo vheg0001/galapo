@@ -59,8 +59,8 @@ export default function EventCard({
     return (
         <article
             className={cn(
-                "group overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl",
-                horizontal ? "flex flex-col md:flex-row" : "flex flex-col",
+                "group flex overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl h-full",
+                horizontal ? "flex-col md:flex-row" : "flex-col",
                 featured && "min-w-[21rem] md:min-w-[24rem]",
                 isPast && "opacity-70 grayscale-[0.2]",
                 className
@@ -95,7 +95,7 @@ export default function EventCard({
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col p-5 md:p-6">
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-1 items-start justify-between gap-4">
                     <div className="min-w-0 flex-1 space-y-3">
                         {horizontal && <DateBadge date={eventDate} size="sm" />}
 
@@ -109,58 +109,61 @@ export default function EventCard({
                             {isPast && <Badge className="bg-muted text-muted-foreground">Event ended</Badge>}
                         </div>
 
-                        <div>
+                        <div className="min-h-[4rem] overflow-hidden">
                             <Link href={detailHref} className="block">
                                 <h3 className="text-xl font-black tracking-tight text-foreground transition-colors group-hover:text-primary line-clamp-2">
                                     {title}
                                 </h3>
                             </Link>
-                            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <Clock3 className="h-4 w-4 shrink-0 text-primary" />
-                                    <span>{timeLabel}</span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                                    <span>
-                                        {[venue, venueAddress].filter(Boolean).join(" • ") || "Olongapo City"}
-                                    </span>
-                                </div>
+                        </div>
+
+                        <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                <Clock3 className="h-4 w-4 shrink-0 text-primary" />
+                                <span>{timeLabel}</span>
+                            </div>
+                            <div className="flex items-start gap-2 overflow-hidden">
+                                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                <span className="line-clamp-2">
+                                    {[venue, venueAddress].filter(Boolean).join(" • ") || "Olongapo City"}
+                                </span>
                             </div>
                         </div>
 
                         {listing && listingHref && (
-                            <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <div className="flex flex-wrap items-center gap-2 text-sm min-h-[2.5rem] overflow-hidden">
                                 <span className="text-muted-foreground">Hosted by</span>
-                                <Link href={listingHref} className="font-bold text-primary hover:underline">
+                                <Link href={listingHref} className="font-bold text-primary hover:underline line-clamp-1">
                                     {listing.businessName}
                                 </Link>
                                 {listing.badges && listing.badges.length > 0 && (
                                     <BadgeDisplay
                                         badges={listing.badges}
-                                        isFeatured={listing.isFeatured}
-                                        isPremium={listing.isPremium}
                                         mode="card"
                                         size="sm"
+                                        className="scale-90"
                                     />
                                 )}
                             </div>
                         )}
 
                         {description && (
-                            <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                            <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground min-h-[2.8rem] overflow-hidden">
                                 {description.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}
                             </p>
                         )}
                     </div>
                 </div>
 
-                <div className="mt-5 flex items-center justify-between border-t border-border/50 pt-4">
-                    <span className={cn("text-xs font-bold uppercase tracking-[0.2em]", isPast ? "text-muted-foreground" : "text-primary")}>
+                <div className="mt-auto flex items-center justify-start border-t border-border/50 pt-4">
+                    <Link 
+                        href={detailHref} 
+                        className={cn(
+                            "text-[10px] font-black uppercase tracking-widest text-primary hover:underline",
+                            isPast && "text-muted-foreground"
+                        )}
+                    >
                         {isPast ? "This event has ended" : "View event information"}
-                    </span>
-                    <Link href={detailHref} className="text-sm font-bold text-primary hover:underline">
-                        View Details
                     </Link>
                 </div>
             </div>

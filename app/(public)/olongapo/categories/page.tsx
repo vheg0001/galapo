@@ -6,13 +6,13 @@ import AdSlot from "@/components/shared/AdSlot";
 import CategoryCard from "@/components/public/CategoryCard";
 
 export const metadata: Metadata = {
-    title: "Browse Business Categories in Olongapo City | GalaPo",
+    title: "Browse Business Categories in Olongapo City",
     description:
-        "Find businesses by category in Olongapo City. Browse restaurants, shops, services, health, education, and more.",
+        "Explore businesses by category in Olongapo City. Find restaurants, services, shops, and more.",
     openGraph: {
-        title: "Browse Business Categories in Olongapo City | GalaPo",
+        title: "Browse Business Categories in Olongapo City",
         description:
-            "Find businesses by category in Olongapo City. Browse restaurants, shops, services, health, education, and more.",
+            "Explore businesses by category in Olongapo City.",
     },
 };
 

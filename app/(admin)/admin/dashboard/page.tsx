@@ -7,7 +7,7 @@ import AdminDashboardDeepSections from "@/components/admin/dashboard/AdminDashbo
 import { Building2, CreditCard, ShieldCheck, Users, BarChart2, Calendar } from "lucide-react";
 
 export const metadata: Metadata = {
-    title: "Dashboard - GalaPo Admin",
+    title: "Dashboard",
     robots: { index: false, follow: false },
 };
 

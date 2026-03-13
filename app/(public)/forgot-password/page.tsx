@@ -3,7 +3,7 @@ import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-    title: "Reset Password | GalaPo",
+    title: "Reset Password",
     description: "Reset your GalaPo business account password.",
     robots: { index: false, follow: false },
 };

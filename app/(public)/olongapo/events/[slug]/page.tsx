@@ -20,13 +20,13 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
     const event = await fetchEventBySlug(supabase, slug);
 
     if (!event) {
-        return { title: "Event Not Found | GalaPo" };
+        return { title: "Event Not Found" };
     }
 
     const formattedDate = format(new Date(`${event.event_date.split("T")[0]}T00:00:00`), "MMMM d, yyyy");
 
     return {
-        title: `${event.title} — ${formattedDate} | GalaPo`,
+        title: `${event.title} — ${formattedDate}`,
         description: stripHtml(event.description).slice(0, 160),
     };
 }

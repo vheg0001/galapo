@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import LoginForm from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
-    title: "Business Owner Login | GalaPo",
-    description: "Login to your GalaPo business dashboard to manage your listing.",
+    title: "Business Owner Login",
+    description: "Sign in to your GalaPo business account to manage your listing, deals, and events.",
     robots: { index: false, follow: false },
 };
 

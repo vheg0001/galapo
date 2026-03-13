@@ -9,8 +9,8 @@ import AdSlot from "@/components/shared/AdSlot";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Deals & Offers in Olongapo City | GalaPo",
-    description: "Find the latest deals, discounts, and offers from businesses in Olongapo City. Save money on restaurants, shops, services, and more.",
+    title: "Deals & Offers in Olongapo City",
+    description: "Discover the best discounts, vouchers, and special offers from local businesses in Olongapo.",
 };
 
 interface DealsPageProps {

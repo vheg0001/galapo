@@ -42,7 +42,7 @@ export default function PlanLimitIndicator({ used, total, title = "Deal Slot Usa
 
             <div className="mt-4 flex items-center justify-between">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    {safeTotal === 0 ? "No deal slots available" : isAtLimit ? "Limit reached" : `${safeTotal - used} slots remaining`}
+                    {safeTotal === 0 ? "No slots available" : isAtLimit ? "Limit reached" : `${safeTotal - used} slots remaining`}
                 </p>
                 {isAtLimit && (
                     <Link

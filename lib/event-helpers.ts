@@ -86,8 +86,12 @@ export function normalizeEventRecord(row: any): Event {
         }
         : null;
 
+    // Effective featured status: event is featured if its own flag is true OR its listing is featured/premium
+    const isFeatured = Boolean(row.is_featured || listing?.is_featured || listing?.is_premium);
+
     return {
         ...row,
+        is_featured: isFeatured,
         listing,
     } as Event;
 }
@@ -133,7 +137,7 @@ function matchesType(event: Event, type: EventTypeFilter) {
 
 function matchesFeatured(event: Event, featuredOnly?: boolean) {
     if (!featuredOnly) return true;
-    return Boolean(event.is_featured || event.listing?.is_featured || event.listing?.is_premium);
+    return event.is_featured;
 }
 
 function matchesCategory(event: Event, category?: string | null) {

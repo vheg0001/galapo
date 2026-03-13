@@ -13,7 +13,7 @@ import FeaturedEvents from "@/components/public/events/FeaturedEvents";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-    title: "Events in Olongapo City | GalaPo",
+    title: "Events in Olongapo City",
     description: "Discover upcoming events, festivals, and activities in Olongapo City.",
 };
 
