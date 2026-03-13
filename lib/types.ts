@@ -335,9 +335,71 @@ export interface BlogPost {
     meta_title?: string | null;
     meta_description?: string | null;
     author_id: string;
+    is_featured?: boolean;
+    view_count?: number;
+    read_time?: number;
     published_at: string | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface BlogAuthor {
+    id: string;
+    name: string;
+    avatar_url?: string | null;
+    bio?: string | null;
+}
+
+export interface TagCount {
+    tag: string;
+    count: number;
+}
+
+export interface BlogHeading {
+    level: 2 | 3;
+    text: string;
+    id: string;
+}
+
+export interface BlogPostCard extends BlogPost {
+    author: BlogAuthor;
+}
+
+export interface BlogLinkedListing {
+    id: string;
+    slug: string;
+    business_name: string;
+    short_description: string;
+    logo_url?: string | null;
+    image_url?: string | null;
+    is_featured?: boolean;
+    is_premium?: boolean;
+    category?: {
+        id?: string;
+        name: string;
+        slug?: string;
+    } | null;
+    barangay?: {
+        id?: string;
+        name: string;
+        slug?: string;
+    } | null;
+    badges?: ListingBadge[];
+}
+
+export interface BlogNavigationPost {
+    id: string;
+    slug: string;
+    title: string;
+}
+
+export interface BlogPostDetail extends BlogPostCard {
+    headings: BlogHeading[];
+    linked_listings: BlogLinkedListing[];
+    related_posts: BlogPostCard[];
+    previous_post?: BlogNavigationPost | null;
+    next_post?: BlogNavigationPost | null;
+    canonical_url?: string;
 }
 
 export interface Subscription {
@@ -628,5 +690,6 @@ export interface ActivityItem {
     listing_id?: string | null;
     listing_name?: string | null;
 }
+
 
 

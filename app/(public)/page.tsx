@@ -429,7 +429,7 @@ export default async function HomePage() {
                                 </h2>
                                 <p className="mt-1 text-muted-foreground">Stories and guides about Olongapo</p>
                             </div>
-                            <Link href="/blog" className="hidden sm:flex items-center gap-1 text-sm font-medium text-secondary hover:underline">
+                            <Link href="/olongapo/blog" className="hidden sm:flex items-center gap-1 text-sm font-medium text-secondary hover:underline">
                                 Visit Blog <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
