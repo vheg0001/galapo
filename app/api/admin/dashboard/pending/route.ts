@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
             admin
                 .from("payments")
-                .select("id, amount, plan_type, description, created_at, profiles!payments_user_id_fkey(full_name)")
+                .select("id, amount, description, created_at, profiles!payments_user_id_fkey(full_name)")
                 .eq("status", "pending")
                 .order("created_at", { ascending: false })
                 .limit(5),
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
                 id: p.id,
                 owner_name: p.profiles?.full_name ?? "Unknown",
                 amount: p.amount,
-                plan: p.plan_type ?? p.description ?? "—",
+                plan: p.description ?? "-",
                 submitted_at: p.created_at,
             })),
             pending_claims: (pendingClaims ?? []).map((l: any) => ({

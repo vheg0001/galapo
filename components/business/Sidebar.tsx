@@ -35,7 +35,7 @@ const NAV_ITEMS: NavItem[] = [
     { label: "Add New Listing", href: "/business/listings/new", icon: PlusCircle },
     { label: "Deals & Offers", href: "/business/deals", icon: Tag },
     { label: "Events", href: "/business/events", icon: CalendarDays },
-    { label: "Subscription & Billing", href: "/business/billing", icon: CreditCard },
+    { label: "Subscription & Billing", href: "/business/subscription", icon: CreditCard },
     { label: "Notifications", href: "/business/notifications", icon: Bell },
     { label: "Account Settings", href: "/business/settings", icon: Settings },
 ];

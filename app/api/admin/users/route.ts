@@ -4,6 +4,12 @@ import { createAdminSupabaseClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
+const PLAN_PRIORITY: Record<string, number> = {
+    free: 0,
+    featured: 1,
+    premium: 2,
+};
+
 export async function GET(request: NextRequest) {
     const auth = await requireAdmin(request);
     if ("error" in auth) return auth.error;
@@ -43,23 +49,53 @@ export async function GET(request: NextRequest) {
 
         // Enrich with listing count and subscription status
         const ids = (profiles ?? []).map((p: any) => p.id);
-        const [{ data: listingCounts }, { data: subs }] = await Promise.all([
-            ids.length
-                ? admin.from("listings").select("owner_id").in("owner_id", ids)
-                : Promise.resolve({ data: [] }),
-            ids.length
-                ? admin.from("subscriptions").select("user_id, status, plan_type").in("user_id", ids).eq("status", "active")
-                : Promise.resolve({ data: [] }),
-        ]);
+        const { data: listingRows } = ids.length
+            ? await admin.from("listings").select("id, owner_id").in("owner_id", ids)
+            : { data: [] };
+
+        const listingIdToOwnerId = new Map<string, string>();
+        (listingRows ?? []).forEach((listing: any) => {
+            if (listing.id && listing.owner_id) {
+                listingIdToOwnerId.set(listing.id, listing.owner_id);
+            }
+        });
+
+        const listingIds = Array.from(listingIdToOwnerId.keys());
+        const { data: subs } = listingIds.length
+            ? await admin
+                .from("subscriptions")
+                .select("listing_id, status, plan_type, created_at")
+                .in("listing_id", listingIds)
+                .eq("status", "active")
+                .order("created_at", { ascending: false })
+            : { data: [] };
 
         const countMap: Record<string, number> = {};
-        (listingCounts ?? []).forEach((l: any) => {
+        (listingRows ?? []).forEach((l: any) => {
             countMap[l.owner_id] = (countMap[l.owner_id] ?? 0) + 1;
         });
 
-        const subMap: Record<string, { status: string; plan_type: string }> = {};
+        const subMap: Record<string, { status: string; plan_type: string; created_at?: string | null }> = {};
         (subs ?? []).forEach((s: any) => {
-            subMap[s.user_id] = { status: s.status, plan_type: s.plan_type };
+            const ownerId = listingIdToOwnerId.get(s.listing_id);
+            if (!ownerId) return;
+
+            const existing = subMap[ownerId];
+            const nextPriority = PLAN_PRIORITY[String(s.plan_type)] ?? -1;
+            const existingPriority = existing ? PLAN_PRIORITY[String(existing.plan_type)] ?? -1 : -1;
+            const shouldReplace =
+                !existing ||
+                nextPriority > existingPriority ||
+                (nextPriority === existingPriority &&
+                    new Date(String(s.created_at ?? 0)).getTime() > new Date(String(existing.created_at ?? 0)).getTime());
+
+            if (shouldReplace) {
+                subMap[ownerId] = {
+                    status: s.status,
+                    plan_type: s.plan_type,
+                    created_at: s.created_at,
+                };
+            }
         });
 
         const users = (profiles ?? []).map((p: any) => ({

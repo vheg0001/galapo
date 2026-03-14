@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Loader2, Settings, DollarSign, CreditCard, Search, MonitorPlay, Package, Plus, Trash2, CheckCircle2, GripVertical } from "lucide-react";
+import { Save, Loader2, Settings, DollarSign, CreditCard, Search, MonitorPlay, Package, Plus, Trash2, CheckCircle2, GripVertical, RefreshCw } from "lucide-react";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
+import { PLAN_CARD_META, PLAN_FEATURES, ADD_ONS } from "@/lib/subscription-config";
+import type { PlanFeatureItem } from "@/lib/subscription-config";
+
+type ManagedPlan = "free" | "featured" | "premium" | "top_search" | "banner_ads";
 
 const TABS = [
     { id: "general", label: "General", icon: Settings },
@@ -273,6 +277,41 @@ function PlansTab({ s, set }: { s: any; set: (k: string, v: any) => void }) {
             updatePackage(pkgId, { features: [...(pkg.features || []), "New Feature"] });
         }
     };
+    
+    const loadDefaults = (pkgId: string, planType: ManagedPlan) => {
+        if (planType === "free" || planType === "featured" || planType === "premium") {
+            const meta = PLAN_CARD_META[planType];
+            const features = PLAN_FEATURES[planType]
+                .filter((f: PlanFeatureItem) => f.included && !f.label.includes("plus"))
+                .map((f: PlanFeatureItem) => f.label);
+
+            updatePackage(pkgId, {
+                name: meta.title + " Listing",
+                price: planType === "free" ? "0" : (s[`${planType}_listing_monthly_price`] || (planType === "featured" ? "299" : "599")),
+                description: meta.subtitle,
+                features,
+                is_popular: meta.ribbon === "POPULAR"
+            });
+        } else if (planType === "top_search") {
+            const config = ADD_ONS.topSearch;
+            updatePackage(pkgId, {
+                name: "Top Search Placement",
+                price: s.top_search_monthly_price || "999",
+                description: config.description,
+                features: config.features,
+                is_popular: false
+            });
+        } else if (planType === "banner_ads") {
+            const config = ADD_ONS.bannerAds;
+            updatePackage(pkgId, {
+                name: "Banner Ad Placement",
+                price: s.featured_listing_monthly_price || "1499", // Using a fallback or specific fee
+                description: config.description,
+                features: config.features,
+                is_popular: false
+            });
+        }
+    };
 
     const updateFeature = (pkgId: string, index: number, value: string) => {
         const pkg = packages.find((p: any) => p.id === pkgId);
@@ -381,6 +420,43 @@ function PlansTab({ s, set }: { s: any; set: (k: string, v: any) => void }) {
                                             <SettingsInput value={p.button_link} onChange={(v) => updatePackage(p.id, { button_link: v })} placeholder="/register" />
                                         </Field>
                                     </div>
+                                    <div className="pt-2 flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => loadDefaults(p.id, "free")}
+                                            className="text-[10px] font-bold bg-muted px-2 py-1 rounded hover:bg-muted/80 transition-colors"
+                                        >
+                                            Load Free Template
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => loadDefaults(p.id, "featured")}
+                                            className="text-[10px] font-bold bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
+                                        >
+                                            Load Featured Template
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => loadDefaults(p.id, "premium")}
+                                            className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded hover:bg-amber-200 transition-colors"
+                                        >
+                                            Load Premium Template
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => loadDefaults(p.id, "top_search")}
+                                            className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                                        >
+                                            Load Top Search
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => loadDefaults(p.id, "banner_ads")}
+                                            className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded hover:bg-emerald-200 transition-colors"
+                                        >
+                                            Load Banner Ads
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="lg:col-span-1 border-r border-border/30 hidden lg:block" />
@@ -423,9 +499,6 @@ function PlansTab({ s, set }: { s: any; set: (k: string, v: any) => void }) {
                     </Field>
                     <Field label="Reactivation Fee (₱)" hint="Fee for expired listings.">
                         <SettingsInput type="number" value={s.reactivation_fee_amount ?? ""} onChange={(v) => set("reactivation_fee_amount", v)} placeholder="200" />
-                    </Field>
-                    <Field label="Top Search Slot (₱/mo)" hint="Premium search placement.">
-                        <SettingsInput type="number" value={s.top_search_monthly_price ?? ""} onChange={(v) => set("top_search_monthly_price", v)} placeholder="500" />
                     </Field>
                 </div>
             </div>

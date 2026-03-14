@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createAdminSupabaseClient } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-helpers";
 
-// Revalidate every 1 hour
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const cityParam = searchParams.get("city") || "olongapo";
 
-        const supabase = await createServerSupabaseClient();
+        const supabase = createAdminSupabaseClient();
 
         // We assume city maps to city_id via slug or name. In this schema, barangays link to cities.
         // First get city ID

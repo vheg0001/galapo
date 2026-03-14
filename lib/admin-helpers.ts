@@ -74,10 +74,10 @@ export async function getAdminDashboardStats() {
         admin.from("listing_analytics").select("id").eq("event_type", "page_view").gte("created_at", startOfMonth),
         admin.from("listing_analytics").select("id").eq("event_type", "page_view").gte("created_at", startOfLastMonth).lte("created_at", endOfLastMonth),
         admin.from("profiles").select("id", { count: "exact", head: true }).eq("role", "business_owner"),
-        admin.from("payments").select("amount, plan_type").eq("status", "verified").gte("verified_at", startOfMonth),
+        admin.from("payments").select("amount, description").eq("status", "verified").gte("verified_at", startOfMonth),
         admin.from("payments").select("amount").eq("status", "verified").gte("verified_at", startOfLastMonth).lte("verified_at", endOfLastMonth),
         admin.from("payments").select("amount").eq("status", "verified"),
-        admin.from("payments").select("amount, plan_type").eq("status", "verified").gte("verified_at", startOfMonth),
+        admin.from("payments").select("amount, description").eq("status", "verified").gte("verified_at", startOfMonth),
         admin.from("annual_checks").select("id").eq("status", "pending").lte("response_deadline", nextWeek).gte("response_deadline", now.toISOString().split("T")[0]),
         admin.from("annual_checks").select("id").eq("status", "no_response"),
     ]);
@@ -92,10 +92,10 @@ export async function getAdminDashboardStats() {
     // Revenue breakdown — based on plan_type in payments
     const breakdown = { subscriptions: 0, ad_placements: 0, top_search: 0, reactivation_fees: 0 };
     (revenueThisMonthRows ?? []).forEach((p: any) => {
-        const plan: string = p.plan_type ?? "";
-        if (plan.includes("ad")) breakdown.ad_placements += Number(p.amount);
-        else if (plan.includes("top_search")) breakdown.top_search += Number(p.amount);
-        else if (plan.includes("reactivation")) breakdown.reactivation_fees += Number(p.amount);
+        const description = String(p.description ?? "").toLowerCase();
+        if (description.includes("ad")) breakdown.ad_placements += Number(p.amount);
+        else if (description.includes("top search")) breakdown.top_search += Number(p.amount);
+        else if (description.includes("reactivation")) breakdown.reactivation_fees += Number(p.amount);
         else breakdown.subscriptions += Number(p.amount);
     });
 

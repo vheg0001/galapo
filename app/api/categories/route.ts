@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createAdminSupabaseClient } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-helpers";
 
-// Revalidate every 30 minutes (1800 seconds)
-export const revalidate = 1800;
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
     try {
@@ -11,7 +10,7 @@ export async function GET(request: Request) {
         const parentOnly = searchParams.get("parent_only") === "true";
         const includeFields = searchParams.get("include_fields") === "true";
 
-        const supabase = await createServerSupabaseClient();
+        const supabase = createAdminSupabaseClient();
 
         // 1. Fetch categories
         let query = supabase

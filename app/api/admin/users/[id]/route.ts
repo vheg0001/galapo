@@ -15,15 +15,27 @@ export async function GET(
 
     try {
         const admin = createAdminSupabaseClient();
-        const [{ data: profile }, { data: listings }, { data: sub }] = await Promise.all([
+        const [{ data: profile }, { data: listings }] = await Promise.all([
             admin.from("profiles").select("*").eq("id", id).single(),
             admin.from("listings").select("id, business_name, slug, status, created_at, is_active, is_premium, is_featured")
                 .eq("owner_id", id).order("created_at", { ascending: false }),
-            admin.from("subscriptions").select("id, plan_type, status, starts_at, ends_at")
-                .eq("user_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         ]);
 
         if (!profile) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+        const listingIds = (listings ?? [])
+            .map((listing: any) => listing.id)
+            .filter(Boolean);
+
+        const { data: sub } = listingIds.length
+            ? await admin
+                .from("subscriptions")
+                .select("id, listing_id, plan_type, status, start_date, end_date")
+                .in("listing_id", listingIds)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle()
+            : { data: null };
 
         return NextResponse.json({ profile, listings: listings ?? [], subscription: sub });
     } catch (err: any) {

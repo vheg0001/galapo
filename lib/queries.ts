@@ -380,8 +380,9 @@ export async function buildListingsQuery(supabase: SupabaseClient, options: Buil
     const { filters, categoryId, subcategoryId, barangayIds, forMap = false } = options;
     const selectStr = forMap ? LISTING_MAP_SELECT : LISTING_FULL_SELECT;
 
-    let query = supabase
-        .from("listings")
+    const listingsQuery = supabase.from("listings") as any;
+
+    let query: any = listingsQuery
         .select(selectStr, { count: forMap ? undefined : "exact" })
         .eq("is_active", true)
         .in("status", ["approved", "claimed_pending"]);

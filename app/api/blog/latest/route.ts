@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createAdminSupabaseClient } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-helpers";
 
-// Revalidate every hour
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
     try {
@@ -11,7 +10,7 @@ export async function GET(request: Request) {
         const limitParam = searchParams.get("limit");
         const limit = limitParam ? parseInt(limitParam, 10) : 3;
 
-        const supabase = await createServerSupabaseClient();
+        const supabase = createAdminSupabaseClient();
 
         const { data, error } = await supabase
             .from("blog_posts")

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createAdminSupabaseClient } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-helpers";
 
 // Revalidate every 1 hour
@@ -7,7 +7,9 @@ export const revalidate = 3600;
 
 export async function GET() {
     try {
-        const supabase = await createServerSupabaseClient();
+        // This route is public and only exposes allowlisted keys, so it can use
+        // the admin client without touching request cookies.
+        const supabase = createAdminSupabaseClient();
 
         const { data, error } = await supabase
             .from("site_settings")

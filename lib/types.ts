@@ -41,6 +41,8 @@ export enum PlanType {
     PREMIUM = "premium",
 }
 
+export type PlanTier = "free" | "featured" | "premium";
+
 export type BadgeType = "admin" | "system" | "plan";
 
 export enum SubscriptionStatus {
@@ -49,6 +51,12 @@ export enum SubscriptionStatus {
     PENDING_PAYMENT = "pending_payment",
     CANCELLED = "cancelled",
 }
+
+export type SubscriptionStatusValue =
+    | "active"
+    | "expired"
+    | "pending_payment"
+    | "cancelled";
 
 export enum PaymentStatus {
     PENDING = "pending",
@@ -406,10 +414,10 @@ export interface BlogPostDetail extends BlogPostCard {
 export interface Subscription {
     id: string;
     listing_id: string;
-    plan_type: PlanType;
-    status: SubscriptionStatus;
-    start_date: string;
-    end_date: string;
+    plan_type: PlanType | PlanTier;
+    status: SubscriptionStatus | SubscriptionStatusValue;
+    start_date: string | null;
+    end_date: string | null;
     amount: number;
     auto_renew: boolean;
     created_at: string;
@@ -427,6 +435,7 @@ export interface Payment {
     reference_number?: string | null;
     description: string;
     status: PaymentStatus;
+    plan_type?: string | null;
     verified_by: string | null;
     verified_at: string | null;
     rejection_reason?: string | null;
@@ -526,12 +535,129 @@ export interface TopSearchPlacement {
     listing_id: string;
     category_id: string;
     subcategory_id: string | null;
-    start_date: string;
-    end_date: string;
+    start_date: string | null;
+    end_date: string | null;
     position: number;
-    payment_id: string;
+    payment_id: string | null;
     is_active: boolean;
     created_at: string;
+}
+
+export type ComputedSubscriptionStatus =
+    | "active"
+    | "expiring_soon"
+    | "expired"
+    | "pending_payment"
+    | "cancelled";
+
+export type TopSearchPlacementStatus = "active" | "expired" | "pending_payment";
+
+export interface AdvertisingPackage {
+    id: string;
+    name: string;
+    price: string | number;
+    interval: string;
+    description: string;
+    features: string[];
+    is_popular: boolean;
+    button_text: string;
+    button_link: string;
+}
+
+
+export interface PricingResponse {
+    featured_monthly: number;
+    premium_monthly: number;
+    top_search_monthly: number;
+    ad_placement_monthly: number;
+    advertising_packages?: AdvertisingPackage[];
+}
+
+
+export interface PaymentInstructionsConfig {
+    gcash_number: string;
+    gcash_name: string;
+    gcash_qr_url?: string | null;
+    bank_name: string;
+    bank_account: string;
+    bank_account_name: string;
+    amount: number;
+    instructions_text: string;
+}
+
+export interface SubscriptionListItem {
+    listing_id: string;
+    listing_name: string;
+    category_id?: string | null;
+    category_name?: string | null;
+    subcategory_id?: string | null;
+    subcategory_name?: string | null;
+    listing_status?: string;
+    current_plan: PlanTier;
+    subscription: {
+        id: string;
+        plan_type: PlanTier;
+        status: ComputedSubscriptionStatus;
+        start_date: string | null;
+        end_date: string | null;
+        days_remaining: number;
+        is_expiring_soon: boolean;
+        auto_renew: boolean;
+        amount?: number;
+    } | null;
+    top_search_placements: Array<{
+        id: string;
+        category_id?: string;
+        category_name: string;
+        position: number;
+        status: TopSearchPlacementStatus;
+        start_date: string | null;
+        end_date: string | null;
+        payment_id?: string | null;
+    }>;
+}
+
+export interface PaymentHistoryItem extends Payment {
+    listing_name: string;
+    listing_slug?: string | null;
+    subscription?: {
+        id: string;
+        plan_type: PlanTier;
+        status: SubscriptionStatus | SubscriptionStatusValue;
+    } | null;
+    invoice?: {
+        id: string;
+        invoice_number: string;
+        amount: number;
+        status: string;
+        issued_at: string;
+    } | null;
+}
+
+export interface TopSearchAvailabilitySlot {
+    position: number;
+    status: "available" | "taken";
+    listing_name?: string;
+}
+
+export interface TopSearchAvailabilityResponse {
+    category_name: string;
+    slots: TopSearchAvailabilitySlot[];
+    available_count: number;
+}
+
+export interface SubscriptionChangeRequest {
+    id: string;
+    subscription_id: string;
+    listing_id: string;
+    action: "request_downgrade";
+    current_plan: PlanTier;
+    target_plan: PlanTier;
+    effective_date: string;
+    status: "pending" | "scheduled" | "applied" | "cancelled";
+    requested_by: string;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface CsvImportLog {
@@ -691,6 +817,7 @@ export interface ActivityItem {
     listing_id?: string | null;
     listing_name?: string | null;
 }
+
 
 
 

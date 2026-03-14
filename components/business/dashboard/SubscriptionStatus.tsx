@@ -38,7 +38,7 @@ export default function SubscriptionStatus({ subscription, loading = false }: Su
                     </p>
                 </div>
                 <Link
-                    href="/business/billing"
+                    href="/business/subscription"
                     className="shrink-0 rounded-lg bg-[#FF6B35] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#e55a25]"
                 >
                     Upgrade Now
@@ -68,7 +68,7 @@ export default function SubscriptionStatus({ subscription, loading = false }: Su
                 </div>
 
                 <Link
-                    href="/business/billing"
+                    href="/business/subscription"
                     className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
                 >
                     Renew
