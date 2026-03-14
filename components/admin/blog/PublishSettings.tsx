@@ -8,10 +8,11 @@ interface PublishSettingsProps {
     isFeatured: boolean;
     publishedAt: string;
     authorName: string;
+    defaultAuthorName: string;
     onChange: (field: string, value: string | boolean) => void;
 }
 
-export default function PublishSettings({ isPublished, isFeatured, publishedAt, authorName, onChange }: PublishSettingsProps) {
+export default function PublishSettings({ isPublished, isFeatured, publishedAt, authorName, defaultAuthorName, onChange }: PublishSettingsProps) {
     return (
         <div className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">Publish Settings</h3>
@@ -51,8 +52,14 @@ export default function PublishSettings({ isPublished, isFeatured, publishedAt, 
                 <span>Feature this post (only one featured post at a time)</span>
             </label>
 
-            <div className="rounded-xl bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                Author: <span className="font-medium text-foreground">{authorName}</span>
+            <div className="space-y-2">
+                <Label htmlFor="authorName">Author Name</Label>
+                <Input
+                    id="authorName"
+                    value={authorName}
+                    onChange={(event) => onChange("author_name", event.target.value)}
+                    placeholder={defaultAuthorName}
+                />
             </div>
         </div>
     );

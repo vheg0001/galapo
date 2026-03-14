@@ -335,6 +335,7 @@ export interface BlogPost {
     meta_title?: string | null;
     meta_description?: string | null;
     author_id: string;
+    author_name?: string | null;
     is_featured?: boolean;
     view_count?: number;
     read_time?: number;

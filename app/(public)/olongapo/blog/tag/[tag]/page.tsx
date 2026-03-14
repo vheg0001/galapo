@@ -29,7 +29,6 @@ export default async function BlogTagPage({ params, searchParams }: PageProps) {
     return (
         <BlogIndexPage
             title={`Posts tagged: ${resolvedTag}`}
-            breadcrumbLabel={resolvedTag}
             subtitle={`Articles and local stories filed under ${resolvedTag}.`}
             posts={postsResult.data}
             featuredPost={null}

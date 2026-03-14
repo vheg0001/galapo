@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Breadcrumbs from "@/components/shared/Breadcrumbs";
 import ReadTime from "@/components/shared/ReadTime";
 import LazyImage from "@/components/shared/LazyImage";
 import SocialShareButtons from "@/components/shared/SocialShareButtons";
@@ -72,16 +71,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,768px)_280px] lg:items-start lg:justify-center">
                     <div className="mx-auto w-full max-w-3xl space-y-8">
-                        <Breadcrumbs items={[{ label: "Blog", href: "/olongapo/blog" }, { label: post.title }]} />
-
                         <header className="space-y-5">
-                            <div className="flex flex-wrap gap-2">
-                                {post.tags.map((tag) => (
-                                    <Link key={tag} href={`/olongapo/blog/tag/${encodeURIComponent(tag)}`} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/15">
-                                        {tag}
-                                    </Link>
-                                ))}
-                            </div>
 
                             <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">{post.title}</h1>
 
@@ -106,6 +96,13 @@ export default async function BlogPostPage({ params }: PageProps) {
                         <ArticleContent htmlContent={post.content} linkedListings={post.linked_listings} />
 
                         <div className="space-y-5">
+                            <div className="flex flex-wrap gap-2">
+                                {post.tags.map((tag) => (
+                                    <Link key={tag} href={`/olongapo/blog/tag/${encodeURIComponent(tag)}`} className="rounded-full bg-muted px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-foreground/70 transition-all hover:bg-primary/10 hover:text-primary">
+                                        {tag}
+                                    </Link>
+                                ))}
+                            </div>
                             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
                                 <h2 className="text-lg font-bold text-foreground">Share this article</h2>
                                 <SocialShareButtons url={pageUrl} title={post.title} />
@@ -124,10 +121,10 @@ export default async function BlogPostPage({ params }: PageProps) {
                         </section>
                     </div>
 
-                    <div className="space-y-6">
+                    <aside className="sticky top-24 space-y-6">
                         <TableOfContents headings={post.headings} />
                         <AdSlot location="blog_sidebar" className="hidden overflow-hidden rounded-2xl lg:block" />
-                    </div>
+                    </aside>
                 </div>
             </div>
         </main>

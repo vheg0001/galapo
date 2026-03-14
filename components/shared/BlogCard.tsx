@@ -110,7 +110,7 @@ export default function BlogCard({
                     </div>
                 </div>
 
-                <div className="mt-4 pt-4">
+                <div className="mt-auto pt-4">
                     <Link href={href} className="text-sm font-semibold text-secondary transition-colors hover:underline">
                         Read More →
                     </Link>

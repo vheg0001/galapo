@@ -11,6 +11,9 @@ interface MapPin {
     name: string;
     category?: string;
     slug: string;
+    logo_url?: string | null;
+    phone?: string | null;
+    description?: string | null;
     is_featured?: boolean;
     is_premium?: boolean;
     /** Highest badge tier — drives pin colour. Determined by getPinTier() in the caller. */
@@ -135,12 +138,37 @@ function MapInner({ pins, className, zoom }: MapViewProps) {
                     icon={createIcon(pin)}
                 >
                     <Popup>
-                        <div className="text-sm">
-                            <strong>{pin.name}</strong>
-                            {pin.category && <p className="text-gray-500">{pin.category}</p>}
-                            <a href={`/olongapo/${pin.slug}`} className="text-blue-600 hover:underline">
-                                View Details →
-                            </a>
+                        <div className="w-[200px] overflow-hidden rounded-lg">
+                            <div className="flex items-start gap-3">
+                                {pin.logo_url && (
+                                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                        <img src={pin.logo_url} alt={pin.name} className="h-full w-full object-cover" />
+                                    </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                    <h4 className="m-0 text-sm font-bold text-foreground line-clamp-1">{pin.name}</h4>
+                                    {pin.category && <p className="m-0 text-[11px] font-medium text-secondary">{pin.category}</p>}
+                                </div>
+                            </div>
+
+                            {pin.description && (
+                                <p className="mt-2 mb-0 text-[12px] leading-relaxed text-muted-foreground line-clamp-2">
+                                    {pin.description}
+                                </p>
+                            )}
+
+                            {pin.phone && (
+                                <p className="mt-2 mb-0 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                    <span className="shrink-0 text-primary">📞</span>
+                                    <span className="truncate">{pin.phone}</span>
+                                </p>
+                            )}
+                            
+                            <div className="mt-3 border-t border-border pt-2">
+                                <a href={`/olongapo/${pin.slug}`} className="text-[12px] font-bold text-primary hover:underline flex items-center gap-1">
+                                    View Details <span className="text-[10px]">→</span>
+                                </a>
+                            </div>
                         </div>
                     </Popup>
                 </Marker>

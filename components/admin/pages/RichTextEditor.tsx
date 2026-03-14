@@ -218,7 +218,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Start w
             {/* Editor area */}
             <EditorContent
                 editor={editor}
-                className="prose prose-sm dark:prose-invert max-w-none px-6 py-4 focus-within:outline-none"
+                className="prose prose-sm dark:prose-invert max-w-none px-6 py-4 focus-within:outline-none prose-p:my-5 [&_.ProseMirror_li_p]:my-0 [&_.ProseMirror_li]:my-0 prose-ul:my-2 prose-ol:my-2"
                 style={{ minHeight }}
             />
         </div>

@@ -17,6 +17,9 @@ export interface MapListing {
     is_premium: boolean;
     isSponsored?: boolean;
     image_url?: string | null;
+    logo_url?: string | null;
+    phone?: string | null;
+    short_description?: string| null;
     categories?: { name: string; slug: string } | null;
     badges?: { badge: { type: string; color: string } }[];
 }
@@ -402,17 +405,42 @@ function MapPanel({
                         }}
                     >
                         <Popup>
-                            <div className="min-w-[140px] text-sm">
-                                <p className="font-semibold">{listing.business_name}</p>
-                                {listing.categories?.name && (
-                                    <p className="text-xs text-gray-500">{listing.categories.name}</p>
+                            <div className="w-[180px] overflow-hidden rounded-lg">
+                                <div className="flex items-start gap-3">
+                                    {(listing.logo_url || listing.image_url) && (
+                                        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                            <img src={(listing.logo_url || listing.image_url)!} alt={listing.business_name} className="h-full w-full object-cover" />
+                                        </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="m-0 text-sm font-bold text-foreground line-clamp-1">{listing.business_name}</p>
+                                        {listing.categories?.name && (
+                                            <p className="m-0 text-[10px] font-medium text-secondary">{listing.categories.name}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {listing.short_description && (
+                                    <p className="mt-2 mb-0 text-[11px] leading-relaxed text-muted-foreground line-clamp-2">
+                                        {listing.short_description}
+                                    </p>
                                 )}
-                                <a
-                                    href={`/olongapo/${listing.slug}`}
-                                    className="mt-1.5 inline-block text-xs font-medium text-blue-600 hover:underline"
-                                >
-                                    View details →
-                                </a>
+
+                                {listing.phone && (
+                                    <p className="mt-2 mb-0 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                        <span className="shrink-0 text-primary">📞</span>
+                                        <span className="truncate">{listing.phone}</span>
+                                    </p>
+                                )}
+
+                                <div className="mt-3 border-t border-border pt-2">
+                                    <a
+                                        href={`/olongapo/${listing.slug}`}
+                                        className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1"
+                                    >
+                                        View details <span className="text-[9px]">→</span>
+                                    </a>
+                                </div>
                             </div>
                         </Popup>
                     </Marker>

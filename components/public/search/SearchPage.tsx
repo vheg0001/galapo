@@ -96,6 +96,9 @@ export default function SearchPage({
         is_premium: l.is_premium ?? false,
         isSponsored: l.isSponsored ?? false,
         image_url: l.image_url ?? l.listing_images?.[0]?.image_url ?? null,
+        logo_url: l.logo_url ?? null,
+        phone: l.phone ?? null,
+        short_description: l.short_description ?? null,
         categories: Array.isArray(l.categories) ? l.categories[0] : l.categories,
         badges: l.badges || [],
     }));

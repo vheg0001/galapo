@@ -357,6 +357,7 @@ const LISTING_FULL_SELECT = `
 /** Minimal select for map pins. */
 const LISTING_MAP_SELECT = `
     id, business_name, slug, lat, lng,
+    short_description, phone, logo_url,
     is_featured, is_premium,
     categories!listings_category_id_fkey ( name, slug ),
     subcategories:categories!listings_subcategory_id_fkey ( name, slug ),

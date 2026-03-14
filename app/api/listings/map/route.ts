@@ -58,6 +58,9 @@ export async function GET(request: Request) {
                     subcategory_name: sub?.name || null,
                     is_featured: l.is_featured,
                     is_premium: l.is_premium,
+                    logo_url: l.logo_url,
+                    phone: l.phone,
+                    short_description: l.short_description,
                     primary_image_url: primaryImage?.image_url || null,
                 };
             });

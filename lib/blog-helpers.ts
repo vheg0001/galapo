@@ -50,6 +50,7 @@ interface SaveBlogPostInput {
     meta_title?: string | null;
     meta_description?: string | null;
     published_at?: string | null;
+    author_name?: string | null;
 }
 
 const DEFAULT_AUTHOR_BIO = "Contributor to the GalaPo Blog, sharing local stories, guides, and business highlights around Olongapo City.";
@@ -296,10 +297,10 @@ function toBlogCard(post: BlogRow, authorMap: Map<string, BlogAuthor>): BlogPost
         read_time: post.read_time || calculateReadTime(post.content),
         view_count: post.view_count ?? 0,
         is_featured: Boolean(post.is_featured),
-        author: authorMap.get(post.author_id) ?? {
+        author: {
             id: post.author_id,
-            name: "GalaPo Team",
-            avatar_url: null,
+            name: post.author_name || authorMap.get(post.author_id)?.name || "GalaPo Team",
+            avatar_url: authorMap.get(post.author_id)?.avatar_url ?? null,
             bio: DEFAULT_AUTHOR_BIO,
         },
     };
@@ -574,6 +575,7 @@ function buildBlogPayload(input: SaveBlogPostInput, authorId?: string) {
         meta_description: input.meta_description?.trim() || null,
         published_at: input.published_at || null,
         read_time: calculateReadTime(input.content || ""),
+        author_name: input.author_name?.trim() || null,
         ...(authorId ? { author_id: authorId } : {}),
     };
 }

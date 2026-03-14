@@ -108,7 +108,7 @@ export default async function HomePage() {
             .limit(3),
         supabase
             .from("listings")
-            .select("id, slug, business_name, lat, lng, is_featured, is_premium, categories!listings_category_id_fkey ( name )")
+            .select("id, slug, business_name, lat, lng, short_description, phone, logo_url, is_featured, is_premium, categories!listings_category_id_fkey ( name )")
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
             .or("is_featured.eq.true,is_premium.eq.true")
@@ -148,6 +148,9 @@ export default async function HomePage() {
             name: l.business_name,
             category: (l.categories as any)?.name,
             slug: l.slug,
+            logo_url: l.logo_url,
+            phone: l.phone,
+            description: l.short_description,
             is_featured: l.is_featured,
             is_premium: l.is_premium,
         }));

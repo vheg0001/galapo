@@ -12,20 +12,10 @@ export default function ArticleContent({ htmlContent, linkedListings = [] }: Art
 
     return (
         <div className="space-y-8">
-            {linkedListings.length > 0 ? <LinkedListingCard listing={linkedListings[0]} compact /> : null}
-
             <article
-                className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-headings:font-black prose-h2:text-3xl prose-h3:text-2xl prose-h4:text-xl prose-p:leading-8 prose-a:text-primary prose-img:rounded-2xl prose-li:leading-7 dark:prose-invert"
+                className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-headings:font-black prose-h2:text-3xl prose-h3:text-2xl prose-h4:text-xl prose-p:leading-8 prose-p:my-5 [&_li_p]:my-0 [&_li]:my-0 prose-ul:my-2 prose-ol:my-2 prose-a:text-primary prose-img:rounded-2xl dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: decorated }}
             />
-
-            {linkedListings.length > 1 ? (
-                <div className="space-y-4">
-                    {linkedListings.slice(1).map((listing) => (
-                        <LinkedListingCard key={listing.id} listing={listing} compact />
-                    ))}
-                </div>
-            ) : null}
         </div>
     );
 }

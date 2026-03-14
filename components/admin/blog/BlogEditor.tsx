@@ -12,6 +12,7 @@ import ContentEditor from "@/components/admin/blog/ContentEditor";
 import PublishSettings from "@/components/admin/blog/PublishSettings";
 import SEOPreview from "@/components/admin/blog/SEOPreview";
 import EditorPreview from "@/components/admin/blog/EditorPreview";
+import BlogImageUploader from "@/components/admin/blog/BlogImageUploader";
 
 interface BlogEditorProps {
     mode: "new" | "edit";
@@ -32,6 +33,7 @@ export default function BlogEditor({ mode, initialData }: BlogEditorProps) {
         is_published: initialData?.is_published || false,
         is_featured: initialData?.is_featured || false,
         published_at: initialData?.published_at ? new Date(initialData.published_at).toISOString().slice(0, 16) : "",
+        author_name: initialData?.author_name || "",
     });
     const [linkedListings, setLinkedListings] = useState<BlogLinkedListing[]>(initialData?.linked_listings || []);
     const [saving, setSaving] = useState(false);
@@ -139,8 +141,11 @@ export default function BlogEditor({ mode, initialData }: BlogEditorProps) {
                             <Input id="slug" value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: generateSlug(event.target.value) }))} placeholder="post-slug" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="featuredImage">Featured Image URL</Label>
-                            <Input id="featuredImage" value={form.featured_image_url} onChange={(event) => setForm((current) => ({ ...current, featured_image_url: event.target.value }))} placeholder="https://..." />
+                            <Label>Featured Image</Label>
+                            <BlogImageUploader 
+                                value={form.featured_image_url} 
+                                onChange={(url) => setForm((current) => ({ ...current, featured_image_url: url }))} 
+                            />
                         </div>
                         <ContentEditor
                             value={form.content}
@@ -177,7 +182,8 @@ export default function BlogEditor({ mode, initialData }: BlogEditorProps) {
                         isPublished={form.is_published}
                         isFeatured={form.is_featured}
                         publishedAt={form.published_at}
-                        authorName={initialData?.author.name || "Current Admin"}
+                        authorName={form.author_name}
+                        defaultAuthorName={initialData?.author.name || "Current Admin"}
                         onChange={(field, value) => setForm((current) => ({ ...current, [field]: value }))}
                     />
 
@@ -206,10 +212,12 @@ export default function BlogEditor({ mode, initialData }: BlogEditorProps) {
 
                 <EditorPreview
                     title={form.title}
-                    excerpt={effectiveExcerpt}
                     featuredImageUrl={form.featured_image_url}
                     content={form.content}
                     linkedListings={linkedListings}
+                    tags={parsedTags}
+                    authorName={form.author_name || initialData?.author.name || "GalaPo Team"}
+                    publishedAt={form.published_at}
                 />
             </div>
         </div>

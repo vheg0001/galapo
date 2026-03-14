@@ -1,4 +1,3 @@
-import Breadcrumbs from "@/components/shared/Breadcrumbs";
 import Pagination from "@/components/shared/Pagination";
 import AdSlot from "@/components/shared/AdSlot";
 import FeaturedPost from "@/components/public/blog/FeaturedPost";
@@ -10,7 +9,6 @@ import type { BlogPostCard, TagCount } from "@/lib/types";
 interface BlogIndexPageProps {
     title?: string;
     subtitle: string;
-    breadcrumbLabel?: string;
     posts: BlogPostCard[];
     featuredPost?: BlogPostCard | null;
     tags: TagCount[];
@@ -26,7 +24,6 @@ interface BlogIndexPageProps {
 export default async function BlogIndexPage({
     title = "GalaPo Blog",
     subtitle,
-    breadcrumbLabel = "Blog",
     posts,
     featuredPost,
     tags,
@@ -42,8 +39,6 @@ export default async function BlogIndexPage({
     return (
         <main className="min-h-screen bg-background">
             <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <Breadcrumbs items={[{ label: breadcrumbLabel }]} className="mb-4" />
-
                 <div className="mb-8 space-y-3">
                     <h1 className="text-4xl font-black tracking-tight text-foreground">{title}</h1>
                     <p className="max-w-2xl text-base text-muted-foreground">{subtitle}</p>

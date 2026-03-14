@@ -10,13 +10,8 @@ interface LinkedListingCardProps {
 
 export default function LinkedListingCard({ listing, compact = false }: LinkedListingCardProps) {
     return (
-        <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
-                <span aria-hidden="true">📍</span>
-                <span>Mentioned in this article</span>
-            </div>
-
-            <div className="flex items-start gap-4">
+        <div className="h-full rounded-2xl border border-primary/15 bg-primary/5 p-4 shadow-sm">
+            <div className="flex h-full items-start gap-4">
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-muted">
                     {listing.logo_url || listing.image_url ? (
                         <LazyImage src={listing.logo_url || listing.image_url || "/placeholder-business.svg"} alt={listing.business_name} className="object-cover" />
@@ -25,9 +20,9 @@ export default function LinkedListingCard({ listing, compact = false }: LinkedLi
                     )}
                 </div>
 
-                <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-1 flex-col h-full">
                     <div className="flex flex-wrap items-center gap-2">
-                        <Link href={`/listing/${listing.slug}`} className="text-base font-bold text-foreground hover:text-secondary">
+                        <Link href={`/listing/${listing.slug}`} className="text-base font-bold text-foreground hover:text-secondary text-left">
                             {listing.business_name}
                         </Link>
                         {(listing.is_featured || listing.is_premium) && (
@@ -35,21 +30,21 @@ export default function LinkedListingCard({ listing, compact = false }: LinkedLi
                         )}
                     </div>
 
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="mt-1 text-sm text-muted-foreground text-left">
                         {[listing.category?.name, listing.barangay?.name].filter(Boolean).join(" · ")}
                     </p>
 
-                    <p className={`mt-2 text-sm leading-6 text-muted-foreground ${compact ? "line-clamp-2" : "line-clamp-3"}`}>
+                    <p className={`mt-2 text-sm leading-6 text-muted-foreground text-left ${compact ? "line-clamp-2" : "line-clamp-3"}`}>
                         “{listing.short_description}”
                     </p>
 
                     {listing.badges && listing.badges.length > 0 ? (
                         <div className="mt-3">
-                            <BadgeDisplay badges={listing.badges} mode="card" size="sm" isFeatured={listing.is_featured} isPremium={listing.is_premium} />
+                            <BadgeDisplay badges={listing.badges} mode="card" size="sm" />
                         </div>
                     ) : null}
 
-                    <div className="mt-3">
+                    <div className="mt-auto pt-4 text-left">
                         <Link href={`/listing/${listing.slug}`} className="text-sm font-semibold text-secondary hover:underline">
                             View Listing →
                         </Link>
@@ -58,4 +53,4 @@ export default function LinkedListingCard({ listing, compact = false }: LinkedLi
             </div>
         </div>
     );
-}
+}
