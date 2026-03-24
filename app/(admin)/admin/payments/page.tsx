@@ -24,48 +24,6 @@ export default function AdminPaymentsPage() {
                 </p>
             </div>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="border-slate-200/60 shadow-sm rounded-3xl bg-white overflow-hidden group hover:shadow-md transition-all">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <div className="space-y-1">
-                            <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-wider">Awaiting Verification</CardTitle>
-                            <CardDescription className="text-xs font-medium text-slate-500">Payments needing your review</CardDescription>
-                        </div>
-                        <AlertCircle className="h-5 w-5 text-orange-600" />
-                    </CardHeader>
-                    <div className="p-6 pt-0">
-                        <div className="text-3xl font-black text-slate-900">...</div>
-                    </div>
-                </Card>
-
-                <Card className="border-slate-200/60 shadow-sm rounded-3xl bg-white overflow-hidden group hover:shadow-md transition-all">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <div className="space-y-1">
-                            <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-wider">Recent Activity</CardTitle>
-                            <CardDescription className="text-xs font-medium text-slate-500">Verified in the last 24h</CardDescription>
-                        </div>
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                    </CardHeader>
-                    <div className="p-6 pt-0">
-                        <div className="text-3xl font-black text-slate-900">...</div>
-                    </div>
-                </Card>
-
-                <Card className="border-slate-200/60 shadow-sm rounded-3xl bg-white overflow-hidden group hover:shadow-md transition-all">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <div className="space-y-1">
-                            <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-wider">Historical Logs</CardTitle>
-                            <CardDescription className="text-xs font-medium text-slate-500">Total payments processed</CardDescription>
-                        </div>
-                        <History className="h-5 w-5 text-indigo-600" />
-                    </CardHeader>
-                    <div className="p-6 pt-0">
-                        <div className="text-3xl font-black text-slate-900">...</div>
-                    </div>
-                </Card>
-            </div>
-
             {/* Main Table */}
             <PaymentsTable />
         </div>

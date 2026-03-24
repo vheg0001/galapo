@@ -114,22 +114,40 @@ export default function BusinessInvoicesPage() {
                                             {formatPeso(invoice.amount)}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200 font-black uppercase tracking-widest text-[9px]">
-                                                Paid
-                                            </Badge>
+                                            {invoice.payments?.status === "verified" ? (
+                                                <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200 font-black uppercase tracking-widest text-[9px]">
+                                                    Paid
+                                                </Badge>
+                                            ) : invoice.payments?.status === "pending" ? (
+                                                <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 font-black uppercase tracking-widest text-[9px]">
+                                                    Pending
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="bg-rose-50 text-rose-600 border-rose-200 font-black uppercase tracking-widest text-[9px]">
+                                                    Rejected
+                                                </Badge>
+                                            )}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100" asChild title="View & Print">
-                                                    <Link href={`/business/invoices/${invoice.id}`}>
-                                                        <Eye className="h-4 w-4 text-slate-700" />
-                                                    </Link>
-                                                </Button>
-                                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100" asChild title="Download PDF">
-                                                    <Link href={`/business/invoices/${invoice.id}`}>
-                                                        <Download className="h-4 w-4 text-slate-700" />
-                                                    </Link>
-                                                </Button>
+                                                {invoice.payments?.status === "verified" ? (
+                                                    <>
+                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100" asChild title="View & Print">
+                                                            <Link href={`/business/invoices/${invoice.id}`}>
+                                                                <Eye className="h-4 w-4 text-slate-700" />
+                                                            </Link>
+                                                        </Button>
+                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100" asChild title="Download PDF">
+                                                            <Link href={`/business/invoices/${invoice.id}?print=true`}>
+                                                                <Download className="h-4 w-4 text-slate-700" />
+                                                            </Link>
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">
+                                                        Unavailable
+                                                    </span>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

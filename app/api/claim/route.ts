@@ -78,7 +78,10 @@ export async function POST(req: NextRequest) {
 
         if (updateError) throw updateError;
 
-        // 4. Notify super admin using admin client to bypass RLS
+        // 4. Create notifications using admin client
+        const notifications = [];
+
+        // 1. Notify Super Admin
         const { data: admin } = await adminClient
             .from("profiles")
             .select("id")
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest) {
             .single();
 
         if (admin) {
-            await adminClient.from("notifications").insert({
+            notifications.push({
                 user_id: admin.id,
                 type: "new_claim_request",
                 title: "New Claim Request",
@@ -95,6 +98,17 @@ export async function POST(req: NextRequest) {
                 data: { listing_id: listingId }
             });
         }
+
+        // 2. Notify Claimant
+        notifications.push({
+            user_id: session.user.id,
+            type: "new_claim_request",
+            title: "Claim Submitted",
+            message: `Your claim for "${listing.business_name}" has been submitted and is under review.`,
+            data: { listing_id: listingId }
+        });
+
+        await adminClient.from("notifications").insert(notifications);
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

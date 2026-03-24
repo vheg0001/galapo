@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
                 *,
                 profiles:user_id (id, full_name, email),
                 listings:listing_id (id, business_name, slug),
-                subscriptions:subscription_id (id, plan_type, status)
+                subscriptions:subscription_id (id, plan_type, status),
+                invoices (id, invoice_number)
             `, { count: "exact" });
 
         // Apply filters

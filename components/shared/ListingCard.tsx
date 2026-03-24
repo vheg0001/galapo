@@ -16,6 +16,7 @@ interface ListingCardProps {
     businessName: string;
     shortDescription: string;
     categoryName?: string;
+    subcategoryName?: string;
     barangayName?: string;
     phone?: string | null;
     logoUrl?: string | null;
@@ -25,6 +26,7 @@ interface ListingCardProps {
     isNew?: boolean;
     priority?: boolean;
     badges?: ListingBadge[];
+    layout?: "grid" | "list";
 }
 
 export default function ListingCard({
@@ -33,6 +35,7 @@ export default function ListingCard({
     businessName,
     shortDescription,
     categoryName,
+    subcategoryName,
     barangayName,
     phone,
     logoUrl,
@@ -42,6 +45,7 @@ export default function ListingCard({
     isNew,
     priority,
     badges = [],
+    layout = "grid",
 }: ListingCardProps) {
     // We prioritize the primary gallery image (imageUrl) over the logo for the main cover,
     // as users usually want the "Cover" they set in the gallery to be the main visual.
@@ -57,8 +61,9 @@ export default function ListingCard({
     return (
         <Link
             href={`/olongapo/${slug}`}
-                className={cn(
-                "group flex flex-col overflow-hidden rounded-xl border transition-all duration-500 ease-out hover:shadow-2xl hover:-translate-y-2",
+            className={cn(
+                "group flex overflow-hidden rounded-xl border transition-all duration-500 ease-out hover:shadow-2xl hover:-translate-y-2 h-full",
+                layout === "grid" ? "flex-col" : "flex-col sm:flex-row",
                 isPremium 
                   ? "premium-card-border bg-card relative shadow-[0_0_30px_rgba(255,215,0,0.15)] hover:shadow-[0_0_40px_rgba(255,215,0,0.25)]" 
                   : "border-border bg-card"
@@ -70,13 +75,17 @@ export default function ListingCard({
             )}
 
             {/* Image */}
-            <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
+            <div className={cn(
+                "relative overflow-hidden bg-muted",
+                layout === "grid" ? "aspect-[16/10] w-full" : "aspect-[16/10] w-full sm:aspect-auto sm:h-full sm:w-48 md:w-56"
+            )}>
                 <LazyImage
                     src={displayImage}
                     alt={businessName}
                     className={cn(
                         "object-cover transition-transform duration-700 group-hover:scale-110",
-                        isPremium && "animate-pulse-subtle"
+                        isPremium && "animate-pulse-subtle",
+                        layout === "list" && "sm:h-full"
                     )}
                     priority={priority}
                 />
@@ -119,36 +128,38 @@ export default function ListingCard({
                 </h3>
 
                 {/* Badges moved below title — admin badges only */}
-                {hasAdminBadges && (
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 min-h-[1.75rem]">
+                    {hasAdminBadges && (
                         <BadgeDisplay
                             badges={adminBadges}
                             mode="card"
                             size="sm"
                         />
-                    </div>
-                )}
+                    )}
+                </div>
 
-                {categoryName && (
-                    <span className={cn(
-                        "mt-1 text-xs font-bold uppercase tracking-wider",
-                        isPremium ? "text-amber-600/80" : "text-secondary"
-                    )}>{categoryName}</span>
-                )}
+                <div className="flex flex-col min-h-[3.25rem] justify-center">
+                    {(subcategoryName || categoryName) && (
+                        <span className={cn(
+                            "mt-1 text-xs font-bold uppercase tracking-wider",
+                            isPremium ? "text-amber-600/80" : "text-secondary"
+                        )}>{subcategoryName || categoryName}</span>
+                    )}
 
-                {barangayName && (
-                    <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        <span>{barangayName}</span>
-                    </div>
-                )}
+                    {barangayName && (
+                        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span>{barangayName}</span>
+                        </div>
+                    )}
+                </div>
 
-                <p className="mt-2 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                <p className="mt-2 text-sm text-muted-foreground line-clamp-2 leading-relaxed min-h-[2.5rem]">
                     {truncateText(shortDescription, 90)}
                 </p>
 
-                {phone && (
-                    <div className="mt-auto pt-4 border-t border-border/30">
+                <div className="mt-auto pt-4 border-t border-border/30 min-h-[3.5rem] flex items-center">
+                    {phone && (
                         <span
                             className={cn(
                                 "inline-flex items-center gap-2 text-sm font-bold transition-all duration-300 transform group-hover:translate-x-1",
@@ -162,8 +173,8 @@ export default function ListingCard({
                             <Phone className="h-3.5 w-3.5" />
                             {phone}
                         </span>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
             
             {/* Premium Golden Bottom Line */}

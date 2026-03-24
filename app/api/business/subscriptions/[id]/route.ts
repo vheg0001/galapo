@@ -60,7 +60,7 @@ export async function PUT(
         const { id } = await params;
         const body = await request.json();
         const { action, target_plan } = body as { 
-            action: "cancel_auto_renew" | "request_downgrade", 
+            action: "cancel_auto_renew" | "request_downgrade" | "enable_renewal_reminder", 
             target_plan?: PlanTier 
         };
 
@@ -79,15 +79,20 @@ export async function PUT(
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        if (action === "cancel_auto_renew") {
-            // Cancel auto-renewal
+        if (action === "cancel_auto_renew" || action === "enable_renewal_reminder") {
+            const isEnabled = action === "enable_renewal_reminder";
+            
+            // Toggle renewal reminder
             const updateQuery = admin
                 .from("subscriptions")
-                .update({ auto_renew: false });
+                .update({ auto_renew: isEnabled });
             const { error: updateError } = await resolveEqMutation(updateQuery, "id", id);
 
             if (updateError) throw updateError;
-            return NextResponse.json({ message: "Auto-renewal cancelled successfully" });
+            return NextResponse.json({ 
+                message: isEnabled ? "Renewal reminders enabled" : "Renewal reminders disabled",
+                auto_renew: isEnabled 
+            });
 
         } else if (action === "request_downgrade") {
             if (!target_plan) return NextResponse.json({ error: "target_plan is required for downgrade" }, { status: 400 });

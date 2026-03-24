@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase";
+import { createServerSupabaseClient } from "@/lib/supabase";
 import InvoiceView from "@/components/admin/invoices/InvoiceView";
 import { Receipt } from "lucide-react";
 
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BusinessInvoiceDetailPage({ params }: PageProps) {
     const { id } = await params;
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -32,7 +32,7 @@ export default async function BusinessInvoiceDetailPage({ params }: PageProps) {
             *,
             profiles:user_id (id, full_name, email),
             listings:listing_id (id, business_name, slug),
-            payments:payment_id (id, payment_method, reference_number, plan_type)
+            payments:payment_id (id, payment_method, reference_number, subscriptions(plan_type))
         `)
         .eq("id", id)
         .eq("user_id", user.id) // Security: Ensure it belongs to the owner

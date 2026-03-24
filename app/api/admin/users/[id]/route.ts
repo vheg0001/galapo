@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 import { createAdminSupabaseClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +53,7 @@ export async function PUT(
     if ("error" in auth) return auth.error;
 
     // Prevent self-deactivation
-    if (id === auth.userId) {
+    if (id === auth.user.id) {
         return NextResponse.json({ error: "Cannot modify your own admin account." }, { status: 403 });
     }
 

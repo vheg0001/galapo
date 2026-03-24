@@ -77,7 +77,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex min-h-screen overflow-x-hidden bg-[#F5F7FA]">
             {/* Desktop Sidebar */}
-            <div className="hidden lg:block">
+            <div className="hidden lg:block print:hidden">
                 <AdminSidebar
                     collapsed={sidebarCollapsed}
                     onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -91,8 +91,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Mobile Nav */}
-            <AdminMobileNav
-                open={mobileNavOpen}
+            <div className="print:hidden">
+                <AdminMobileNav
+                    open={mobileNavOpen}
                 onClose={() => setMobileNavOpen(false)}
                 pendingListings={stats.pending_listings}
                 pendingPayments={stats.pending_payments}
@@ -101,18 +102,21 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 siteName={siteName}
                 siteTagline={siteTagline}
             />
+            </div>
 
             {/* Main content area */}
             <div className={cn(
                 "flex min-w-0 flex-1 flex-col transition-all duration-300",
                 sidebarCollapsed ? "lg:pl-16" : "lg:pl-[260px]"
             )}>
-                <AdminTopBar
-                    onMenuToggle={() => setMobileNavOpen(true)}
-                    adminName={adminName}
-                    adminEmail={adminEmail}
-                />
-                <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+                <div className="print:hidden">
+                    <AdminTopBar
+                        onMenuToggle={() => setMobileNavOpen(true)}
+                        adminName={adminName}
+                        adminEmail={adminEmail}
+                    />
+                </div>
+                <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 print:p-0 print:bg-white">
                     {children}
                 </main>
             </div>

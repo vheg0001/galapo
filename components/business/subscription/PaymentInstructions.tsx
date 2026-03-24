@@ -12,6 +12,7 @@ interface PaymentInstructionsProps {
 }
 
 export default function PaymentInstructions({ config, method, onMethodChange }: PaymentInstructionsProps) {
+    if (!config) return null;
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-2 gap-3">

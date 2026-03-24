@@ -25,6 +25,7 @@ import {
 import { format } from "date-fns";
 import Link from "next/link";
 import { formatPeso } from "@/lib/subscription-helpers";
+import { cn } from "@/lib/utils";
 
 export default function AdminInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([]);
@@ -139,12 +140,20 @@ export default function AdminInvoicesPage() {
                                             {formatPeso(invoice.amount)}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest bg-slate-100">
+                                            <Badge 
+                                                variant="outline" 
+                                                className={cn(
+                                                    "text-[10px] font-black uppercase tracking-widest px-2 py-0.5",
+                                                    invoice.payments?.payment_method?.toLowerCase() === "gcash"
+                                                        ? "bg-[#007DFE] text-white border-transparent"
+                                                        : "bg-slate-100 text-slate-700 border-slate-200"
+                                                )}
+                                            >
                                                 {invoice.payments?.payment_method}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200 font-black uppercase tracking-widest text-[9px]">
+                                            <Badge variant="outline" className="bg-emerald-500 text-white border-transparent font-black uppercase tracking-widest text-[9px] px-2 py-0.5">
                                                 Paid
                                             </Badge>
                                         </TableCell>
@@ -156,7 +165,7 @@ export default function AdminInvoicesPage() {
                                                     </Link>
                                                 </Button>
                                                 <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100" asChild title="Print/Download">
-                                                    <Link href={`/admin/invoices/${invoice.id}`}>
+                                                    <Link href={`/admin/invoices/${invoice.id}?print=true`}>
                                                         <Download className="h-4 w-4 text-slate-700" />
                                                     </Link>
                                                 </Button>

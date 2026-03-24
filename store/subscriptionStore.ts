@@ -39,6 +39,7 @@ export interface SubscriptionStoreState {
     initiateTopSearch: () => Promise<any>;
     initiateRenewal: (subscriptionId: string) => Promise<any>;
     submitPayment: () => Promise<any>;
+    setPaymentInstructions: (instructions: PaymentInstructionsConfig | null) => void;
     resetFlow: () => void;
 }
 
@@ -221,5 +222,6 @@ export const useSubscriptionStore = create<SubscriptionStoreState>()((set, get) 
         }
     },
 
+    setPaymentInstructions: (paymentInstructions) => set({ paymentInstructions }),
     resetFlow: () => set({ ...initialState }),
 }));

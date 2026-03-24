@@ -109,4 +109,87 @@ export const handlers = [
     http.patch(`${APP_URL}/api/notifications/read-all`, () => {
         return HttpResponse.json({ success: true });
     }),
+
+    // Admin Subscriptions
+    http.get(`${APP_URL}/api/admin/subscriptions`, () => {
+        const subscriptions = Array.from({ length: 5 }).map(() => ({
+            ...factories.createMockSubscription(),
+            business_name: "Mock Business",
+            owner_name: "Mock Owner",
+            owner_email: "owner@mock.com",
+            payment_status: "verified"
+        }));
+        return HttpResponse.json({ data: subscriptions, count: 5 });
+    }),
+
+    http.get(`${APP_URL}/api/admin/subscriptions/stats`, () => {
+        return HttpResponse.json({
+            stats: { 
+                active: 10, total_revenue: 5000, 
+                revenue_growth: 15, prev_revenue: 4347 
+            },
+            plan_breakdown: [
+                { plan_type: "basic", count: 5, revenue: 1000 },
+                { plan_type: "premium", count: 3, revenue: 1800 },
+                { plan_type: "featured", count: 2, revenue: 2200 }
+            ]
+        });
+    }),
+
+    http.get(`${APP_URL}/api/admin/subscriptions/:id`, ({ params }) => {
+        return HttpResponse.json({
+            success: true,
+            data: {
+                ...factories.createMockSubscription({ id: params.id as string }),
+                business_name: "Mock Business",
+                owner: { full_name: "Mock Owner", email: "owner@mock.com" },
+                listing: { id: "list-1", business_name: "Mock Business" },
+                history: [],
+                payments: []
+            }
+        });
+    }),
+
+    http.post(`${APP_URL}/api/admin/subscriptions/bulk`, () => {
+        return HttpResponse.json({ success: true, processed: 5, failures: [] });
+    }),
+
+    // Admin Top Search
+    http.get(`${APP_URL}/api/admin/top-search`, () => {
+        return HttpResponse.json({
+            data: Array.from({ length: 3 }).map(() => factories.createMockTopSearchPlacement()),
+            active_count: 3,
+            expired_count: 0
+        });
+    }),
+
+    http.get(`${APP_URL}/api/admin/top-search/overview`, () => {
+        return HttpResponse.json({
+            success: true,
+            data: [
+                {
+                    category: { id: "cat-1", name: "Restaurants" },
+                    slots: [
+                        { position: 1, placement: factories.createMockTopSearchPlacement(), listing: { business_name: "Starbucks" } },
+                        { position: 2, placement: null, listing: null },
+                        { position: 3, placement: null, listing: null }
+                    ]
+                }
+            ]
+        });
+    }),
+
+    http.post(`${APP_URL}/api/admin/top-search`, () => {
+        return HttpResponse.json({ success: true }, { status: 201 });
+    }),
+
+    http.get(`${APP_URL}/api/admin/top-search/stats`, () => {
+        return HttpResponse.json({
+            active_placements: 5,
+            total_available_slots: 25,
+            revenue_this_month: 2500,
+            expiring_this_week: 1,
+            by_category: []
+        });
+    }),
 ];

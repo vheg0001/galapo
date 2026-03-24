@@ -59,8 +59,8 @@ describe("Settings APIs (Admin & Public)", () => {
         const req = new NextRequest("http://localhost/api/admin/settings");
         const res = await adminGet(req);
 
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.data.site_name).toBe("GalaPo");
         expect(json.data.price_premium).toBe(2400);
     });
@@ -73,8 +73,8 @@ describe("Settings APIs (Admin & Public)", () => {
         });
 
         const res = await adminPatch(req);
-        expect(res.status).toBe(400);
-        const json = await res.json();
+        expect(res!.status).toBe(400);
+        const json = await res!.json();
         expect(json.error).toContain("must be a non-negative number");
     });
 
@@ -90,8 +90,8 @@ describe("Settings APIs (Admin & Public)", () => {
         } as any);
 
         const res = await adminPatch(req);
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.success).toBe(true);
     });
 
@@ -115,8 +115,8 @@ describe("Settings APIs (Admin & Public)", () => {
         const req = new NextRequest("http://localhost/api/settings/public");
         const res = await publicGet();
 
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.data.site_name).toBe("GalaPo");
         expect(json.data.contact_email).toBe("hello@galapo.ph");
         // Sensitive data like price_premium shouldn't be here (and wasn't mocked)

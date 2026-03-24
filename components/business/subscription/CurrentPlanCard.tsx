@@ -78,7 +78,7 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
         pending_payment: {
             color: "text-blue-700 bg-blue-50 border-blue-100",
             icon: Clock,
-            label: "Pending Verification"
+            label: "Pending Payment"
         },
         cancelled: {
             color: "text-slate-700 bg-slate-50 border-slate-100",
@@ -105,6 +105,10 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
         Boolean(sub?.id) &&
         Boolean(sub?.auto_renew) &&
         (currentStatus === "active" || currentStatus === "expiring_soon");
+    const canEnableAutoRenew =
+        Boolean(sub?.id) &&
+        !sub?.auto_renew &&
+        (currentStatus === "active" || currentStatus === "expiring_soon");
     const canCancelPendingRequest =
         Boolean(sub?.id) &&
         currentStatus === "pending_payment";
@@ -129,7 +133,7 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
             }
 
             setSubscription((current) => current ? { ...current, auto_renew: false } : current);
-            setSuccessMessage("Auto-renewal has been successfully cancelled.");
+            setSuccessMessage("Renewal reminders have been successfully disabled.");
             setShowCancelDialog(false);
             router.refresh();
         } catch (error: any) {
@@ -140,6 +144,36 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
         }
     };
 
+    const handleEnableRenewalReminder = async () => {
+        if (!sub?.id) return;
+
+        setIsCancelling(true);
+
+        try {
+            const response = await fetch(`/api/business/subscriptions/${sub.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ action: "enable_renewal_reminder" }),
+            });
+            const payload = await response.json();
+
+            if (!response.ok) {
+                throw new Error(payload.error || "Failed to enable renewal reminder.");
+            }
+
+            setSubscription((current) => current ? { ...current, auto_renew: true } : current);
+            setSuccessMessage("Renewal reminders have been successfully enabled.");
+            router.refresh();
+        } catch (error: any) {
+            console.error("Failed to enable renewal reminder:", error);
+            window.alert(error.message || "Failed to enable renewal reminder.");
+        } finally {
+            setIsCancelling(false);
+        }
+    };
+    
     const handleCancelPendingRequest = async () => {
         if (!sub?.id) return;
 
@@ -226,10 +260,10 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
                             <div className="space-y-1">
                                 <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                     <Clock className="h-3 w-3" />
-                                    Auto-Renew
+                                    Renewal Reminder
                                 </p>
                                 <p className="text-xs font-semibold text-slate-700">
-                                    {sub.auto_renew ? "Enabled" : "Disabled"}
+                                    {sub.auto_renew ? "Active" : "Disabled"}
                                 </p>
                             </div>
                         </div>
@@ -241,6 +275,16 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
                         </div>
                         <p className="text-sm font-bold text-slate-900">Free Listing</p>
                     </div>
+                )}
+
+                {sub?.status === "pending_payment" && (
+                    <Alert className="mt-4 rounded-2xl border-blue-200 bg-blue-50/50">
+                        <ArrowUpCircle className="h-4 w-4 text-blue-600" />
+                        <AlertTitle className="text-xs font-black uppercase tracking-tight text-blue-900">Pending Upgrade</AlertTitle>
+                        <AlertDescription className="mt-1 text-xs font-medium text-blue-800/80">
+                            You've started an upgrade to <strong>{sub.plan_type}</strong>. Please complete the payment to activate your new benefits.
+                        </AlertDescription>
+                    </Alert>
                 )}
 
                 {isDeactivated && (
@@ -256,7 +300,39 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
             </CardContent>
 
             <CardFooter className="mt-auto flex flex-col gap-2 border-t border-slate-50 bg-slate-50/30 pt-4">
-                {hasPaidPlan ? (
+                {sub?.status === "pending_payment" ? (
+                    <div className="flex w-full flex-col gap-2">
+                        <Button 
+                            size="sm" 
+                            className="w-full rounded-xl bg-slate-900 font-bold text-white hover:bg-slate-800"
+                            asChild
+                        >
+                            <Link href={`/business/subscription/upgrade?listing=${item.listing_id}&step=3`}>
+                                Proceed to Payment
+                            </Link>
+                        </Button>
+                        <div className="flex w-full gap-2">
+                            <Button 
+                                variant="outline"
+                                size="sm" 
+                                className="flex-1 rounded-xl bg-white font-bold text-slate-700 hover:bg-slate-50"
+                                asChild
+                            >
+                                <Link href={`/business/subscription/upgrade?listing=${item.listing_id}&step=2`}>
+                                    Change Plan
+                                </Link>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 rounded-xl border-rose-200 font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                                onClick={() => setShowCancelDialog(true)}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                ) : hasPaidPlan ? (
                     <div className="flex w-full gap-2">
                         {sub?.status === "expiring_soon" || sub?.status === "expired" ? (
                             <Button 
@@ -267,25 +343,27 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
                                 Renew Now
                             </Button>
                         ) : null}
-                        {canCancelAutoRenew ? (
+                        {canEnableAutoRenew ? (
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="flex-1 rounded-xl border-rose-200 font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                                onClick={() => setShowCancelDialog(true)}
+                                className="flex-1 rounded-xl border-[#FF6B35] font-bold text-[#FF6B35] hover:bg-orange-50"
+                                onClick={handleEnableRenewalReminder}
+                                disabled={isCancelling}
                             >
-                                Cancel
+                                {isCancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Enable Reminder
                             </Button>
                         ) : null}
-                        {canCancelPendingRequest ? (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 rounded-xl border-rose-200 font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                                onClick={() => setShowCancelDialog(true)}
-                            >
-                                Cancel
-                            </Button>
+                        {canCancelAutoRenew ? (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 rounded-xl border-slate-200 font-bold text-slate-600 hover:bg-slate-50"
+                                    onClick={() => setShowCancelDialog(true)}
+                                >
+                                    Disable Reminder
+                                </Button>
                         ) : null}
                     </div>
                 ) : isDeactivated ? (
@@ -313,14 +391,12 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4">
                 <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
                     <h3 className="text-lg font-black text-slate-900">
-                        {canCancelPendingRequest ? "Cancel pending subscription?" : "Cancel auto-renew?"}
+                        {canCancelPendingRequest ? "Cancel pending subscription?" : "Disable renewal reminders?"}
                     </h3>
                     <p className="mt-3 text-sm leading-6 text-slate-600">
                         {canCancelPendingRequest
                             ? "This pending subscription request will be removed."
-                            : sub?.end_date
-                                ? `Your subscription will remain active until ${format(new Date(sub.end_date), "MMMM d, yyyy")}.`
-                                : "Your subscription will remain active until the end of the current billing period."}
+                            : "You will no longer receive automatic renewal notifications for this listing."}
                     </p>
                     <div className="mt-6 flex justify-end gap-3">
                         <Button
@@ -338,8 +414,8 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
                             onClick={canCancelPendingRequest ? handleCancelPendingRequest : handleCancelAutoRenew}
                             disabled={isCancelling}
                         >
-                            {isCancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Confirm Cancel
+                             {isCancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Confirm Disable
                         </Button>
                     </div>
                 </div>

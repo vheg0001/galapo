@@ -20,6 +20,7 @@ import {
     Settings,
     ExternalLink,
     LogOut,
+    Receipt,
 } from "lucide-react";
 
 interface NavItem {
@@ -36,6 +37,7 @@ const NAV_ITEMS: NavItem[] = [
     { label: "Deals & Offers", href: "/business/deals", icon: Tag },
     { label: "Events", href: "/business/events", icon: CalendarDays },
     { label: "Subscription & Billing", href: "/business/subscription", icon: CreditCard },
+    { label: "Official Invoices", href: "/business/invoices", icon: Receipt },
     { label: "Notifications", href: "/business/notifications", icon: Bell },
     { label: "Account Settings", href: "/business/settings", icon: Settings },
 ];

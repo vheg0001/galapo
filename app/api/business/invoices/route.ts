@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase";
+import { createServerSupabaseClient } from "@/lib/supabase";
 
 /**
  * GET /api/business/invoices
@@ -7,7 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase";
  */
 export async function GET(request: NextRequest) {
     try {
-        const supabase = await createSupabaseServerClient();
+        const supabase = await createServerSupabaseClient();
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
             .select(`
                 *,
                 listings:listing_id (id, business_name, slug),
-                payments:payment_id (id, payment_method, reference_number, plan_type)
+                payments:payment_id (id, status, payment_method, reference_number, subscriptions(plan_type))
             `, { count: "exact" })
             .eq("user_id", user.id)
             .order("issued_at", { ascending: false })

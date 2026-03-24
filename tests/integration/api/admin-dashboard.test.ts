@@ -94,7 +94,7 @@ describe("Admin Dashboard API Integration", () => {
             error: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 }),
         } as any);
         const res = await getStats(new NextRequest("http://localhost/api/admin/stats"));
-        expect(res.status).toBe(401);
+        expect(res!.status).toBe(401);
     });
 
     it("returns 403 if not a super_admin", async () => {
@@ -102,7 +102,7 @@ describe("Admin Dashboard API Integration", () => {
             error: new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 }),
         } as any);
         const res = await getStats(new NextRequest("http://localhost/api/admin/stats"));
-        expect(res.status).toBe(403);
+        expect(res!.status).toBe(403);
     });
 
     // ─── Dashboard Stats ──────────────────────────────────────────────────────
@@ -114,8 +114,8 @@ describe("Admin Dashboard API Integration", () => {
         );
 
         const res = await getStats(new NextRequest("http://localhost/api/admin/stats"));
-        expect(res.status).toBe(200);
-        const data = await res.json();
+        expect(res!.status).toBe(200);
+        const data = await res!.json();
         expect(data).toHaveProperty("total_active_listings");
         expect(data).toHaveProperty("revenue_this_month");
     });
@@ -129,8 +129,8 @@ describe("Admin Dashboard API Integration", () => {
         );
 
         const res = await getUsers(new NextRequest("http://localhost/api/admin/users?page=1"));
-        expect(res.status).toBe(200);
-        const data = await res.json();
+        expect(res!.status).toBe(200);
+        const data = await res!.json();
         expect(data.users).toHaveLength(1);
     });
 
@@ -143,8 +143,8 @@ describe("Admin Dashboard API Integration", () => {
             body: JSON.stringify({ is_active: false }),
         });
         const res = await updateUser(req, { params: Promise.resolve({ id: "u1" }) });
-        expect(res.status).toBe(200);
-        const data = await res.json();
+        expect(res!.status).toBe(200);
+        const data = await res!.json();
         expect(data.profile.is_active).toBe(false);
     });
 
@@ -162,8 +162,8 @@ describe("Admin Dashboard API Integration", () => {
             body: JSON.stringify({ action: "approve" }),
         });
         const res = await updateClaim(req, { params: Promise.resolve({ id: "l1" }) });
-        expect(res.status).toBe(200);
-        const data = await res.json();
+        expect(res!.status).toBe(200);
+        const data = await res!.json();
         expect(data.action).toBe("approved");
     });
 
@@ -183,8 +183,8 @@ describe("Admin Dashboard API Integration", () => {
             body: JSON.stringify({ listing_id: "l1" }),
         });
         const res = await triggerCheck(req);
-        expect(res.status).toBe(200);
-        const data = await res.json();
+        expect(res!.status).toBe(200);
+        const data = await res!.json();
         expect(data.success).toBe(true);
     });
 
@@ -200,8 +200,8 @@ describe("Admin Dashboard API Integration", () => {
             body: JSON.stringify({ action: "deactivate" }),
         });
         const res = await updateCheck(req, { params: Promise.resolve({ id: "c1" }) });
-        expect(res.status).toBe(200);
-        const data = await res.json();
+        expect(res!.status).toBe(200);
+        const data = await res!.json();
         expect(data.action).toBe("deactivated");
     });
 });

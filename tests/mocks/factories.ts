@@ -253,6 +253,26 @@ export function createMockSubscription(overrides?: Partial<Subscription>): Subsc
     };
 }
 
+export function createMockTopSearchPlacement(overrides?: any): any {
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 30);
+
+    return {
+        id: generateId(),
+        listing_id: generateId(),
+        category_id: generateId(),
+        position: 1,
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        is_active: true,
+        notes: "Mock placement",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...overrides,
+    };
+}
+
 export function createMockPayment(overrides?: Partial<Payment>): Payment {
     return {
         id: generateId(),

@@ -9,14 +9,34 @@ import { addDays } from "date-fns";
 /**
  * getSignedProofUrl
  * Generates a signed URL for a private payment proof file.
+ * Handles both raw paths and full Supabase storage URLs.
  */
-export async function getSignedProofUrl(filePath: string): Promise<string> {
+export async function getSignedProofUrl(pathOrUrl: string): Promise<string> {
     const supabase = createAdminSupabaseClient();
+    let filePath = pathOrUrl;
+
+    // If it's a full URL, extract the path after the bucket name
+    if (pathOrUrl.includes("/storage/v1/object/")) {
+        try {
+            const url = new URL(pathOrUrl);
+            const parts = url.pathname.split("/payments/");
+            if (parts.length > 1) {
+                filePath = parts[1];
+            }
+        } catch (e) {
+            // Fallback to original string if URL parsing fails
+        }
+    }
+
     const { data, error } = await supabase.storage
         .from("payments")
         .createSignedUrl(filePath, 3600); // 1 hour expiry
 
-    if (error) throw error;
+    if (error) {
+        console.error("Error creating signed URL:", error.message);
+        return pathOrUrl; // Fallback to original
+    }
+    
     return data.signedUrl;
 }
 

@@ -10,6 +10,7 @@ interface RelatedListing {
     is_featured: boolean;
     is_premium: boolean;
     categories: { name: string; slug: string } | null;
+    subcategories: { name: string; slug: string } | null;
     barangays: { name: string; slug: string } | null;
     listing_images: { image_url: string; is_primary: boolean }[];
 }
@@ -44,6 +45,7 @@ export default function RelatedListings({ listings, categoryName }: RelatedListi
                             businessName={listing.business_name}
                             shortDescription={listing.short_description}
                             categoryName={listing.categories?.name}
+                            subcategoryName={listing.subcategories?.name}
                             barangayName={listing.barangays?.name}
                             phone={listing.phone}
                             logoUrl={listing.logo_url}

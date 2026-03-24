@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 import { createAdminSupabaseClient } from "@/lib/supabase";
 import { simplifyError } from "@/lib/api-helpers";
 
@@ -295,7 +295,7 @@ export async function PUT(
         }
 
         await logAdminActivityIfAvailable(admin, {
-            admin_id: auth.userId,
+            admin_id: auth.user.id,
             entity_type: "listing",
             entity_id: id,
             action: "update",
@@ -396,10 +396,10 @@ export async function PATCH(
         if (error) throw error;
 
         await logAdminActivityIfAvailable(admin, {
-            admin_id: auth.userId,
+            admin_id: auth.user.id,
             entity_type: "listing",
             entity_id: id,
-            action,
+            action: action,
             metadata: {
                 reason: reason || null,
                 business_name: listing.business_name,
@@ -438,7 +438,7 @@ export async function DELETE(
             if (error) throw error;
 
             await logAdminActivityIfAvailable(admin, {
-                admin_id: auth.userId,
+                admin_id: auth.user.id,
                 entity_type: "listing",
                 entity_id: id,
                 action: "soft_delete",
@@ -500,14 +500,14 @@ export async function DELETE(
         const { error: deleteError } = await admin.from("listings").delete().eq("id", id);
         if (deleteError) throw deleteError;
 
-        await logAdminActivityIfAvailable(admin, {
-            admin_id: auth.userId,
-            entity_type: "listing",
-            entity_id: id,
-            action: "hard_delete",
-            metadata: null,
-            created_at: new Date().toISOString(),
-        });
+            await logAdminActivityIfAvailable(admin, {
+                admin_id: auth.user.id,
+                entity_type: "listing",
+                entity_id: id,
+                action: "hard_delete",
+                metadata: null,
+                created_at: new Date().toISOString(),
+            });
 
         return NextResponse.json({ success: true, deleted: "hard" });
     } catch (error: any) {

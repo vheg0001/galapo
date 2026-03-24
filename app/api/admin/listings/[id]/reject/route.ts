@@ -75,7 +75,7 @@ export async function POST(
                 },
                 status: "queued",
                 created_at: now,
-                created_by: auth.userId,
+                created_by: auth.user.id,
             });
         }
 

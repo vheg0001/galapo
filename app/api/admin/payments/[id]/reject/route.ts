@@ -11,7 +11,9 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { user } = await requireAdmin(request);
+        const auth = await requireAdmin(request);
+        if ("error" in auth) return auth.error;
+        const { user } = auth;
         const { id } = await params;
         const { reason } = await request.json();
 

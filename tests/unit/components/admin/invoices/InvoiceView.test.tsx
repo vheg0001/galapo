@@ -1,6 +1,38 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import InvoiceView from "@/components/admin/invoices/InvoiceView";
+
+// Suppress jsx and global attribute warnings from styled-jsx in tests
+beforeAll(() => {
+    const originalError = console.error;
+    const originalWarn = console.warn;
+    
+    const filter = (...args: any[]) => {
+        const message = args[0];
+        if (typeof message === 'string' && (
+            message.includes('non-boolean attribute') ||
+            message.includes('jsx') ||
+            message.includes('global')
+        )) {
+            return true;
+        }
+        return false;
+    };
+
+    vi.spyOn(console, 'error').mockImplementation((...args) => {
+        if (filter(...args)) return;
+        originalError(...args);
+    });
+
+    vi.spyOn(console, 'warn').mockImplementation((...args) => {
+        if (filter(...args)) return;
+        originalWarn(...args);
+    });
+});
+
+afterAll(() => {
+    vi.restoreAllMocks();
+});
 
 const mockInvoice = {
     id: "inv-1",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Loader2, CheckCircle2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
@@ -10,23 +10,61 @@ import PaymentInstructions from "./PaymentInstructions";
 import PaymentProofUpload from "./PaymentProofUpload";
 import OrderSummary from "./OrderSummary";
 import { cn } from "@/lib/utils";
-import type { SubscriptionListItem, PlanTier, PricingResponse } from "@/lib/types";
+import type { SubscriptionListItem, PlanTier, PricingResponse, PaymentInstructionsConfig } from "@/lib/types";
 
 interface UpgradeWizardProps {
     listing: SubscriptionListItem;
     pricing: PricingResponse;
+    paymentInstructions?: PaymentInstructionsConfig | null;
 }
 
-export default function UpgradeWizard({ listing, pricing }: UpgradeWizardProps) {
+export default function UpgradeWizard({ listing, pricing, paymentInstructions }: UpgradeWizardProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const store = useSubscriptionStore();
     const [verifying, setVerifying] = useState(false);
 
     // Sync listing with store once
     useEffect(() => {
         store.setSelectedListing(listing);
-        store.setCurrentStep(2);
-    }, [listing.listing_id]);
+        
+        // If instructions provided from server, sync them
+        if (paymentInstructions) {
+            store.setPaymentInstructions(paymentInstructions);
+        }
+        
+        // Check for manual step override in URL
+        const forcedStep = searchParams.get("step");
+        if (forcedStep) {
+            const step = parseInt(forcedStep);
+            store.setCurrentStep(step);
+            if (listing.subscription?.status === "pending_payment") {
+                store.setSelectedPlan(listing.subscription.plan_type);
+                // Also sync IDs if going directly to payment step
+                if (step === 3) {
+                    useSubscriptionStore.setState({
+                        currentFlow: "subscription",
+                        currentTargetId: listing.subscription.id,
+                        currentPaymentId: listing.subscription.payment_id || null
+                    });
+                }
+            }
+            return;
+        }
+
+        // If there's a pending subscription, auto-resume to payment step
+        if (listing.subscription?.status === "pending_payment") {
+            store.setSelectedPlan(listing.subscription.plan_type);
+            useSubscriptionStore.setState({
+                currentFlow: "subscription",
+                currentTargetId: listing.subscription.id,
+                currentPaymentId: listing.subscription.payment_id || null,
+                currentStep: 3
+            });
+        } else {
+            store.setCurrentStep(2);
+        }
+    }, [listing.listing_id, paymentInstructions, searchParams]);
 
     const activeStep = store.currentStep;
 
@@ -133,7 +171,7 @@ export default function UpgradeWizard({ listing, pricing }: UpgradeWizardProps) 
                                 onSelect={store.setSelectedPlan}
                                 pricing={pricing}
                                 pendingPlan={(listing.subscription?.status === "pending_payment" || listing.subscription?.status === "under_review") ? listing.subscription?.plan_type : undefined}
-                                pendingStatus={listing.subscription?.status as any}
+                                pendingStatus={listing.subscription?.status || undefined}
                             />
                         </div>
                     )}
@@ -145,11 +183,20 @@ export default function UpgradeWizard({ listing, pricing }: UpgradeWizardProps) 
                                 <p className="text-sm font-medium text-slate-500">Follow the instructions to complete your upgrade.</p>
                             </div>
 
-                            <PaymentInstructions
-                                config={store.paymentInstructions!}
-                                method={store.paymentMethod}
-                                onMethodChange={store.setPaymentMethod}
-                            />
+                            {store.paymentInstructions ? (
+                                <PaymentInstructions
+                                    config={store.paymentInstructions}
+                                    method={store.paymentMethod}
+                                    onMethodChange={store.setPaymentMethod}
+                                />
+                            ) : (
+                                <div className="flex h-60 items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                                        <p className="text-xs font-medium text-slate-400">Loading payment details...</p>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="pt-2">
                                 <PaymentProofUpload

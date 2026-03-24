@@ -18,12 +18,13 @@ export default function ListingMapView({ listings }: ListingMapViewProps) {
         .filter((l) => l.lat && l.lng)
         .map((l) => {
             const cat = unwrapJoin<{ name: string; slug: string }>(l.categories);
+            const sub = unwrapJoin<{ name: string; slug: string }>(l.subcategories);
             return {
                 id: l.id,
                 lat: l.lat!,
                 lng: l.lng!,
                 name: l.business_name,
-                category: cat?.name,
+                category: sub?.name || cat?.name,
                 slug: l.slug,
                 logo_url: l.logo_url || l.image_url,
                 phone: l.phone,
@@ -45,6 +46,7 @@ export default function ListingMapView({ listings }: ListingMapViewProps) {
                 )}
                 {listings.map((listing) => {
                     const cat = unwrapJoin<{ name: string; slug: string }>(listing.categories);
+                    const sub = unwrapJoin<{ name: string; slug: string }>(listing.subcategories);
                     const brgy = unwrapJoin<{ name: string; slug: string }>(listing.barangays);
 
                     return (
@@ -62,8 +64,8 @@ export default function ListingMapView({ listings }: ListingMapViewProps) {
                                             <span>{brgy.name}</span>
                                         </>
                                     )}
-                                    {cat?.name && (
-                                        <span className="ml-2 text-secondary">{cat.name}</span>
+                                    {(sub?.name || cat?.name) && (
+                                        <span className="ml-2 text-secondary">{sub?.name || cat?.name}</span>
                                     )}
                                 </div>
                             </div>

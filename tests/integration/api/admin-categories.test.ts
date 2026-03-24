@@ -58,8 +58,8 @@ describe("Admin Categories APIs", () => {
         const req = new NextRequest("http://localhost/api/admin/categories");
         const res = await GET(req);
 
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
 
         expect(json.data.length).toBe(1);
         expect(json.data[0].id).toBe("c1");
@@ -76,8 +76,8 @@ describe("Admin Categories APIs", () => {
         mockSupabaseClient.from.mockReturnValue(createMockChain({ id: "new-id", name: "New" }));
 
         const res = await POST(req);
-        expect(res.status).toBe(201);
-        const json = await res.json();
+        expect(res!.status).toBe(201);
+        const json = await res!.json();
         expect(json.data.id).toBe("new-id");
     });
 
@@ -91,7 +91,7 @@ describe("Admin Categories APIs", () => {
         mockSupabaseClient.from.mockReturnValue(createMockChain(null, { message: "Duplicate slug" }));
 
         const res = await POST(req);
-        expect(res.status).toBe(500);
+        expect(res!.status).toBe(500);
     });
 
     it("DELETE /api/admin/categories/[id] checks listing references", async () => {
@@ -103,8 +103,8 @@ describe("Admin Categories APIs", () => {
         });
 
         const res = await deleteCategory(req, { params: Promise.resolve({ id: "c1" }) });
-        expect(res.status).toBe(409);
-        const json = await res.json();
+        expect(res!.status).toBe(409);
+        const json = await res!.json();
         expect(json.error).toContain("Cannot delete");
     });
 
@@ -117,7 +117,7 @@ describe("Admin Categories APIs", () => {
         });
 
         const res = await deleteCategory(req, { params: Promise.resolve({ id: "c1" }) });
-        expect(res.status).toBe(200);
+        expect(res!.status).toBe(200);
     });
 
     it("non-admin gets 403 on all routes", async () => {
@@ -125,6 +125,6 @@ describe("Admin Categories APIs", () => {
 
         const getReq = new NextRequest("http://localhost/api/admin/categories");
         const getRes = await GET(getReq);
-        expect(getRes.status).toBe(403);
+        expect(getRes!.status).toBe(403);
     });
 });

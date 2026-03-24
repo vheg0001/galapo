@@ -256,7 +256,7 @@ export function buildSubscriptionListItems({
     subscriptions: any[];
     placements: any[];
     payments: any[];
-    reactivation_fees: any[];
+    reactivation_fees?: any[];
     categories: Record<string, Category>;
 }): SubscriptionListItem[] {
     const paymentsMap = new Map<string, any>((payments ?? []).map((payment) => [payment.id, payment]));

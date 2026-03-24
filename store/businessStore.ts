@@ -179,8 +179,14 @@ export const useBusinessStore = create<BusinessState>()((set, get) => ({
 
     markNotificationRead: async (id: string) => {
         try {
-            // In a real app, we'd have a specific endpoint for this
-            // For now, keep the local state update as is, but we could add a PUT /api/notifications/[id]
+            // Persist to database
+            await fetch("/api/business/activity", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id }),
+            });
+
+            // Local state update
             set((state) => ({
                 notifications: state.notifications.map((n) =>
                     n.id === id ? { ...n, is_read: true } : n
@@ -193,11 +199,23 @@ export const useBusinessStore = create<BusinessState>()((set, get) => ({
     },
 
     markAllNotificationsRead: async (userId: string) => {
-        // Local update
-        set((state) => ({
-            notifications: state.notifications.map((n) => ({ ...n, is_read: true })),
-            unreadCount: 0,
-        }));
+        if (!userId) return;
+        try {
+            // Persist to database
+            await fetch("/api/business/activity", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ all: true }),
+            });
+
+            // Local update
+            set((state) => ({
+                notifications: state.notifications.map((n) => ({ ...n, is_read: true })),
+                unreadCount: 0,
+            }));
+        } catch (err) {
+            console.error("businessStore: markAllNotificationsRead error:", err);
+        }
     },
 
     reset: () => set({

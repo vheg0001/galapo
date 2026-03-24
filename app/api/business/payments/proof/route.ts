@@ -119,24 +119,38 @@ export async function POST(request: NextRequest) {
             .update({ payment_proof_url: publicUrl })
             .eq("id", payment.id);
 
-        // 7. Notify Admins
+        // 7. Create notifications
         const { data: admins } = await admin
             .from("profiles")
             .select("id")
             .eq("role", "super_admin")
             .eq("is_active", true);
 
-        if (admins && admins.length > 0) {
-            const notifications = admins.map(a => ({
-                user_id: a.id,
-                type: NotificationType.NEW_PAYMENT_UPLOADED,
-                title: "New Payment Proof Uploaded",
-                message: `${profile.full_name || profile.email} uploaded proof for ${description} for ${businessName}`,
-                data: { payment_id: payment.id, listing_id: listingId }
-            }));
+        const notifications = [];
 
-            await admin.from("notifications").insert(notifications);
+        // 1. Notify Super Admin(s)
+        if (admins && admins.length > 0) {
+            admins.forEach(a => {
+                notifications.push({
+                    user_id: a.id,
+                    type: NotificationType.NEW_PAYMENT_UPLOADED,
+                    title: "New Payment Proof Uploaded",
+                    message: `${profile.full_name || profile.email} uploaded proof for ${description} for ${businessName}`,
+                    data: { payment_id: payment.id, listing_id: listingId }
+                });
+            });
         }
+
+        // 2. Notify Business Owner
+        notifications.push({
+            user_id: profile.id,
+            type: NotificationType.NEW_PAYMENT_UPLOADED,
+            title: "Payment proof submitted",
+            message: `Your payment proof for ${businessName} has been received and is currently pending verification.`,
+            data: { payment_id: payment.id, listing_id: listingId }
+        });
+
+        await admin.from("notifications").insert(notifications);
 
         return NextResponse.json({ 
             message: "Payment proof uploaded successfully",

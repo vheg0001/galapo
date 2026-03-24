@@ -90,12 +90,18 @@ export default async function SearchRoute({ searchParams }: SearchPageProps) {
     const listingIds = listings.map((l: any) => l.id).filter(Boolean);
     const badgesByListing = await getListingBadgesByIds(supabase, listingIds);
 
+    // Normalize individual result to match ListingItem expected by ListingGrid/List
+    const normalizeResult = (r: any) => ({
+        ...r,
+        categories: { name: r.category_name, slug: r.category_slug },
+        subcategories: r.subcategory_name ? { name: r.subcategory_name, slug: r.subcategory_slug } : null,
+        barangays: { name: r.barangay_name, slug: r.barangay_slug },
+    });
+
     // Normalize listings to match the expected shape.
     const normalizedListings = listings.map((l: any) => ({
-        ...l,
+        ...normalizeResult(l),
         image_url: l.primary_image || l.image_url || null,
-        categories: { name: l.category_name },
-        barangays: { name: l.barangay_name },
         badges: badgesByListing.get(l.id) || [],
     }));
 

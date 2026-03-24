@@ -25,7 +25,7 @@ export default async function AdminInvoiceDetailPage({ params }: PageProps) {
             *,
             profiles:user_id (id, full_name, email),
             listings:listing_id (id, business_name, slug),
-            payments:payment_id (id, payment_method, reference_number, plan_type)
+            payments:payment_id (id, payment_method, reference_number, subscriptions(plan_type))
         `)
         .eq("id", id)
         .single();

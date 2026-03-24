@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
 /**
@@ -14,17 +14,6 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Requirements specify sources:
-        // - Listing status changes
-        // - Deals created/expired
-        // - Events created
-        // - Payments confirmed
-        // - Subscription changes
-
-        // Strategy: Pull from the "notifications" table as it already serves as an activity log
-        // If we want raw data, we'd query multiple tables, but notifications usually consolidate this for users.
-        // Let's query notifications first as the primary "Activity" source.
-
         const { data: notifications, error: notifError } = await supabase
             .from("notifications")
             .select(`
@@ -38,7 +27,7 @@ export async function GET() {
             `)
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
-            .limit(10);
+            .limit(50);
 
         if (notifError) throw notifError;
 
@@ -61,6 +50,42 @@ export async function GET() {
 
     } catch (error: any) {
         console.error("[ACTIVITY_GET]", error);
+        return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    }
+}
+
+/**
+ * PATCH /api/business/activity
+ * Mark a specific notification or all notifications as read.
+ * Body: { id?: string, all?: boolean }
+ */
+export async function PATCH(request: NextRequest) {
+    try {
+        const supabase = await createServerSupabaseClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = await request.json();
+        const { id, all } = body;
+
+        let query = supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id);
+
+        if (!all && id) {
+            query = query.eq("id", id);
+        } else if (!all && !id) {
+            return NextResponse.json({ error: "Missing notification id or 'all' flag" }, { status: 400 });
+        }
+
+        const { error: updateError } = await query;
+        if (updateError) throw updateError;
+
+        return NextResponse.json({ success: true });
+
+    } catch (error: any) {
+        console.error("[ACTIVITY_PATCH]", error);
         return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
     }
 }

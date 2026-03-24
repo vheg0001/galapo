@@ -50,8 +50,8 @@ describe("Pages APIs (Admin & Public)", () => {
         const req = new NextRequest("http://localhost/api/admin/pages");
         const res = await adminGet(req);
 
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.data.length).toBe(1);
     });
 
@@ -60,7 +60,7 @@ describe("Pages APIs (Admin & Public)", () => {
 
         const req = new NextRequest("http://localhost/api/admin/pages");
         const res = await adminGet(req);
-        expect(res.status).toBe(403);
+        expect(res!.status).toBe(403);
     });
 
     it("POST /api/admin/pages CRUD works", async () => {
@@ -73,8 +73,8 @@ describe("Pages APIs (Admin & Public)", () => {
         mockClient.from.mockReturnValue(createMockChain({ id: "new-p1" }));
 
         const res = await adminPost(req);
-        expect(res.status).toBe(201);
-        const json = await res.json();
+        expect(res!.status).toBe(201);
+        const json = await res!.json();
         expect(json.data.id).toBe("new-p1");
     });
 
@@ -84,8 +84,8 @@ describe("Pages APIs (Admin & Public)", () => {
         mockClient.from.mockReturnValue(createMockChain({ id: "p1", title: "About", is_published: true }));
 
         const res = await publicGet(req, { params: Promise.resolve({ slug: "about" }) });
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.data.title).toBe("About");
     });
 
@@ -95,6 +95,6 @@ describe("Pages APIs (Admin & Public)", () => {
         mockClient.from.mockReturnValue(createMockChain(null, new Error('Not found')));
 
         const res = await publicGet(req, { params: Promise.resolve({ slug: "draft" }) });
-        expect(res.status).toBe(404);
+        expect(res!.status).toBe(404);
     });
 });

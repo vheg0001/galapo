@@ -117,7 +117,7 @@ export default function PaymentReview({ payment }: PaymentReviewProps) {
                     <Card className="border-slate-200/60 shadow-sm overflow-hidden rounded-3xl">
                         <CardContent className="p-4">
                             <ProofViewer 
-                                url={payment.payment_proof_url} 
+                                url={payment.signedProofUrl || payment.payment_proof_url} 
                                 fileName={`Proof_${payment.reference_number || payment.id}.jpg`} 
                             />
                         </CardContent>
@@ -144,13 +144,39 @@ export default function PaymentReview({ payment }: PaymentReviewProps) {
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Payment Received</p>
                                     <div className="text-4xl font-black text-slate-900">{formatPeso(payment.amount)}</div>
                                     <div className="mt-2 flex justify-center">
-                                        <StatusBadge variant="secondary" className="bg-slate-200/50 font-black uppercase tracking-widest text-[10px]">
+                                        <StatusBadge 
+                                            variant="default" 
+                                            className={mergeClasses(
+                                                "font-black uppercase tracking-widest text-[10px] border-none shadow-sm",
+                                                payment.payment_method?.toLowerCase() === "gcash" ? "bg-[#007DFE] text-white" : 
+                                                payment.payment_method?.toLowerCase() === "bank" ? "bg-indigo-600 text-white" : 
+                                                "bg-slate-600 text-white"
+                                            )}
+                                        >
                                             {payment.payment_method}
                                         </StatusBadge>
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
+                                    {payment.subscriptions?.plan_type && (
+                                        <DetailItem 
+                                            icon={<CreditCard className="h-4 w-4" />}
+                                            label="Purchased Plan"
+                                            value={
+                                                <span className={mergeClasses(
+                                                    "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border shadow-sm",
+                                                    payment.subscriptions.plan_type === "premium" 
+                                                        ? "border-amber-400/50 bg-gradient-to-br from-[#FFD700] via-[#FFF4B0] to-[#B8860B] text-black" 
+                                                        : payment.subscriptions.plan_type === "featured"
+                                                            ? "border-secondary/20 bg-secondary text-white"
+                                                            : "border-gray-200 bg-gray-50 text-gray-600"
+                                                )}>
+                                                    {payment.subscriptions.plan_type}
+                                                </span>
+                                            }
+                                        />
+                                    )}
                                     <DetailItem 
                                         icon={<CreditCard className="h-4 w-4" />}
                                         label="Reference Number"

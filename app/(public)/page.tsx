@@ -64,8 +64,9 @@ export default async function HomePage() {
             .select(`
                 id, slug, business_name, short_description, phone, logo_url,
                 is_featured, is_premium,
-                categories!listings_category_id_fkey ( name ),
-                barangays ( name ),
+                categories!listings_category_id_fkey ( name, slug ),
+                subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
+                barangays ( name, slug ),
                 listing_images ( image_url, is_primary ),
                 listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
             `)
@@ -81,8 +82,9 @@ export default async function HomePage() {
             .select(`
                 id, slug, business_name, short_description, phone, logo_url,
                 is_featured, is_premium,
-                categories!listings_category_id_fkey ( name ),
-                barangays ( name ),
+                categories!listings_category_id_fkey ( name, slug ),
+                subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
+                barangays ( name, slug ),
                 listing_images ( image_url, is_primary ),
                 listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
             `)
@@ -104,7 +106,7 @@ export default async function HomePage() {
         getPublishedBlogPosts({ limit: 3 }),
         supabase
             .from("listings")
-            .select("id, slug, business_name, lat, lng, short_description, phone, logo_url, is_featured, is_premium, categories!listings_category_id_fkey ( name )")
+            .select("id, slug, business_name, lat, lng, short_description, phone, logo_url, is_featured, is_premium, categories!listings_category_id_fkey ( name ), subcategories:categories!listings_subcategory_id_fkey ( name )")
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
             .or("is_featured.eq.true,is_premium.eq.true")
@@ -143,7 +145,7 @@ export default async function HomePage() {
             lat: Number(l.lat),
             lng: Number(l.lng),
             name: l.business_name,
-            category: (l.categories as any)?.name,
+            category: (l.subcategories as any)?.name || (l.categories as any)?.name,
             slug: l.slug,
             logo_url: l.logo_url,
             phone: l.phone,
@@ -231,6 +233,7 @@ export default async function HomePage() {
                                     businessName={listing.business_name}
                                     shortDescription={listing.short_description}
                                     categoryName={(listing.categories as any)?.name}
+                                    subcategoryName={(listing.subcategories as any)?.name}
                                     barangayName={(listing.barangays as any)?.name}
                                     phone={listing.phone}
                                     logoUrl={listing.logo_url}
@@ -324,6 +327,7 @@ export default async function HomePage() {
                                     businessName={listing.business_name}
                                     shortDescription={listing.short_description}
                                     categoryName={(listing.categories as any)?.name}
+                                    subcategoryName={(listing.subcategories as any)?.name}
                                     barangayName={(listing.barangays as any)?.name}
                                     phone={listing.phone}
                                     logoUrl={listing.logo_url}

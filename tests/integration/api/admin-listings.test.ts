@@ -143,7 +143,7 @@ describe("Admin Listings API Integration", () => {
         for (const invoke of invocations) {
             mockRequireAdmin.mockResolvedValueOnce({ error: forbidden } as any);
             const res = await invoke();
-            expect(res.status).toBe(403);
+            expect(res!.status).toBe(403);
         }
     });
 
@@ -172,8 +172,8 @@ describe("Admin Listings API Integration", () => {
         );
 
         const res = await getListings(new NextRequest("http://localhost/api/admin/listings?status=all"));
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.data).toHaveLength(1);
         expect(json.data[0].views_count).toBe(2);
         expect(json.counts.pending).toBe(1);
@@ -186,7 +186,7 @@ describe("Admin Listings API Integration", () => {
             { data: [], error: null }
         );
         const res = await getListings(new NextRequest("http://localhost/api/admin/listings?status=pending"));
-        expect(res.status).toBe(200);
+        expect(res!.status).toBe(200);
         expect(mockState.calls.eq.some((args) => args[0] === "status" && args[1] === "pending")).toBe(true);
     });
 
@@ -197,7 +197,7 @@ describe("Admin Listings API Integration", () => {
             { data: [], error: null }
         );
         const res = await getListings(new NextRequest("http://localhost/api/admin/listings?search=cafe"));
-        expect(res.status).toBe(200);
+        expect(res!.status).toBe(200);
         expect(mockState.calls.or.some((args) => String(args[0]).includes("business_name.ilike.%cafe%"))).toBe(true);
     });
 
@@ -208,7 +208,7 @@ describe("Admin Listings API Integration", () => {
             { data: [], error: null }
         );
         const res = await getListings(new NextRequest("http://localhost/api/admin/listings?page=2&limit=10"));
-        expect(res.status).toBe(200);
+        expect(res!.status).toBe(200);
         expect(mockState.calls.range.some((args) => args[0] === 10 && args[1] === 19)).toBe(true);
     });
 
@@ -224,8 +224,8 @@ describe("Admin Listings API Integration", () => {
             { count: 5, error: null }
         );
         const res = await getCounts(new NextRequest("http://localhost/api/admin/listings/counts"));
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.pending).toBe(1);
         expect(json.total).toBe(15);
         expect(json.active).toBe(10);
@@ -244,7 +244,7 @@ describe("Admin Listings API Integration", () => {
             }),
         });
         const res = await postListing(req);
-        expect(res.status).toBe(201);
+        expect(res!.status).toBe(201);
         expect(mockState.calls.insert[0]).toMatchObject({
             business_name: "Cafe Uno",
             slug: "cafe-uno-2",
@@ -278,8 +278,8 @@ describe("Admin Listings API Integration", () => {
         const res = await getListingById(new NextRequest("http://localhost/api/admin/listings/l1"), {
             params: Promise.resolve({ id: "l1" }),
         });
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.images).toHaveLength(1);
         expect(json.dynamic_field_values).toHaveLength(1);
         expect(json.current_subscription).toBeTruthy();
@@ -298,8 +298,8 @@ describe("Admin Listings API Integration", () => {
             body: JSON.stringify({ short_description: "Updated copy" }),
         });
         const res = await putListingById(req, { params: Promise.resolve({ id: "l1" }) });
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.data.status).toBe("approved");
         expect(mockState.calls.update[0]).toMatchObject({ short_description: "Updated copy" });
     });
@@ -315,8 +315,8 @@ describe("Admin Listings API Integration", () => {
             new NextRequest("http://localhost/api/admin/listings/l1/approve", { method: "POST" }),
             { params: Promise.resolve({ id: "l1" }) }
         );
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.listing.status).toBe("approved");
         expect(mockState.calls.insert.some((x) => x?.type === "listing_approved")).toBe(true);
     });
@@ -335,8 +335,8 @@ describe("Admin Listings API Integration", () => {
             }),
             { params: Promise.resolve({ id: "l1" }) }
         );
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.listing.rejection_reason).toBe("Invalid docs");
         expect(mockState.calls.insert.some((x) => x?.type === "listing_rejected")).toBe(true);
     });
@@ -357,8 +357,8 @@ describe("Admin Listings API Integration", () => {
                 body: JSON.stringify({ listing_ids: ["l1", "l2"], action: "approve" }),
             })
         );
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.success_count).toBe(2);
         expect(json.failed_count).toBe(0);
     });
@@ -379,8 +379,8 @@ describe("Admin Listings API Integration", () => {
                 body: JSON.stringify({ listing_ids: ["l1", "l2"], action: "reject", reason: "Policy violation" }),
             })
         );
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.success_count).toBe(2);
     });
 
@@ -389,24 +389,24 @@ describe("Admin Listings API Integration", () => {
             data: { id: "n1", note: "Investigate duplicate", profiles: { full_name: "Admin One" } },
             error: null,
         });
-        let res = await postNote(
+        const postRes = await postNote(
             new NextRequest("http://localhost/api/admin/listings/l1/notes", {
                 method: "POST",
                 body: JSON.stringify({ note: "Investigate duplicate" }),
             }),
             { params: Promise.resolve({ id: "l1" }) }
         );
-        expect(res.status).toBe(201);
+        expect(postRes!.status).toBe(201);
 
         mockState.thenQueue.push({
             data: [{ id: "n1", note: "Investigate duplicate" }],
             error: null,
         });
-        res = await getNotes(new NextRequest("http://localhost/api/admin/listings/l1/notes"), {
+        const getRes = await getNotes(new NextRequest("http://localhost/api/admin/listings/l1/notes"), {
             params: Promise.resolve({ id: "l1" }),
         });
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(getRes!.status).toBe(200);
+        const json = await getRes!.json();
         expect(json.notes).toHaveLength(1);
     });
 
@@ -425,8 +425,8 @@ describe("Admin Listings API Integration", () => {
             }),
             { params: Promise.resolve({ id: "l1" }) }
         );
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.listing.owner_id).toBe("u1");
     });
 
@@ -443,8 +443,8 @@ describe("Admin Listings API Integration", () => {
             new NextRequest("http://localhost/api/admin/listings/l1/analytics?period=30d"),
             { params: Promise.resolve({ id: "l1" }) }
         );
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.total_views).toBe(1);
         expect(json.total_clicks.phone).toBe(1);
         expect(json.total_clicks.email).toBe(1);
@@ -465,8 +465,8 @@ describe("Admin Listings API Integration", () => {
             }),
             { params: Promise.resolve({ id: "l1" }) }
         );
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.action).toBe("approved");
         expect(mockState.calls.insert.some((x) => x?.type === "claim_approved")).toBe(true);
     });
@@ -485,8 +485,8 @@ describe("Admin Listings API Integration", () => {
             }),
             { params: Promise.resolve({ id: "l1" }) }
         );
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.action).toBe("rejected");
         expect(mockState.calls.insert.some((x) => x?.type === "claim_rejected")).toBe(true);
     });

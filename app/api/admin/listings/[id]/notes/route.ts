@@ -46,7 +46,7 @@ export async function POST(
             .from("admin_notes")
             .insert({
                 listing_id: id,
-                admin_id: auth.userId,
+                admin_id: auth.user.id,
                 note,
             })
             .select("id, note, created_at, admin_id, profiles!admin_notes_admin_id_fkey(full_name, email)")

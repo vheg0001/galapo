@@ -58,8 +58,8 @@ describe("Admin Barangays APIs", () => {
         const req = new NextRequest("http://localhost/api/admin/barangays");
         const res = await GET(req);
 
-        expect(res.status).toBe(200);
-        const json = await res.json();
+        expect(res!.status).toBe(200);
+        const json = await res!.json();
         expect(json.data[0].id).toBe("b1");
     });
 
@@ -85,8 +85,8 @@ describe("Admin Barangays APIs", () => {
         } as any);
 
         const res = await POST(req);
-        expect(res.status).toBe(201);
-        const json = await res.json();
+        expect(res!.status).toBe(201);
+        const json = await res!.json();
         expect(json.data.id).toBe("new-b1");
     });
 
@@ -100,13 +100,13 @@ describe("Admin Barangays APIs", () => {
         }) as any);
 
         const res = await DELETE(req, { params: Promise.resolve({ id: "b1" }) });
-        expect(res.status).toBe(409);
+        expect(res!.status).toBe(409);
     });
 
     it("non-admin -> 403", async () => {
         (adminHelpers.requireAdmin as any).mockResolvedValue({ error: new Response("Unauthorized", { status: 403 }) });
         const req = new NextRequest("http://localhost/api/admin/barangays");
         const res = await GET(req);
-        expect(res.status).toBe(403);
+        expect(res!.status).toBe(403);
     });
 });

@@ -30,6 +30,7 @@ export function getListingsQuery(supabase: SupabaseClient, filters: ListingFilte
         is_premium,
         created_at,
         categories!listings_category_id_fkey ( name, slug ),
+        subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
         barangays ( name, slug )
     `);
 
@@ -165,6 +166,7 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
             id, slug, business_name, short_description, phone, logo_url,
             is_featured, is_premium, created_at, address, operating_hours, lat, lng,
             categories!listings_category_id_fkey ( name, slug ),
+            subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
             barangays ( name, slug ),
             listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
         `, { count: "exact" })
@@ -593,6 +595,7 @@ export async function getRelatedListings(
             id, slug, business_name, short_description, phone, logo_url,
             is_featured, is_premium,
             categories!listings_category_id_fkey ( name, slug ),
+            subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
             barangays ( name, slug ),
             listing_images ( image_url, is_primary ),
             listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )

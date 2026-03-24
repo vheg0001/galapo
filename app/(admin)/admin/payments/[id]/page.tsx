@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createAdminSupabaseClient } from "@/lib/supabase";
 import PaymentReview from "@/components/admin/payments/PaymentReview";
 import { CreditCard } from "lucide-react";
+import { getSignedProofUrl } from "@/lib/payment-helpers";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -34,6 +35,17 @@ export default async function AdminPaymentDetailPage({ params }: PageProps) {
         notFound();
     }
 
+    // Generate signed URL for proof if it exists
+    let signedProofUrl = null;
+    if (payment.payment_proof_url) {
+        try {
+            signedProofUrl = await getSignedProofUrl(payment.payment_proof_url);
+        } catch (e) {
+            console.error("Failed to sign proof URL:", e);
+            signedProofUrl = payment.payment_proof_url;
+        }
+    }
+
     return (
         <div className="flex flex-col gap-6 p-6 md:p-8 max-w-7xl mx-auto w-full min-h-screen">
             <div className="space-y-1">
@@ -46,7 +58,7 @@ export default async function AdminPaymentDetailPage({ params }: PageProps) {
                 </h1>
             </div>
 
-            <PaymentReview payment={payment} />
+            <PaymentReview payment={{ ...payment, signedProofUrl }} />
         </div>
     );
 }

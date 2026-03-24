@@ -194,7 +194,7 @@ export async function POST(req: Request) {
             if (fieldsError) console.error("Error inserting dynamic fields:", fieldsError);
         }
 
-        // 7. Create notification for super admin
+        // 7. Create notifications
         if (!is_draft) {
             // Find super admin using admin client to bypass RLS if necessary
             const adminClient = createAdminSupabaseClient();
@@ -205,8 +205,11 @@ export async function POST(req: Request) {
                 .limit(1)
                 .single();
 
+            const notifications = [];
+
+            // 1. Notify Super Admin
             if (admin) {
-                await adminClient.from("notifications").insert({
+                notifications.push({
                     user_id: admin.id,
                     type: "new_listing_submitted",
                     title: "New listing submitted",
@@ -214,6 +217,17 @@ export async function POST(req: Request) {
                     data: { listing_id: newListing.id, slug: newListing.slug }
                 });
             }
+
+            // 2. Notify Business Owner
+            notifications.push({
+                user_id: user.id,
+                type: "new_listing_submitted",
+                title: "Listing submitted for review",
+                message: `Your listing "${newListing.business_name}" has been submitted and is currently pending review.`,
+                data: { listing_id: newListing.id, slug: newListing.slug }
+            });
+
+            await adminClient.from("notifications").insert(notifications);
         }
 
         return NextResponse.json({ data: newListing }, { status: 201 });

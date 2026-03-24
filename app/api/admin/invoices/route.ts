@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
                 *,
                 profiles:user_id (id, full_name, email),
                 listings:listing_id (id, business_name, slug),
-                payments:payment_id (id, payment_method, reference_number, plan_type)
+                payments:payment_id (id, payment_method, reference_number)
             `, { count: "exact" });
 
         if (fromDate) {

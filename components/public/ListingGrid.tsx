@@ -7,7 +7,7 @@ import Pagination from "@/components/shared/Pagination";
 import SponsoredBadge from "./SponsoredBadge";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type JoinResult = Record<string, any> | Record<string, any>[] | null | undefined;
+export type JoinResult = Record<string, any> | Record<string, any>[] | null | undefined;
 
 /** Normalize a Supabase join result that can be an object or array into a single object. */
 function unwrapJoin<T>(val: JoinResult): T | undefined {
@@ -32,6 +32,7 @@ export interface ListingItem {
     lat?: number | null;
     lng?: number | null;
     categories?: JoinResult;
+    subcategories?: JoinResult;
     barangays?: JoinResult;
     isSponsored?: boolean;
     badges?: any[];
@@ -59,6 +60,7 @@ export default function ListingGrid({ listings, currentPage, totalPages, basePat
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {listings.map((listing, index) => {
                     const cat = unwrapJoin<{ name: string; slug: string }>(listing.categories);
+                    const sub = unwrapJoin<{ name: string; slug: string }>(listing.subcategories);
                     const brgy = unwrapJoin<{ name: string; slug: string }>(listing.barangays);
 
                     return (
@@ -74,6 +76,7 @@ export default function ListingGrid({ listings, currentPage, totalPages, basePat
                                 businessName={listing.business_name}
                                 shortDescription={listing.short_description}
                                 categoryName={cat?.name}
+                                subcategoryName={sub?.name}
                                 barangayName={brgy?.name}
                                 phone={listing.phone}
                                 logoUrl={listing.logo_url}

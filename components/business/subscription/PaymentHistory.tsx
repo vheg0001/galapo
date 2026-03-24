@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { Download, ExternalLink, BadgeCheck, Clock, AlertTriangle, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { formatPeso } from "@/lib/subscription-helpers";
 import { cn } from "@/lib/utils";
 
@@ -102,14 +104,24 @@ export default function PaymentHistory({ userId }: PaymentHistoryProps) {
                                 </TableCell>
                                 <TableCell className="py-5 text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                        {p.invoice ? (
-                                            <button className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900" title="Download Invoice">
-                                                <Download className="h-4 w-4" />
-                                            </button>
-                                        ) : null}
-                                        <button className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900" title="View Transaction">
-                                            <ExternalLink className="h-4 w-4" />
-                                        </button>
+                                        {p.invoice && p.status === "verified" ? (
+                                            <>
+                                                <Button size="icon" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-900" asChild title="Download Invoice">
+                                                    <Link href={`/business/invoices/${p.invoice.id}?print=true`}>
+                                                        <Download className="h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                                <Button size="icon" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-900" asChild title="View Invoice">
+                                                    <Link href={`/business/invoices/${p.invoice.id}`}>
+                                                        <ExternalLink className="h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">
+                                                No Invoice
+                                            </span>
+                                        )}
                                     </div>
                                 </TableCell>
                             </TableRow>

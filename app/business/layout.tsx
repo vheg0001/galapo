@@ -25,7 +25,7 @@ export default function BusinessLayout({
         <AuthGuard requireRole="business_owner">
             <div className="flex min-h-screen bg-[#F5F7FA]">
                 {/* Desktop Sidebar */}
-                <div className="hidden h-screen w-64 shrink-0 sticky top-0 lg:block">
+                <div className="hidden h-screen w-64 shrink-0 sticky top-0 lg:block print:hidden">
                     <Sidebar unreadNotifications={UNREAD_NOTIFICATIONS} />
                 </div>
 
@@ -42,24 +42,29 @@ export default function BusinessLayout({
                     </>
                 )}
 
+
                 {/* Main Content Area */}
                 <div className="flex min-w-0 flex-1 flex-col">
-                    <TopBar
-                        onMobileMenuToggle={() => setMobileSidebarOpen((v) => !v)}
-                        unreadNotifications={UNREAD_NOTIFICATIONS}
-                    />
+                    <div className="print:hidden">
+                        <TopBar
+                            onMobileMenuToggle={() => setMobileSidebarOpen((v) => !v)}
+                            unreadNotifications={UNREAD_NOTIFICATIONS}
+                        />
+                    </div>
 
                     {/* Page Content */}
-                    <main className="flex-1 overflow-auto p-4 pb-20 lg:p-6 lg:pb-6">
+                    <main className="flex-1 overflow-auto p-4 pb-20 lg:p-6 lg:pb-6 print:p-0 print:bg-white">
                         {children}
                     </main>
                 </div>
 
                 {/* Mobile Bottom Navigation */}
-                <MobileNav
-                    unreadNotifications={UNREAD_NOTIFICATIONS}
-                    onMoreClick={() => setMobileSidebarOpen(true)}
-                />
+                <div className="print:hidden">
+                    <MobileNav
+                        unreadNotifications={UNREAD_NOTIFICATIONS}
+                        onMoreClick={() => setMobileSidebarOpen(true)}
+                    />
+                </div>
             </div>
         </AuthGuard>
     );

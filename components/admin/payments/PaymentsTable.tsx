@@ -17,11 +17,15 @@ import {
     Search, 
     Filter, 
     Eye, 
-    CheckCircle2, 
     XCircle, 
     Loader2, 
     ExternalLink,
-    Calendar as CalendarIcon
+    Calendar as CalendarIcon,
+    AlertCircle,
+    History,
+    CheckCircle2 as CheckCircle,
+    Download,
+    Receipt
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -34,9 +38,9 @@ type StatusTab = "all" | "pending" | "verified" | "rejected";
 export default function PaymentsTable() {
     const [payments, setPayments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [statusTab, setStatusTab] = useState<StatusTab>("pending");
+    const [statusTab, setStatusTab] = useState<StatusTab>("all");
     const [search, setSearch] = useState("");
-    const [pendingCount, setPendingCount] = useState(0);
+    const [counts, setCounts] = useState({ pending: 0, verified: 0, rejected: 0, all: 0 });
     const [total, setTotal] = useState(0);
 
     const fetchPayments = useCallback(async () => {
@@ -55,7 +59,9 @@ export default function PaymentsTable() {
             if (data.payments) {
                 setPayments(data.payments);
                 setTotal(data.total);
-                setPendingCount(data.pendingCount);
+                if (data.counts) {
+                    setCounts(data.counts);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch payments:", error);
@@ -85,11 +91,57 @@ export default function PaymentsTable() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="border-slate-200/60 shadow-sm rounded-3xl bg-white overflow-hidden group hover:shadow-md transition-all">
+                    <CardContent className="flex flex-row items-center justify-between p-6">
+                        <div className="space-y-1">
+                            <p className="text-sm font-black text-slate-900 uppercase tracking-wider">Awaiting Verification</p>
+                            <p className="text-3xl font-black text-slate-900">
+                                {loading ? "..." : counts.pending}
+                            </p>
+                        </div>
+                        <div className="bg-orange-50 p-2 rounded-2xl">
+                            <AlertCircle className="h-6 w-6 text-orange-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-slate-200/60 shadow-sm rounded-3xl bg-white overflow-hidden group hover:shadow-md transition-all">
+                    <CardContent className="flex flex-row items-center justify-between p-6">
+                        <div className="space-y-1">
+                            <p className="text-sm font-black text-slate-900 uppercase tracking-wider">Verified Payments</p>
+                            <p className="text-3xl font-black text-slate-900">
+                                {loading ? "..." : counts.verified}
+                            </p>
+                        </div>
+                        <div className="bg-emerald-50 p-2 rounded-2xl">
+                            <CheckCircle className="h-6 w-6 text-emerald-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-slate-200/60 shadow-sm rounded-3xl bg-white overflow-hidden group hover:shadow-md transition-all">
+                    <CardContent className="flex flex-row items-center justify-between p-6">
+                        <div className="space-y-1">
+                            <p className="text-sm font-black text-slate-900 uppercase tracking-wider">Historical Logs</p>
+                            <p className="text-3xl font-black text-slate-900">
+                                {loading ? "..." : counts.all}
+                            </p>
+                        </div>
+                        <div className="bg-indigo-50 p-2 rounded-2xl">
+                            <History className="h-6 w-6 text-indigo-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="space-y-6">
             {/* Tabs & Search Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
-                    {(["pending", "verified", "rejected", "all"] as StatusTab[]).map((tab) => (
+                    {(["all", "pending", "verified", "rejected"] as StatusTab[]).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setStatusTab(tab)}
@@ -101,9 +153,9 @@ export default function PaymentsTable() {
                             )}
                         >
                             {tab}
-                            {tab === "pending" && pendingCount > 0 && (
+                            {tab === "pending" && counts.pending > 0 && (
                                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-600 text-[10px] font-bold text-white">
-                                    {pendingCount}
+                                    {counts.pending}
                                 </span>
                             )}
                         </button>
@@ -177,7 +229,17 @@ export default function PaymentsTable() {
                                             {formatPeso(payment.amount)}
                                         </TableCell>
                                         <TableCell className="text-center">
-                                            <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest bg-slate-100">
+                                            <Badge 
+                                                variant="outline" 
+                                                className={cn(
+                                                    "text-[9px] font-black uppercase tracking-widest px-2 py-0.5",
+                                                    payment.payment_method?.toLowerCase() === "gcash" 
+                                                        ? "bg-[#007DFE] text-white border-transparent" 
+                                                        : payment.payment_method?.toLowerCase() === "maya" || payment.payment_method?.toLowerCase() === "paymaya"
+                                                        ? "bg-emerald-500 text-white border-transparent"
+                                                        : "bg-slate-100 text-slate-700 border-slate-200"
+                                                )}
+                                            >
                                                 {payment.payment_method}
                                             </Badge>
                                         </TableCell>
@@ -194,11 +256,25 @@ export default function PaymentsTable() {
                                                         <Eye className="h-4 w-4 text-slate-700" />
                                                     </Link>
                                                 </Button>
-                                                {payment.status === "pending" && (
-                                                     <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-50 text-emerald-600" title="Quick Verify">
-                                                        <CheckCircle2 className="h-4 w-4" />
-                                                    </Button>
+                                                {payment.status === "verified" && payment.invoices?.[0] && (
+                                                    <>
+                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100" asChild title="Download Invoice">
+                                                            <Link href={`/admin/invoices/${payment.invoices[0].id}?print=true`}>
+                                                                <Download className="h-4 w-4 text-slate-700" />
+                                                            </Link>
+                                                        </Button>
+                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100" asChild title="View Invoice">
+                                                            <Link href={`/admin/invoices/${payment.invoices[0].id}`}>
+                                                                <Receipt className="h-4 w-4 text-slate-700" />
+                                                            </Link>
+                                                        </Button>
+                                                    </>
                                                 )}
+                                                 {payment.status === "pending" && (
+                                                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-50 text-emerald-600" title="Quick Verify">
+                                                         <CheckCircle className="h-4 w-4" />
+                                                     </Button>
+                                                 )}
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -219,5 +295,6 @@ export default function PaymentsTable() {
                 </div>
             )}
         </div>
+    </div>
     );
 }

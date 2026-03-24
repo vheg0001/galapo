@@ -47,7 +47,7 @@ export default function PlanSelector({
                         key={card.plan}
                         type="button"
                         onClick={() => onSelect(card.plan)}
-                        disabled={isCurrent || isPending}
+                        disabled={isCurrent || (isPending && !isSelected)}
                         className={cn(
                             "relative flex flex-col rounded-3xl border-2 p-6 text-left transition-all",
                             isSelected 
