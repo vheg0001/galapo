@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MoreHorizontal, FileText, ExternalLink, CalendarDays, ShieldAlert, XCircle, RotateCw } from "lucide-react";
 import DataTable, { Column } from "@/components/admin/shared/DataTable";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
+import Badge from "@/components/shared/Badge";
 import { cn } from "@/lib/utils";
 import { formatPeso, getDaysRemaining } from "@/lib/subscription-helpers";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -118,18 +119,12 @@ export function SubscriptionsTable() {
         {
             key: "plan_type",
             header: "Plan",
-            render: (r) => (
-                <span className={cn(
-                    "text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border shadow-sm transition-all",
-                    r.plan_type === "premium" 
-                        ? "border-amber-400/50 bg-gradient-to-br from-[#FFD700] via-[#FFF4B0] to-[#B8860B] text-black" 
-                        : r.plan_type === "featured"
-                            ? "border-secondary/20 bg-secondary text-white shadow-secondary/20"
-                            : "border-gray-200 bg-gray-50 text-gray-600"
-                )}>
-                    {r.plan_type}
-                </span>
-            )
+            render: (r) => {
+                const plan = r.plan_type?.toLowerCase();
+                if (plan === "premium") return <Badge variant="premium">Premium</Badge>;
+                if (plan === "featured") return <Badge variant="featured">Featured</Badge>;
+                return <Badge variant="default">Free</Badge>;
+            },
         },
         {
             key: "status",

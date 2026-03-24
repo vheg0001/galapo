@@ -1079,7 +1079,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                                 <option value="pending">⏳ Pending Review</option>
                                 <option value="approved">✅ Approved & Live</option>
                                 <option value="rejected">❌ Rejected / Blocked</option>
-                                <option value="expired">⌛ Expired</option>
+                                <option value="deactivated">🚫 Deactivated (Violation/Check)</option>
                             </select>
                             <LayoutGrid className="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/40 pointer-events-none transition-transform group-hover:rotate-45" />
                         </div>

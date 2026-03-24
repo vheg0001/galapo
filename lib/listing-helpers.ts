@@ -8,10 +8,10 @@ import { generateSlug } from "./utils";
  * Valid coordinates for Olongapo City area
  */
 export const OLONGAPO_BOUNDS = {
-    north: 14.88,
-    south: 14.78,
-    east: 120.32,
-    west: 120.23,
+    north: 14.95,
+    south: 14.70,
+    east: 120.45,
+    west: 120.15,
 };
 
 /**
@@ -82,9 +82,11 @@ export function validateListingData(data: any, categoryFields: any[] = []): { is
         errors.short_description = "Short description is required and must be under 160 characters.";
     }
 
-    const phoneRegex = /^(09|\+639)\d{9}$/;
-    if (!data.phone || !phoneRegex.test(data.phone.replace(/\s/g, ""))) {
-        errors.phone = "Valid PH phone number is required (e.g., 09123456789).";
+    const phoneDigits = (data.phone || "").replace(/\D/g, ""); // strip spaces, parens, dashes
+    // Accept: 09xxxxxxxxx (11d mobile), 0x xxxxxxxx (9-10d landline), +63xxxxxxxxx (12d)
+    const phoneRegex = /^(0\d{8,10}|63\d{9,10})$/;
+    if (!data.phone || !phoneRegex.test(phoneDigits)) {
+        errors.phone = "Valid PH phone or mobile number is required.";
     }
 
     if (!data.category_id) {

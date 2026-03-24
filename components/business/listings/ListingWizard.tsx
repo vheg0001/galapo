@@ -27,6 +27,7 @@ export default function ListingWizard({ listingId }: ListingWizardProps) {
     const {
         currentStep,
         formData,
+        errors,
         isSubmitting,
         isLoading,
         editingListingId,
@@ -115,6 +116,16 @@ export default function ListingWizard({ listingId }: ListingWizardProps) {
             <div className="sticky top-0 z-40 -mx-4 bg-white/80 px-4 py-4 backdrop-blur-md sm:mx-0 sm:rounded-2xl sm:border sm:border-gray-100 sm:px-8 sm:shadow-sm">
                 <StepProgress currentStep={currentStep} onStepClick={setStep} />
             </div>
+
+            {/* Error Display */}
+            {errors.submission && (
+                <div className="mx-auto max-w-3xl animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600">
+                        <AlertTriangle size={18} className="shrink-0" />
+                        <p>{errors.submission}</p>
+                    </div>
+                </div>
+            )}
 
             {/* Step Content */}
             <div className="min-h-[400px]">

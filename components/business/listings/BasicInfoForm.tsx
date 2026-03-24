@@ -55,6 +55,7 @@ export default function BasicInfoForm() {
                     </label>
                     <textarea
                         placeholder="A brief summary of your business (max 160 characters)"
+                        maxLength={160}
                         value={formData.short_description}
                         onChange={(e) => updateFormData({ short_description: e.target.value })}
                         className={`w-full rounded-xl border px-4 py-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 h-24 resize-none ${errors.short_description ? "border-red-300 bg-red-50 focus:border-red-500" : "border-gray-200 focus:border-[#FF6B35]"

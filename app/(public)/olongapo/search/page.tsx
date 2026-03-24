@@ -16,7 +16,7 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
     const params = new URLSearchParams(
         Object.entries(sp)
             .filter(([, v]) => v != null)
-            .map(([k, v]) => [k, Array.isArray(v) ? v[0] : v ?? ""])
+            .map(([k, v]) => [k, typeof v === "string" ? v : Array.isArray(v) ? v.join(",") : ""])
     );
     const q = params.get("q");
     const hasFilters = !!(params.get("barangay") || params.get("badges") || params.get("open_now") || params.get("page"));
@@ -51,7 +51,7 @@ export default async function SearchRoute({ searchParams }: SearchPageProps) {
     const params = new URLSearchParams(
         Object.entries(sp)
             .filter(([, v]) => v != null)
-            .map(([k, v]) => [k, Array.isArray(v) ? v[0] : v ?? ""])
+            .map(([k, v]) => [k, typeof v === "string" ? v : Array.isArray(v) ? v.join(",") : ""])
     );
 
     const filters = parseSearchParams(params);

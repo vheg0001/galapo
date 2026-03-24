@@ -10,7 +10,7 @@ export interface DashboardListing {
     id: string;
     business_name: string;
     slug: string;
-    status: "pending" | "approved" | "rejected" | "claimed_pending";
+    status: "pending" | "approved" | "rejected" | "claimed_pending" | "deactivated";
     is_featured: boolean;
     is_premium: boolean;
     views_this_month: number;

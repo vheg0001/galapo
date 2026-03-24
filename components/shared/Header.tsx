@@ -24,8 +24,10 @@ export default function Header({ categories = [], settings = {} }: HeaderProps) 
     const [scrolled, setScrolled] = useState(false);
     const [headerQuery, setHeaderQuery] = useState("");
 
-    // Hide header search on the search page (it has its own big search bar)
+    // Hide header search on the homepage and search page (they have their own big search bars)
+    const isHomePage = pathname === "/";
     const isSearchPage = pathname.startsWith("/olongapo/search");
+    const shouldHideSearch = isHomePage || isSearchPage;
 
     const handleHomeClick = (e: React.MouseEvent) => {
         if (pathname === "/") {
@@ -74,8 +76,8 @@ export default function Header({ categories = [], settings = {} }: HeaderProps) 
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
-                        {/* Search toggle — hidden on search page */}
-                        {!isSearchPage && (
+                        {/* Search toggle — hidden on search page and homepage */}
+                        {!shouldHideSearch && (
                             <button
                                 onClick={toggleSearch}
                                 className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
@@ -108,8 +110,8 @@ export default function Header({ categories = [], settings = {} }: HeaderProps) 
                     </div>
                 </div>
 
-                {/* Search Bar (expandable) — hidden on search page */}
-                {isSearchOpen && !isSearchPage && (
+                {/* Search Bar (expandable) — hidden on search page and homepage */}
+                {isSearchOpen && !shouldHideSearch && (
                     <div className="border-t border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
                         <div className="mx-auto max-w-7xl">
                             <form

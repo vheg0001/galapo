@@ -10,9 +10,7 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import Sidebar from "@/components/business/Sidebar";
 import TopBar from "@/components/business/TopBar";
 import MobileNav from "@/components/business/MobileNav";
-
-// Placeholder unread count — in production, fetch from Supabase
-const UNREAD_NOTIFICATIONS = 0;
+import { useNotifications } from "@/hooks/useNotifications";
 
 export default function BusinessLayout({
     children,
@@ -20,13 +18,14 @@ export default function BusinessLayout({
     children: React.ReactNode;
 }) {
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+    const { unreadCount } = useNotifications();
 
     return (
         <AuthGuard requireRole="business_owner">
             <div className="flex min-h-screen bg-[#F5F7FA]">
                 {/* Desktop Sidebar */}
                 <div className="hidden h-screen w-64 shrink-0 sticky top-0 lg:block print:hidden">
-                    <Sidebar unreadNotifications={UNREAD_NOTIFICATIONS} />
+                    <Sidebar unreadNotifications={unreadCount} />
                 </div>
 
                 {/* Mobile Sidebar (slide-in overlay) */}
@@ -37,7 +36,7 @@ export default function BusinessLayout({
                             onClick={() => setMobileSidebarOpen(false)}
                         />
                         <div className="fixed left-0 top-0 z-50 h-full w-64 lg:hidden">
-                            <Sidebar unreadNotifications={UNREAD_NOTIFICATIONS} />
+                            <Sidebar unreadNotifications={unreadCount} />
                         </div>
                     </>
                 )}
@@ -48,7 +47,7 @@ export default function BusinessLayout({
                     <div className="print:hidden">
                         <TopBar
                             onMobileMenuToggle={() => setMobileSidebarOpen((v) => !v)}
-                            unreadNotifications={UNREAD_NOTIFICATIONS}
+                            unreadNotifications={unreadCount}
                         />
                     </div>
 
@@ -61,7 +60,7 @@ export default function BusinessLayout({
                 {/* Mobile Bottom Navigation */}
                 <div className="print:hidden">
                     <MobileNav
-                        unreadNotifications={UNREAD_NOTIFICATIONS}
+                        unreadNotifications={unreadCount}
                         onMoreClick={() => setMobileSidebarOpen(true)}
                     />
                 </div>

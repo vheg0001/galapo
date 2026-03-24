@@ -160,16 +160,32 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
     const from = (page - 1) * perPage;
     const to = from + perPage - 1;
 
+    // Badge resolution (slug to ID)
+    let badgeIds: string[] = [];
+    if (filters.badgeSlugs && filters.badgeSlugs.length > 0) {
+        const { data: matchedBadges } = await supabase
+            .from('badges')
+            .select('id')
+            .in('slug', filters.badgeSlugs)
+            .eq('is_active', true);
+        badgeIds = matchedBadges?.map(b => b.id) || [];
+    }
+
+    // Build dynamic select string based on filters
+    let selectString = `
+        id, slug, business_name, short_description, phone, logo_url,
+        is_featured, is_premium, created_at, address, operating_hours, lat, lng,
+        categories!listings_category_id_fkey ( name, slug ),
+        subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
+        barangays ( name, slug ),
+        ${badgeIds.length > 0 
+            ? "listing_badges!inner ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )"
+            : "listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )"}
+    `;
+
     let query = supabase
         .from("listings")
-        .select(`
-            id, slug, business_name, short_description, phone, logo_url,
-            is_featured, is_premium, created_at, address, operating_hours, lat, lng,
-            categories!listings_category_id_fkey ( name, slug ),
-            subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
-            barangays ( name, slug ),
-            listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
-        `, { count: "exact" })
+        .select(selectString, { count: "exact" })
         .eq("is_active", true)
         .in("status", ["approved", "claimed_pending"]);
 
@@ -205,9 +221,16 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
     }
 
     // Badge filter
-    if (filters.badgeSlugs && filters.badgeSlugs.length > 0) {
-        // We use the filter on the joined relation
-        query = query.filter('listing_badges.badges.slug', 'in', `(${filters.badgeSlugs.join(',')})`);
+    if (badgeIds.length > 0) {
+        query = query.in('listing_badges.badge_id', badgeIds)
+            .eq('listing_badges.is_active', true);
+        
+        // Add expiration check for badges if possible via filter
+        // query = query.filter('listing_badges.expires_at', 'gte', new Date().toISOString()); 
+        // Note: Raw filter on joined table with gte might require more care, leaving it simple for now.
+    } else if (filters.badgeSlugs && filters.badgeSlugs.length > 0) {
+        // Slugs were provided but no IDs found - return empty
+        query = query.eq('id', '00000000-0000-0000-0000-000000000000');
     }
 
     // Featured only

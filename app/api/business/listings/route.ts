@@ -124,6 +124,7 @@ export async function POST(req: Request) {
         // 2. Validate data
         const { isValid, errors } = validateListingData(coreData, is_draft ? [] : categoryFields);
         if (!isValid && !is_draft) {
+            console.error("Listing validation failed:", errors);
             return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
         }
 

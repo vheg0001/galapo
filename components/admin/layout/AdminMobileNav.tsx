@@ -11,6 +11,7 @@ interface AdminMobileNavProps {
     pendingListings?: number;
     pendingPayments?: number;
     pendingClaims?: number;
+    pendingNotifications?: number;
     adminName?: string;
     siteName?: string;
     siteTagline?: string;
@@ -22,6 +23,7 @@ export default function AdminMobileNav({
     pendingListings = 0,
     pendingPayments = 0,
     pendingClaims = 0,
+    pendingNotifications = 0,
     adminName = "Admin",
     siteName = "GalaPo",
     siteTagline = "Admin Panel"
@@ -75,6 +77,7 @@ export default function AdminMobileNav({
                         pendingListings={pendingListings}
                         pendingPayments={pendingPayments}
                         pendingClaims={pendingClaims}
+                        pendingNotifications={pendingNotifications}
                         adminName={adminName}
                         siteName={siteName}
                         siteTagline={siteTagline}

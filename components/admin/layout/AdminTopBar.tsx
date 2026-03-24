@@ -11,12 +11,11 @@ interface AdminTopBarProps {
     onMenuToggle: () => void;
     adminName?: string;
     adminEmail?: string;
-    unreadNotifications?: number;
     breadcrumbs?: { label: string; href?: string }[];
 }
 
 export default function AdminTopBar({
-    onMenuToggle, adminName = "Admin", adminEmail = "", unreadNotifications = 0, breadcrumbs = []
+    onMenuToggle, adminName = "Admin", adminEmail = "", breadcrumbs = []
 }: AdminTopBarProps) {
     const router = useRouter();
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -60,17 +59,6 @@ export default function AdminTopBar({
 
             {/* Right: Notification Bell + Profile Dropdown */}
             <div className="flex items-center gap-2">
-                <Link
-                    href="/admin/notifications"
-                    className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                >
-                    <Bell className="h-5 w-5" />
-                    {unreadNotifications > 0 && (
-                        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF6B35] px-1 text-[10px] font-bold text-white">
-                            {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                        </span>
-                    )}
-                </Link>
 
                 {/* Profile Dropdown */}
                 <div className="relative">

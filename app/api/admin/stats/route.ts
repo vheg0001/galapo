@@ -30,6 +30,7 @@ export async function GET() {
             { data: revenueThisMonth },
             { data: revenueLastMonth },
             { data: allTimeRevenue },
+            { count: unreadCount },
         ] = await Promise.all([
             admin.from("listings").select("id", { count: "exact", head: true }).eq("is_active", true).in("status", ["approved", "claimed_pending"]),
             admin.from("listings").select("id", { count: "exact", head: true }).eq("status", "pending"),
@@ -40,6 +41,7 @@ export async function GET() {
             admin.from("payments").select("amount").eq("status", "verified").gte("verified_at", startOfMonth),
             admin.from("payments").select("amount").eq("status", "verified").gte("verified_at", startOfLastMonth).lte("verified_at", endOfLastMonth),
             admin.from("payments").select("amount").eq("status", "verified"),
+            admin.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", session.user.id).eq("is_read", false),
         ]);
 
         const sumAmount = (rows: { amount: number }[] | null) => (rows ?? []).reduce((s, r) => s + Number(r.amount), 0);
@@ -49,6 +51,7 @@ export async function GET() {
             pending_listings: pendingListings ?? 0,
             pending_payments: pendingPayments ?? 0,
             pending_claims: pendingClaims ?? 0,
+            unread_notifications: unreadCount ?? 0,
             active_subscriptions: activeSubscriptions ?? 0,
             total_views_this_month: viewsThisMonth?.length ?? 0,
             revenue: {

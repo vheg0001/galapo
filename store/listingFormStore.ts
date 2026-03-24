@@ -319,8 +319,17 @@ export const useListingFormStore = create<ListingFormState>()((set, get) => ({
         }
 
         if (currentStep === 3) {
+            if (!formData.barangay_id) {
+                newErrors.barangay_id = "Barangay is required.";
+            }
             if (!formData.address.trim()) {
                 newErrors.address = "Address is required.";
+            }
+            if (formData.lat && (formData.lat < 14.70 || formData.lat > 14.95)) {
+                newErrors.lat = "Location must be within Olongapo City.";
+            }
+            if (formData.lng && (formData.lng < 120.15 || formData.lng > 120.45)) {
+                newErrors.lng = "Location must be within Olongapo City.";
             }
         }
 
@@ -334,6 +343,19 @@ export const useListingFormStore = create<ListingFormState>()((set, get) => ({
         const { formData, editingListingId } = get();
 
         try {
+            // Debug: log form state before submission
+            console.log("[submitListing] Submitting with formData:", {
+                category_id: formData.category_id,
+                business_name: formData.business_name,
+                short_description: formData.short_description,
+                short_desc_len: formData.short_description?.length,
+                phone: formData.phone,
+                barangay_id: formData.barangay_id,
+                address: formData.address,
+                lat: formData.lat,
+                lng: formData.lng,
+            });
+
             const payload = buildListingPayload(formData);
             const url = editingListingId
                 ? `/api/business/listings/${editingListingId}`

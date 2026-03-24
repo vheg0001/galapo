@@ -19,12 +19,14 @@ function StatusBadge({ status }: { status: DashboardListing["status"] }) {
         pending: "bg-yellow-50 text-yellow-700 border-yellow-100",
         rejected: "bg-red-50 text-red-700 border-red-100",
         claimed_pending: "bg-blue-50 text-blue-700 border-blue-100",
+        deactivated: "bg-red-50 text-red-700 border-red-100",
     };
     const labels = {
         approved: "Approved",
         pending: "Pending",
         rejected: "Rejected",
         claimed_pending: "Claim Pending",
+        deactivated: "Deactivated",
     };
     return (
         <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${map[status]}`}>
@@ -137,13 +139,23 @@ export default function ListingsTable({ listings, loading = false }: ListingsTab
                                 </span>
                             </td>
                             <td className="px-4 py-3 text-right">
-                                <Link
-                                    href={`/business/listings/${listing.id}/edit`}
-                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50"
-                                >
-                                    <Pencil size={12} />
-                                    Edit
-                                </Link>
+                                    <div className="flex items-center justify-end gap-2">
+                                        <Link
+                                            href={`/business/listings/${listing.id}/edit`}
+                                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50"
+                                        >
+                                            <Pencil size={12} />
+                                            Edit
+                                        </Link>
+                                        {listing.status === 'deactivated' && (
+                                            <Link
+                                                href={`/business/subscription?listing=${listing.id}&reactivate=true`}
+                                                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-slate-800"
+                                            >
+                                                Reactivate
+                                            </Link>
+                                        )}
+                                    </div>
                             </td>
                         </tr>
                     ))}

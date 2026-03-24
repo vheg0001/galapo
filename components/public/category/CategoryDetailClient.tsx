@@ -79,7 +79,7 @@ export default function CategoryDetailClient({
         const sub = subcategories.find((s) => s.slug === activeSub);
         if (sub) activeFilters.push({ key: "sub", label: sub.name, value: activeSub });
     }
-    const activeBarangays = searchParams.getAll("barangay");
+    const activeBarangays = searchParams.get("barangay")?.split(",").filter(Boolean) || [];
     activeBarangays.forEach((b) => {
         const brgy = barangayGroups.flatMap((g) => g.items).find((item) => item.slug === b);
         activeFilters.push({ key: "barangay", label: brgy?.name || b, value: b });
@@ -90,7 +90,7 @@ export default function CategoryDetailClient({
     if (searchParams.get("open_now") === "true") {
         activeFilters.push({ key: "open_now", label: "Open Now", value: "true" });
     }
-    const activeBadges = searchParams.getAll("badges");
+    const activeBadges = searchParams.get("badges")?.split(",").filter(Boolean) || [];
     activeBadges.forEach((b) => {
         activeFilters.push({ key: "badges", label: `Badge: ${b}`, value: b });
     });
@@ -110,9 +110,13 @@ export default function CategoryDetailClient({
         const params = new URLSearchParams(searchParams.toString());
         params.delete("page");
         if (key === "barangay" || key === "badges") {
-            const all = params.getAll(key).filter((v) => v !== value);
-            params.delete(key);
-            all.forEach((v) => params.append(key, v));
+            const current = params.get(key)?.split(",").filter(Boolean) || [];
+            const next = current.filter((v) => v !== value);
+            if (next.length > 0) {
+                params.set(key, next.join(","));
+            } else {
+                params.delete(key);
+            }
         } else {
             params.delete(key);
         }

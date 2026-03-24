@@ -12,6 +12,7 @@ interface AdminStats {
     pending_listings: number;
     pending_payments: number;
     pending_claims: number;
+    unread_notifications: number;
 }
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
@@ -24,7 +25,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     const [stats, setStats] = useState<AdminStats>({
         pending_listings: 0,
         pending_payments: 0,
-        pending_claims: 0
+        pending_claims: 0,
+        unread_notifications: 0
     });
 
     useEffect(() => {
@@ -64,6 +66,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                         pending_listings: data.pending_listings ?? 0,
                         pending_payments: data.pending_payments ?? 0,
                         pending_claims: data.pending_claims ?? 0,
+                        unread_notifications: data.unread_notifications ?? 0,
                     });
                 }
             } catch { /* non-critical */ }
@@ -72,6 +75,36 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         loadProfile();
         loadSettings();
         loadStats();
+
+        // 4. Real-time Subscriptions
+        const supabase = createBrowserSupabaseClient();
+        const channel = supabase
+            .channel("admin-stats-updates")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "listings" },
+                () => loadStats()
+            )
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "payments" },
+                () => loadStats()
+            )
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "notifications" },
+                () => loadStats()
+            )
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "claims" }, // If claims is a separate table
+                () => loadStats()
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     return (
@@ -84,6 +117,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                     pendingListings={stats.pending_listings}
                     pendingPayments={stats.pending_payments}
                     pendingClaims={stats.pending_claims}
+                    pendingNotifications={stats.unread_notifications}
                     adminName={adminName}
                     siteName={siteName}
                     siteTagline={siteTagline}
@@ -98,6 +132,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 pendingListings={stats.pending_listings}
                 pendingPayments={stats.pending_payments}
                 pendingClaims={stats.pending_claims}
+                pendingNotifications={stats.unread_notifications}
                 adminName={adminName}
                 siteName={siteName}
                 siteTagline={siteTagline}

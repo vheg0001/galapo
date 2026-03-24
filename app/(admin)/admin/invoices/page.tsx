@@ -99,6 +99,7 @@ export default function AdminInvoicesPage() {
                                 <TableHead className="font-bold text-slate-900">Issued Date</TableHead>
                                 <TableHead className="font-bold text-slate-900">Business</TableHead>
                                 <TableHead className="font-bold text-slate-900">Owner</TableHead>
+                                <TableHead className="font-bold text-slate-900">Description</TableHead>
                                 <TableHead className="font-bold text-slate-900">Amount</TableHead>
                                 <TableHead className="font-bold text-slate-900">Method</TableHead>
                                 <TableHead className="font-bold text-slate-900">Status</TableHead>
@@ -108,7 +109,7 @@ export default function AdminInvoicesPage() {
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-48 text-center">
+                                    <TableCell colSpan={9} className="h-48 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
                                             <p className="text-sm font-medium text-slate-500">Loading invoices...</p>
@@ -117,7 +118,7 @@ export default function AdminInvoicesPage() {
                                 </TableRow>
                             ) : invoices.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-48 text-center text-slate-500 font-medium">
+                                    <TableCell colSpan={9} className="h-48 text-center text-slate-500 font-medium">
                                         No invoices found.
                                     </TableCell>
                                 </TableRow>
@@ -135,6 +136,9 @@ export default function AdminInvoicesPage() {
                                         </TableCell>
                                         <TableCell className="text-xs font-medium text-slate-500">
                                             {invoice.profiles?.full_name}
+                                        </TableCell>
+                                        <TableCell className="text-xs font-medium text-slate-500 truncate max-w-[200px]" title={invoice.description}>
+                                            {invoice.description}
                                         </TableCell>
                                         <TableCell className="font-black text-slate-900">
                                             {formatPeso(invoice.amount)}

@@ -303,6 +303,45 @@ export async function PUT(
             created_at: new Date().toISOString(),
         });
 
+        // --- NEW: Notification and Fee on Deactivation ---
+        try {
+            if (updatePayload.status === "deactivated" && data?.owner_id) {
+                // Check if we just deactivated it
+                if (Object.keys(updatePayload).includes("status")) {
+                    const business_name = data.business_name || "Your listing";
+                    
+                    // 1. Send Notification
+                    await admin.from("notifications").insert({
+                        user_id: data.owner_id,
+                        type: "listing_deactivated",
+                        title: "Listing Deactivated",
+                        message: `Your listing '${business_name}' has been deactivated. A reactivation fee is required to bring it back online.`,
+                        data: { listing_id: id, business_name }
+                    });
+
+                    // 2. Create Reactivation Fee (if none exists pending)
+                    const { data: existingFee } = await admin
+                        .from("reactivation_fees")
+                        .select("id")
+                        .eq("listing_id", id)
+                        .eq("status", "pending")
+                        .maybeSingle();
+
+                    if (!existingFee) {
+                        await admin.from("reactivation_fees").insert({
+                            listing_id: id,
+                            amount: 500, // Standard reactivation fee
+                            status: "pending"
+                        });
+                    }
+                }
+            }
+        } catch (notifError) {
+            console.error("[admin/listings/PUT] Deactivation notification/fee failed:", notifError);
+            // Don't throw, let the main update succeed
+        }
+        // ------------------------------------------------
+
         return NextResponse.json({ data });
     } catch (error: any) {
         console.error("[admin/listings/[id] PUT]", error);
@@ -430,12 +469,55 @@ export async function DELETE(
         const hard = searchParams.get("hard") === "true" || body.hard === true;
 
         if (!hard) {
+            const { data: listing, error: getError } = await admin
+                .from("listings")
+                .select("owner_id, business_name, status")
+                .eq("id", id)
+                .single();
+
+            if (getError) throw getError;
+
             const { error } = await admin.from("listings").update({
                 is_active: false,
                 status: "deactivated",
                 updated_at: new Date().toISOString()
             }).eq("id", id);
             if (error) throw error;
+
+            // --- NEW: Notification and Fee on Soft Delete ---
+            try {
+                if (listing?.owner_id && listing?.status !== "deactivated") {
+                    const business_name = listing.business_name || "Your listing";
+                    
+                    // 1. Send Notification
+                    await admin.from("notifications").insert({
+                        user_id: listing.owner_id,
+                        type: "listing_deactivated",
+                        title: "Listing Deactivated",
+                        message: `Your listing '${business_name}' has been deactivated and moved to archive. A reactivation fee is required to bring it back online.`,
+                        data: { listing_id: id, business_name }
+                    });
+
+                    // 2. Create Reactivation Fee
+                    const { data: existingFee } = await admin
+                        .from("reactivation_fees")
+                        .select("id")
+                        .eq("listing_id", id)
+                        .eq("status", "pending")
+                        .maybeSingle();
+
+                    if (!existingFee) {
+                        await admin.from("reactivation_fees").insert({
+                            listing_id: id,
+                            amount: 500,
+                            status: "pending"
+                        });
+                    }
+                }
+            } catch (notifError) {
+                console.error("[admin/listings/DELETE] Deactivation notification/fee failed:", notifError);
+            }
+            // -------------------------------------------------
 
             await logAdminActivityIfAvailable(admin, {
                 admin_id: auth.user.id,

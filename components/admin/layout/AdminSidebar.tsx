@@ -20,6 +20,7 @@ interface AdminSidebarProps {
     pendingListings?: number;
     pendingPayments?: number;
     pendingClaims?: number;
+    pendingNotifications?: number;
     adminName?: string;
     siteName?: string;
     siteTagline?: string;
@@ -31,6 +32,7 @@ export default function AdminSidebar({
     pendingListings = 0,
     pendingPayments = 0,
     pendingClaims = 0,
+    pendingNotifications = 0,
     adminName = "Admin",
     siteName = "GalaPo",
     siteTagline = "Admin Panel"
@@ -103,7 +105,7 @@ export default function AdminSidebar({
 
                 <SidebarNavGroup label="System" emoji="⚙️" collapsed={collapsed}>
                     <SidebarNavItem href="/admin/settings" label="Site Settings" icon={Settings} collapsed={collapsed} />
-                    <SidebarNavItem href="/admin/notifications" label="Notifications" icon={Bell} collapsed={collapsed} />
+                    <SidebarNavItem href="/admin/notifications" label="Notifications" icon={Bell} badge={pendingNotifications} collapsed={collapsed} />
                     <SidebarNavItem href="/admin/annual-checks" label="Annual Checks" icon={ClipboardList} collapsed={collapsed} />
                     <SidebarNavItem href="/admin/import-export" label="CSV Import/Export" icon={FileDown} collapsed={collapsed} />
                     <SidebarNavItem href="/admin/analytics" label="Analytics" icon={BarChart2} collapsed={collapsed} />

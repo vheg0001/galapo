@@ -6,6 +6,7 @@ import { Star, MoreHorizontal } from "lucide-react";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 import DataTable, { Column } from "@/components/admin/shared/DataTable";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
+import Badge from "@/components/shared/Badge";
 import ListingsFilterBar, { ListingsFiltersValue } from "@/components/admin/listings/ListingsFilterBar";
 import RejectionModal from "@/components/admin/listings/RejectionModal";
 import ApprovalDialog from "@/components/admin/listings/ApprovalDialog";
@@ -345,17 +346,10 @@ export default function AdminListingsPage() {
             key: "plan",
             header: "Plan",
             render: (r) => {
-                const plan = r.plan === "premium" ? "premium" : r.plan === "featured" ? "featured" : "free";
-                const classes = plan === "premium"
-                    ? "bg-violet-500/10 text-violet-600 border border-violet-500/20"
-                    : plan === "featured"
-                        ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-                        : "bg-muted/50 text-muted-foreground border border-border/50";
-                return (
-                    <span className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${classes}`}>
-                        {plan}
-                    </span>
-                );
+                const plan = r.plan?.toLowerCase();
+                if (plan === "premium") return <Badge variant="premium">Premium</Badge>;
+                if (plan === "featured") return <Badge variant="featured">Featured</Badge>;
+                return <Badge variant="default">Free</Badge>;
             },
         },
         {

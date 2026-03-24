@@ -29,10 +29,20 @@ export default function CurrentPlanCard({ item, onUpgrade, onRenew }: CurrentPla
     const [isCancelling, setIsCancelling] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+    const [searchParams] = useState(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null));
+
     // Sync state with props when they change (e.g. after router.refresh)
     useEffect(() => {
         setSubscription(item.subscription);
-    }, [item.subscription]);
+        
+        // Auto-open reactivation dialog if requested via URL
+        if (searchParams?.get("listing") === item.listing_id && searchParams?.get("reactivate") === "true") {
+            setShowReactivateDialog(true);
+            // Clean up URL to avoid re-opening on refresh
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [item.subscription, item.listing_id, searchParams]);
 
     // Clear success message after 5 seconds
     useEffect(() => {

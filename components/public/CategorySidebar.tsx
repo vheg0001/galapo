@@ -50,8 +50,8 @@ export default function CategorySidebar({
     }, []);
 
     const activeSubcategory = searchParams.get("sub") || "";
-    const activeBarangays = searchParams.getAll("barangay");
-    const activeBadges = searchParams.getAll("badges");
+    const activeBarangays = searchParams.get("barangay")?.split(",").filter(Boolean) || [];
+    const activeBadges = searchParams.get("badges")?.split(",").filter(Boolean) || [];
     const openNow = searchParams.get("open_now") === "true";
     const featuredOnly = searchParams.get("featured") === "true";
 
@@ -84,14 +84,14 @@ export default function CategorySidebar({
         const next = activeBarangays.includes(slug)
             ? activeBarangays.filter((b) => b !== slug)
             : [...activeBarangays, slug];
-        updateParams({ barangay: next.length > 0 ? next : null });
+        updateParams({ barangay: next.length > 0 ? next.join(",") : null });
     };
 
     const handleBadgeToggle = (slug: string) => {
         const next = activeBadges.includes(slug)
             ? activeBadges.filter((b) => b !== slug)
             : [...activeBadges, slug];
-        updateParams({ badges: next.length > 0 ? next : null });
+        updateParams({ badges: next.length > 0 ? next.join(",") : null });
     };
 
     const handleClearAll = () => {

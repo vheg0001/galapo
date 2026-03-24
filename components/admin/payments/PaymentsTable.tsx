@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { PaymentStatus } from "@/lib/types";
 import { formatPeso } from "@/lib/subscription-helpers";
+import { toast } from "react-hot-toast";
 
 type StatusTab = "all" | "pending" | "verified" | "rejected";
 
@@ -42,6 +43,7 @@ export default function PaymentsTable() {
     const [search, setSearch] = useState("");
     const [counts, setCounts] = useState({ pending: 0, verified: 0, rejected: 0, all: 0 });
     const [total, setTotal] = useState(0);
+    const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
     const fetchPayments = useCallback(async () => {
         setLoading(true);
@@ -76,6 +78,28 @@ export default function PaymentsTable() {
         }, 300); // Debounce search
         return () => clearTimeout(timer);
     }, [fetchPayments]);
+
+    const handleQuickVerify = async (id: string) => {
+        if (verifyingId) return;
+        
+        setVerifyingId(id);
+        try {
+            const res = await fetch(`/api/admin/payments/${id}/verify`, {
+                method: "POST"
+            });
+            const data = await res.json();
+
+            if (data.error) throw new Error(data.error);
+
+            toast.success("Payment verified and services activated!");
+            fetchPayments(); // Refresh list
+        } catch (error: any) {
+            console.error("Quick verify failed:", error);
+            toast.error(error.message || "Failed to verify payment");
+        } finally {
+            setVerifyingId(null);
+        }
+    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -271,9 +295,20 @@ export default function PaymentsTable() {
                                                     </>
                                                 )}
                                                  {payment.status === "pending" && (
-                                                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-50 text-emerald-600" title="Quick Verify">
-                                                         <CheckCircle className="h-4 w-4" />
-                                                     </Button>
+                                                      <Button 
+                                                          size="sm" 
+                                                          variant="ghost" 
+                                                          className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-50 text-emerald-600 disabled:opacity-50" 
+                                                          title="Quick Verify"
+                                                          onClick={() => handleQuickVerify(payment.id)}
+                                                          disabled={verifyingId === payment.id}
+                                                      >
+                                                          {verifyingId === payment.id ? (
+                                                              <Loader2 className="h-4 w-4 animate-spin" />
+                                                          ) : (
+                                                              <CheckCircle className="h-4 w-4" />
+                                                          )}
+                                                      </Button>
                                                  )}
                                             </div>
                                         </TableCell>

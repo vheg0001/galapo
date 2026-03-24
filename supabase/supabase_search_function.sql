@@ -3,14 +3,24 @@
 -- =========================================================================
 -- This function handles comprehensive search logic for listings.
 -- Features: Full-text search (pg_trgm relevance ranking), filtering
--- (category, barangay, city, open now, featured), distance sorting.
+-- (category, barangay, city, badges, open now, featured), distance sorting.
 -- =========================================================================
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
--- Assuming earthdistance is already enabled or handled manually using Haversine
 
--- Drop existing if exists
-DROP FUNCTION IF EXISTS search_listings(text,text,text,text[],text,boolean,boolean,double precision,double precision,double precision,text,integer,integer);
+-- Drop ALL existing versions of search_listings to ensure a clean state
+-- We drop by name because we want to remove all overloads
+DO $$ 
+DECLARE 
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT proname, oidvectortypes(proargtypes) as args 
+              FROM pg_proc 
+              WHERE proname = 'search_listings') 
+    LOOP
+        EXECUTE 'DROP FUNCTION public.' || quote_ident(r.proname) || '(' || r.args || ')';
+    END LOOP;
+END $$;
 
 CREATE OR REPLACE FUNCTION search_listings(
     search_query TEXT DEFAULT NULL,
@@ -18,6 +28,7 @@ CREATE OR REPLACE FUNCTION search_listings(
     subcategory_slug TEXT DEFAULT NULL,
     barangay_slugs TEXT[] DEFAULT NULL,
     city_slug TEXT DEFAULT 'olongapo',
+    badge_slugs TEXT[] DEFAULT NULL,
     is_open_now BOOLEAN DEFAULT FALSE,
     featured_only BOOLEAN DEFAULT FALSE,
     user_lat DOUBLE PRECISION DEFAULT NULL,
@@ -45,8 +56,6 @@ DECLARE
     v_result JSON;
 BEGIN
     -- 1. Setup Time for "Open Now" 
-    -- We assume the server calls this function with current day/time if we don't calculate it here
-    -- But we can calculate it dynamically directly in PG using Asia/Manila 
     IF is_open_now THEN
         v_current_day := LOWER(to_char(timezone('Asia/Manila', now()), 'Day'));
         v_current_time := to_char(timezone('Asia/Manila', now()), 'HH24:MI');
@@ -55,7 +64,6 @@ BEGIN
     -- 2. Resolve Slugs to IDs
     IF category_slug IS NOT NULL THEN
         SELECT id INTO v_category_id FROM categories WHERE slug = category_slug AND is_active = true;
-        -- Get children in case we search by parent category
         SELECT array_agg(id) INTO v_child_category_ids FROM categories WHERE parent_id = v_category_id;
     END IF;
 
@@ -67,8 +75,7 @@ BEGIN
         SELECT array_agg(id) INTO v_barangay_ids FROM barangays WHERE slug = ANY(barangay_slugs) AND is_active = true;
     END IF;
 
-    -- 3. Fetch Sponsored Placements if sorting by featured/relevance and category is specified
-    -- (This logic mimics the current API)
+    -- 3. Fetch Sponsored Placements
     IF v_category_id IS NOT NULL THEN
         SELECT COALESCE(jsonb_agg(sponsored_listings), '[]'::jsonb)
         INTO v_sponsored_results
@@ -120,7 +127,6 @@ BEGIN
             b.name AS barangay_name,
             COALESCE((SELECT image_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY is_primary DESC, sort_order ASC NULLS LAST LIMIT 1), l.logo_url) AS primary_image,
             
-            -- Full-text search relevance (pg_trgm)
             CASE 
                 WHEN search_query IS NOT NULL THEN
                     (
@@ -131,7 +137,6 @@ BEGIN
                 ELSE 0 
             END AS relevance_score,
 
-            -- Distance calculation (Haversine Formula) in km
             CASE 
                 WHEN user_lat IS NOT NULL AND user_lng IS NOT NULL AND l.lat IS NOT NULL AND l.lng IS NOT NULL THEN
                     (6371 * acos(
@@ -149,34 +154,30 @@ BEGIN
         
         WHERE l.status = 'approved'
           AND l.is_active = true
-          
-          -- Location Filter (City defaults to olongapo but currently isn't strictly enforced in db structure; skipping for now unless explicitly modelled)
-          
-          -- Category Filter (Matches explicit slug or search query matching category name)
           AND (v_category_id IS NULL OR (l.category_id = v_category_id OR l.subcategory_id = ANY(COALESCE(v_child_category_ids, '{}'))))
-          
-          -- Subcategory Filter
           AND (v_subcategory_id IS NULL OR l.subcategory_id = v_subcategory_id)
-          
-          -- Barangay Filter
           AND (array_length(v_barangay_ids, 1) IS NULL OR l.barangay_id = ANY(v_barangay_ids))
-          
-          -- Featured Only Filter
           AND (NOT featured_only OR l.is_featured = true OR l.is_premium = true)
           
-          -- Search Filter (Strictly restricts by query if provided)
+          -- Badge Filter
+          AND (badge_slugs IS NULL OR array_length(badge_slugs, 1) = 0 OR EXISTS (
+                SELECT 1 FROM listing_badges lb
+                JOIN badges b2 ON lb.badge_id = b2.id
+                WHERE lb.listing_id = l.id
+                  AND b2.slug = ANY(badge_slugs)
+                  AND lb.is_active = true
+                  AND (lb.expires_at IS NULL OR lb.expires_at > now())
+                  AND b2.is_active = true
+          ))
+
+          -- Search Filter
           AND (search_query IS NULL OR 
                l.business_name ILIKE '%' || search_query || '%' OR
-               -- Match category or subcategory name (e.g. 'seafood' subcategory)
                c.name ILIKE '%' || search_query || '%' OR
                sc.name ILIKE '%' || search_query || '%' OR
-               -- Exact tag match (case insensitive check for array element)
                EXISTS (SELECT 1 FROM unnest(l.tags) AS t WHERE t ILIKE search_query) OR
-               -- Fuzzy matches with high threshold
                similarity(l.business_name, search_query) > 0.4
               )
-              
-          -- Open Now Filter
           AND (NOT is_open_now OR (
                 l.operating_hours IS NOT NULL 
                 AND l.operating_hours->trim(v_current_day)->>'is_closed' = 'false'
@@ -188,15 +189,13 @@ BEGIN
         SELECT * FROM FilteredListings
         WHERE (radius_km IS NULL OR distance_km IS NULL OR distance_km <= radius_km)
         ORDER BY 
-            -- Dynamic Sorting
+            is_premium DESC,
+            is_featured DESC,
             CASE WHEN sort_by = 'distance' AND distance_km IS NOT NULL THEN distance_km END ASC,
             CASE WHEN search_query IS NOT NULL THEN relevance_score END DESC,
             CASE WHEN sort_by = 'newest' THEN created_at END DESC,
             CASE WHEN sort_by = 'name_asc' THEN business_name END ASC,
             CASE WHEN sort_by = 'name_desc' THEN business_name END DESC,
-            -- Default / Featured sorting
-            is_premium DESC,
-            is_featured DESC,
             updated_at DESC
     ),
     CountedListings AS (
