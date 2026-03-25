@@ -58,7 +58,7 @@ export function SubscriptionTimeline({
     if (subscription.status === "active" && subscription.auto_renew) {
          events.push({
             id: "renew",
-            title: "Renewal Reminder Active",
+            title: "Scheduled Renewal",
             description: `A reminder will be sent before ${new Date(subscription.end_date).toLocaleDateString()} to facilitate manual renewal.`,
             date: subscription.end_date,
             icon: <RefreshCw className="h-4 w-4" />,

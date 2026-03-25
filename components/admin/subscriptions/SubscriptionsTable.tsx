@@ -52,7 +52,7 @@ export function SubscriptionsTable() {
             const res = await fetch(`/api/admin/subscriptions?${params.toString()}`);
             const json = await res.json();
             setRows(json.data || []);
-            setTotal(json.total || 0);
+            setTotal(json.total || json.count || 0);
         } catch (err) {
             console.error("Failed to load subscriptions", err);
         } finally {

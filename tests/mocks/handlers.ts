@@ -111,13 +111,18 @@ export const handlers = [
     }),
 
     // Admin Subscriptions
-    http.get(`${APP_URL}/api/admin/subscriptions`, () => {
+    http.get(/.*\/api\/admin\/subscriptions.*/, () => {
         const subscriptions = Array.from({ length: 5 }).map(() => ({
-            ...factories.createMockSubscription(),
+            id: `sub-${Math.random()}`,
             business_name: "Mock Business",
             owner_name: "Mock Owner",
             owner_email: "owner@mock.com",
-            payment_status: "verified"
+            plan_type: "premium",
+            status: "active",
+            end_date: new Date(Date.now() + 864000000).toISOString(),
+            amount: 599,
+            payment_status: "verified",
+            created_at: new Date().toISOString()
         }));
         return HttpResponse.json({ data: subscriptions, count: 5 });
     }),
@@ -155,7 +160,33 @@ export const handlers = [
     }),
 
     // Admin Top Search
-    http.get(`${APP_URL}/api/admin/top-search`, () => {
+    http.get(/.*\/api\/admin\/top-search.*/, ({ request }) => {
+        const url = new URL(request.url);
+        const format = url.searchParams.get("format");
+
+        if (format === "grouped") {
+            return HttpResponse.json({
+                success: true,
+                data: [
+                    {
+                        category: { id: "cat-1", name: "Restaurants", slug: "restaurants", icon: "Utensils" },
+                        slots: [
+                            { 
+                                is_available: false, 
+                                position: 1, 
+                                placement: {
+                                    ...factories.createMockTopSearchPlacement(),
+                                    listings: { business_name: "Starbucks" }
+                                }
+                            },
+                            { is_available: true, position: 2, placement: null, listing: null },
+                            { is_available: true, position: 3, placement: null, listing: null }
+                        ]
+                    }
+                ]
+            });
+        }
+
         return HttpResponse.json({
             data: Array.from({ length: 3 }).map(() => factories.createMockTopSearchPlacement()),
             active_count: 3,

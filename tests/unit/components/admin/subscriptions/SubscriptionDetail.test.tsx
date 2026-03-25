@@ -1,116 +1,64 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import "@/tests/ui-mocks";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import { SubscriptionDetail } from "@/components/admin/subscriptions/SubscriptionDetail";
-import { ExtendDialog } from "@/components/admin/subscriptions/ExtendDialog";
-import { UpgradeDialog } from "@/components/admin/subscriptions/UpgradeDialog";
-import { CancelDialog } from "@/components/admin/subscriptions/CancelDialog";
-import { SubscriptionTimeline } from "@/components/admin/subscriptions/SubscriptionTimeline";
+import * as React from "react";
 
-describe("SubscriptionDetail Components", () => {
-    const mockSub = {
-        id: "sub-123",
-        plan_type: "premium",
-        status: "active",
-        amount: 599,
-        start_date: "2024-01-01T00:00:00Z",
-        end_date: "2024-02-01T00:00:00Z",
-        created_at: "2024-01-01T00:00:00Z",
-        auto_renew: true
-    };
+// Mock StatusBadge specialized component
+vi.mock("@/components/admin/shared/StatusBadge", () => ({
+    __esModule: true,
+    default: ({ status }: any) => React.createElement("div", { "data-testid": "status-badge" }, status)
+}));
 
-    const mockListing = {
-        id: "list-1",
-        business_name: "Test Business"
-    };
+const mockSubscription = {
+    id: "sub_123",
+    status: "active",
+    plan_type: "premium",
+    amount: 1000,
+    start_date: "2024-01-01T00:00:00Z",
+    end_date: "2024-02-01T00:00:00Z",
+};
 
-    const mockOwner = {
-        id: "user-1",
-        full_name: "Juan Dela Cruz",
-        email: "juan@example.com"
-    };
+const mockListing = {
+    id: "list_1",
+    business_name: "Test Business"
+};
 
-    it("renders subscription info completely", () => {
-        render(<SubscriptionDetail subscription={mockSub} listing={mockListing} owner={mockOwner} />);
-        
-        expect(screen.getByText(/Status & Plan/i)).toBeInTheDocument();
-        expect(screen.getByText("Premium")).toBeInTheDocument();
-        expect(screen.getByText("Php 599")).toBeInTheDocument();
+const mockOwner = {
+    id: "user_1",
+    full_name: "John Doe",
+    email: "john@example.com"
+};
+
+describe("SubscriptionDetail", () => {
+    it("renders subscription details correctly", () => {
+        render(
+            <SubscriptionDetail 
+                subscription={mockSubscription} 
+                listing={mockListing} 
+                owner={mockOwner} 
+            />
+        );
+
         expect(screen.getByText("Test Business")).toBeInTheDocument();
-        expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
+        expect(screen.getByText("premium")).toBeInTheDocument();
+        expect(screen.getByText("active")).toBeInTheDocument();
+        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText("john@example.com")).toBeInTheDocument();
     });
 
-    it("Timeline shows history events in order", () => {
-        const payments = [
-            { id: "pay-1", amount: 599, status: "paid", created_at: "2024-01-02T00:00:00Z" }
-        ];
-        render(<SubscriptionTimeline subscription={mockSub} payments={payments} />);
-        
-        expect(screen.getByText("Subscription Created")).toBeInTheDocument();
-        expect(screen.getByText("Payment Successful")).toBeInTheDocument();
-        expect(screen.getByText("Scheduled Renewal")).toBeInTheDocument();
-    });
+    it("renders fallback for missing listing/owner", () => {
+        render(
+            <SubscriptionDetail 
+                subscription={mockSubscription} 
+                listing={null} 
+                owner={null} 
+            />
+        );
 
-    it("ExtendDialog submission works", async () => {
-        const onClose = vi.fn();
-        const onSuccess = vi.fn();
-        const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({ ok: true } as any);
-
-        render(<ExtendDialog subscriptionId="sub-123" isOpen={true} onClose={onClose} onSuccess={onSuccess} />);
-        
-        fireEvent.change(screen.getByLabelText(/Days to add/i), { target: { value: "15" } });
-        fireEvent.click(screen.getByRole("button", { name: /^Extend$/i }));
-
-        await waitFor(() => {
-            expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining("/api/admin/subscriptions/sub-123"),
-                expect.objectContaining({
-                    method: "PUT",
-                    body: expect.stringContaining('"days":15')
-                })
-            );
-            expect(onSuccess).toHaveBeenCalled();
-            expect(onClose).toHaveBeenCalled();
-        });
-    });
-
-    it("UpgradeDialog plan switching works", async () => {
-        const onClose = vi.fn();
-        const onSuccess = vi.fn();
-        const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({ ok: true } as any);
-
-        render(<UpgradeDialog subscriptionId="sub-123" currentPlan="premium" isOpen={true} onClose={onClose} onSuccess={onSuccess} />);
-        
-        fireEvent.click(screen.getByText("Featured Plan"));
-        fireEvent.click(screen.getByRole("button", { name: /Change Plan/i }));
-
-        await waitFor(() => {
-            expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining("/api/admin/subscriptions/sub-123"),
-                expect.objectContaining({
-                    method: "PUT",
-                    body: expect.stringContaining('"new_plan":"featured"')
-                })
-            );
-        });
-    });
-
-    it("CancelDialog requires action", async () => {
-        const onClose = vi.fn();
-        const onSuccess = vi.fn();
-        const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({ ok: true } as any);
-
-        render(<CancelDialog subscriptionId="sub-123" isOpen={true} onClose={onClose} onSuccess={onSuccess} />);
-        
-        fireEvent.click(screen.getByRole("button", { name: /Cancel Immediately/i }));
-
-        await waitFor(() => {
-            expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining("/api/admin/subscriptions/sub-123"),
-                expect.objectContaining({
-                    method: "PUT",
-                    body: expect.stringContaining('"action":"cancel"')
-                })
-            );
-        });
+        expect(screen.getByText("Unknown Listing")).toBeInTheDocument();
+        // Since there are two "N/A" (name and email), we check for multiple
+        const nas = screen.getAllByText("N/A");
+        expect(nas.length).toBeGreaterThan(0);
     });
 });

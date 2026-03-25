@@ -23,59 +23,51 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     useEffect(() => {
         let isMounted = true;
         let subscription: any = null;
-        const supabase = createBrowserSupabaseClient();
 
         async function setupAuth() {
-            // Use a stable reference to avoid re-running if the store re-initializes
-            const hasInitialized = useAuthStore.getState().user !== null || useAuthStore.getState().profile !== null;
-            
-            // 1. Initialize auth state first
-            await initialize();
+            try {
+                const supabase = createBrowserSupabaseClient();
+                console.log("AuthProvider: Initializing...");
+                await initialize();
+                
+                if (!isMounted) return;
 
-            if (!isMounted) return;
-
-            // 2. Only after initialization is complete, listen for subsequent changes
-            const { data } = supabase.auth.onAuthStateChange(
-                async (event: AuthChangeEvent, session: Session | null) => {
-                    // Ignore INITIAL_SESSION here since initialize() already handled it
-                    if (event === "INITIAL_SESSION") {
-                        return;
-                    }
-
-                    try {
+                const { data } = supabase.auth.onAuthStateChange(
+                    async (event, session) => {
+                        if (event === "INITIAL_SESSION") return;
+                        if (!isMounted) return;
+                        
+                        console.log("AuthProvider: Auth state changed:", event);
                         const { setUser, setSession, loadProfile } = useAuthStore.getState();
 
                         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
                             if (session?.user) {
                                 setUser(session.user);
                                 setSession(session);
-                                await loadProfile(session.user.id);
+                                loadProfile(session.user.id); // Background
                             }
                         } else if (event === "SIGNED_OUT") {
                             setUser(null);
                             setSession(null);
                             useAuthStore.setState({ profile: null, isAuthenticated: false });
                         }
-                    } catch (err) {
-                        console.error("AuthProvider: Auth change error:", err);
-                    } finally {
-                        setLoading(false);
                     }
-                }
-            );
-
-            subscription = data.subscription;
+                );
+                subscription = data.subscription;
+            } catch (err) {
+                console.error("AuthProvider critical mount error:", err);
+            } finally {
+                setLoading(false);
+            }
         }
 
         setupAuth();
 
         return () => {
             isMounted = false;
-            if (subscription) {
-                subscription.unsubscribe();
-            }
+            if (subscription) subscription.unsubscribe();
         };
-    }, [initialize, setLoading]);
+    }, []); // Run ONLY once on mount
 
     return <>{children}</>;
 }

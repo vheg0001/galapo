@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { requireAdmin } from "@/lib/api-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        await requireAdmin();
+        const auth = await requireAdmin(req);
+        if ("error" in auth) return auth.error;
         const { id } = await params;
         const supabase = await createServerSupabaseClient();
 
@@ -29,7 +30,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        await requireAdmin();
+        const auth = await requireAdmin(req);
+        if ("error" in auth) return auth.error;
         const { id } = await params;
         const body = await req.json();
         const { action, days, reason, effective } = body;
@@ -44,13 +46,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             
             const { error } = await supabase
                 .from("top_search_placements")
-                .update({ end_date: newEndDate.toISOString(), updated_at: new Date().toISOString() })
+                .update({ end_date: newEndDate.toISOString() })
                 .eq("id", id);
             
             if (error) throw error;
         } else if (action === "remove") {
             if (effective === "immediate") {
-                await supabase.from("top_search_placements").update({ is_active: false, updated_at: new Date().toISOString() }).eq("id", id);
+                await supabase.from("top_search_placements").update({ is_active: false }).eq("id", id);
                 // Also remove sponsored badge? Requirement 6.89 says "remove badge"
                 const { data: listing } = await supabase.from("listings").select("badges").eq("id", current.listing_id).single();
                 if (listing) {
@@ -72,7 +74,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        await requireAdmin();
+        const auth = await requireAdmin(req);
+        if ("error" in auth) return auth.error;
         const { id } = await params;
         const supabase = await createServerSupabaseClient();
 

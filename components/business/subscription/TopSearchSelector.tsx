@@ -33,16 +33,16 @@ export default function TopSearchSelector({
             // Load only primary and subcategory options for this listing
             async function loadTargetCategories() {
                 try {
-                    const ids = [categoryId, subcategoryId].filter(Boolean) as string[];
-                    // In a real app, we'd fetch these categories to get their full objects
-                    // For now, we'll fetch them from a generic categories API if available
-                    const response = await fetch(`/api/categories?ids=${ids.join(",")}`);
+                    // Fetch the main category and all its children
+                    const response = await fetch(`/api/categories?parent_id=${categoryId}&include_parent=true`);
                     const payload = await response.json();
                     if (response.ok) {
-                        setCategories(payload.data);
-                        // Auto-select primary category
-                        const primary = payload.data.find((c: any) => c.id === categoryId);
-                        if (primary) onSelectCategory(primary);
+                        setCategories(payload.data || []);
+                        
+                        // Auto-select based on existing subcategoryId if present, else fallback to main category
+                        const targetId = subcategoryId || categoryId;
+                        const target = (payload.data || []).find((c: any) => c.id === targetId);
+                        if (target) onSelectCategory(target);
                     }
                 } catch (error) {
                     console.error("Failed to load categories:", error);

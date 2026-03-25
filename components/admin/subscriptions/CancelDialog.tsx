@@ -56,8 +56,9 @@ export function CancelDialog({
                 </DialogHeader>
                 <form onSubmit={handleCancel} className="space-y-4 mt-2">
                     <div className="space-y-2">
-                        <Label>Cancellation Reason (Optional)</Label>
+                        <Label htmlFor="cancel-reason">Cancellation Reason (Optional)</Label>
                         <Textarea 
+                            id="cancel-reason"
                             placeholder="Admin notes on why this was cancelled..." 
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}

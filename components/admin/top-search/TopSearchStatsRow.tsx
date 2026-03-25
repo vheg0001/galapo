@@ -1,9 +1,9 @@
 import { Layers, Crosshair, DollarSign, CalendarClock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createAdminSupabaseClient } from "@/lib/supabase";
 
 async function getTopSearchStats() {
-    const supabase = await createServerSupabaseClient();
+    const supabase = createAdminSupabaseClient();
     
     const now = new Date().toISOString();
     const nextWeek = new Date();
@@ -19,7 +19,6 @@ async function getTopSearchStats() {
             .from("top_search_placements")
             .select("*", { count: "exact", head: true })
             .eq("is_active", true)
-            .lte("start_date", now)
             .gte("end_date", now),
         supabase
             .from("top_search_placements")

@@ -84,7 +84,7 @@ export default function BlogCard({
                     <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">{excerpt}</p>
                 )}
 
-                <div className="mt-5 flex items-center justify-between gap-4 text-xs text-muted-foreground">
+                <div className="mt-auto pt-5 flex items-center justify-between gap-4 text-xs text-muted-foreground">
                     <div className="flex min-w-0 items-center gap-3">
                         <div className="relative h-9 w-9 overflow-hidden rounded-full bg-muted">
                             {authorAvatarUrl ? (
@@ -110,7 +110,7 @@ export default function BlogCard({
                     </div>
                 </div>
 
-                <div className="mt-auto pt-4">
+                <div className="pt-4">
                     <Link href={href} className="text-sm font-semibold text-secondary transition-colors hover:underline">
                         Read More →
                     </Link>

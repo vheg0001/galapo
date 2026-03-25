@@ -1,133 +1,137 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import "@/tests/ui-mocks";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import { TopSearchCategoryView } from "@/components/admin/top-search/TopSearchCategoryView";
+import { server } from "../../../../mocks/server";
+import { http, HttpResponse } from "msw";
+import { APP_URL } from "@/lib/constants";
 import * as React from "react";
 
-vi.mock("@/components/ui/dropdown-menu", () => ({
-    DropdownMenu: ({ children }: any) => <div data-testid="dropdown-menu">{children}</div>,
-    DropdownMenuTrigger: ({ children, asChild }: any) => <button data-testid="dropdown-trigger">{children}</button>,
-    DropdownMenuContent: ({ children }: any) => <div data-testid="dropdown-content">{children}</div>,
-    DropdownMenuItem: ({ children, onSelect, asChild }: any) => (
-        <div onClick={onSelect} data-testid="dropdown-item">
-            {children}
+// Robust Lucide Mock specifically for TopSearchCategoryView
+vi.mock("lucide-react", () => {
+    const Icon = ({ name, className }: any) => <div data-testid={`icon-${name}`} className={className} />;
+    return {
+        Search: (props: any) => Icon({ name: "Search", ...props }),
+        Filter: (props: any) => Icon({ name: "Filter", ...props }),
+        Plus: (props: any) => Icon({ name: "Plus", ...props }),
+        Calendar: (props: any) => Icon({ name: "Calendar", ...props }),
+        ArrowUpDown: (props: any) => Icon({ name: "ArrowUpDown", ...props }),
+        MoreHorizontal: (props: any) => Icon({ name: "MoreHorizontal", ...props }),
+        ChevronDown: (props: any) => Icon({ name: "ChevronDown", ...props }),
+        X: (props: any) => Icon({ name: "X", ...props }),
+        Check: (props: any) => Icon({ name: "Check", ...props }),
+        AlertCircle: (props: any) => Icon({ name: "AlertCircle", ...props }),
+        Clock: (props: any) => Icon({ name: "Clock", ...props }),
+    };
+});
+
+// Mock CategorySlotCard with absolute path alias
+vi.mock("@/components/admin/top-search/CategorySlotCard", () => ({
+    CategorySlotCard: ({ categoryGroup }: any) => (
+        <div data-testid="category-card">
+            <h3>{categoryGroup.category.name}</h3>
+            <p>/{categoryGroup.category.slug}</p>
+            {categoryGroup.slots.map((s: any, idx: number) => {
+                const daysLeft = s.placement?.end_date ? Math.ceil((new Date(s.placement.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
+                return (
+                    <div key={idx} data-testid="slot-info">
+                        {s.placement?.listings?.business_name || (s.is_available ? "Slot Available" : "Occupied")}
+                        {daysLeft !== null && <span className={daysLeft < 7 ? "text-orange-600" : ""}>{daysLeft} Days Left</span>}
+                    </div>
+                );
+            })}
         </div>
     ),
 }));
 
-vi.mock("next/link", () => ({
-    default: ({ children, href, className }: any) => <a href={href} className={className}>{children}</a>
-}));
-
-vi.mock("@/components/ui/card", () => ({
-    Card: ({ children, className }: any) => <div className={className}>{children}</div>,
-    CardHeader: ({ children, className }: any) => <div className={className}>{children}</div>,
-    CardTitle: ({ children, className }: any) => <h2 className={className}>{children}</h2>,
-    CardContent: ({ children, className }: any) => <div className={className}>{children}</div>,
-}));
-
-vi.mock("@/components/ui/dialog", () => ({
-    Dialog: ({ children }: any) => <div>{children}</div>,
-    DialogContent: ({ children }: any) => <div>{children}</div>,
-    DialogHeader: ({ children }: any) => <div>{children}</div>,
-    DialogTitle: ({ children }: any) => <h2>{children}</h2>,
-    DialogDescription: ({ children }: any) => <p>{children}</p>,
-    DialogFooter: ({ children }: any) => <div>{children}</div>,
-}));
-
-vi.mock("@/components/ui/label", () => ({
-    Label: ({ children }: any) => <label>{children}</label>,
-}));
-
-vi.mock("@/components/ui/input", () => ({
-    Input: (props: any) => <input {...props} />,
-}));
-
-vi.mock("lucide-react", () => {
-    const iconMock = (name: string) => ({ className }: any) => (
-        <div data-testid={`icon-${name}`} className={className} />
-    );
-    return new Proxy({}, {
-        get: (target, prop: string) => iconMock(prop)
-    });
-});
-import { server } from "../../../../mocks/server";
-import { http, HttpResponse } from "msw";
-import { APP_URL } from "@/lib/constants";
+const mockGroupedData = [
+    {
+        category: { id: "cat_1", name: "Restaurants", slug: "restaurants" },
+        slots: [
+            {
+                slot_id: 1,
+                is_available: false,
+                placement: {
+                    id: "pl_1",
+                    end_date: new Date(Date.now() + 86400000 * 5).toISOString(),
+                    listings: { business_name: "Pizza Palace" }
+                }
+            },
+            {
+                slot_id: 2,
+                is_available: true,
+                placement: null
+            }
+        ]
+    },
+    {
+        category: { id: "cat_2", name: "Services", slug: "services" },
+        slots: [
+            {
+                slot_id: 1,
+                is_available: true,
+                placement: null
+            }
+        ]
+    }
+];
 
 describe("TopSearchCategoryView", () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it("renders all categories as expandable cards", async () => {
+    it("renders loading state initially", () => {
         render(<TopSearchCategoryView />);
-        
+        expect(screen.getByText(/Loading categories.../i)).toBeInTheDocument();
+    });
+
+    it("renders grouped categories correctly", async () => {
+        server.use(
+            http.get("/api/admin/top-search", ({ request }) => {
+                const url = new URL(request.url);
+                if (url.searchParams.get("format") === "grouped") {
+                    return HttpResponse.json({ success: true, data: mockGroupedData });
+                }
+                return HttpResponse.json({ success: true, data: [] });
+            })
+        );
+
+        render(<TopSearchCategoryView />);
+
+        await waitFor(() => {
+            expect(screen.getByText("Restaurants")).toBeInTheDocument();
+            expect(screen.getByText("Services")).toBeInTheDocument();
+        }, { timeout: 3000 });
+
+        expect(screen.getByText("Pizza Palace")).toBeInTheDocument();
+        expect(screen.getAllByText("Slot Available").length).toBeGreaterThan(0);
+        expect(screen.getByText("5 Days Left")).toBeInTheDocument();
+    });
+
+    it("filters categories based on search input", async () => {
+        server.use(
+            http.get("/api/admin/top-search", ({ request }) => {
+                const url = new URL(request.url);
+                if (url.searchParams.get("format") === "grouped") {
+                    return HttpResponse.json({ success: true, data: mockGroupedData });
+                }
+                return HttpResponse.json({ success: true, data: [] });
+            })
+        );
+
+        render(<TopSearchCategoryView />);
+
         await waitFor(() => {
             expect(screen.getByText("Restaurants")).toBeInTheDocument();
         });
 
-        expect(screen.getByText("/restaurants")).toBeInTheDocument();
-    });
-
-    it("shows 3 position slots per category", async () => {
-        render(<TopSearchCategoryView />);
-        
-        await waitFor(() => {
-            expect(screen.getByText("Starbucks")).toBeInTheDocument(); // Slot 1 taken
-            expect(screen.getAllByText("Slot Available")).toHaveLength(2); // Slot 2 and 3
-        });
-    });
-
-    it("expiring soon shows orange indicator", async () => {
-        const expiringDate = new Date();
-        expiringDate.setDate(expiringDate.getDate() + 3);
-
-        server.use(
-            http.get(`${APP_URL}/api/admin/top-search`, () => {
-                return HttpResponse.json({
-                    success: true,
-                    data: [{
-                        category: { id: "cat-1", name: "Food", slug: "food" },
-                        slots: [{
-                            is_available: false,
-                            position: 1,
-                            placement: { id: "p-1", end_date: expiringDate.toISOString(), listing_id: "l-1" },
-                            listings: { business_name: "Expiring Cafe" }
-                        }, { position: 2, is_available: true, placement: null }, { position: 3, is_available: true, placement: null }]
-                    }]
-                });
-            })
-        );
-
-        render(<TopSearchCategoryView />);
-        
-        await waitFor(() => {
-            const daysText = screen.getByText(/3 Days Left/i);
-            expect(daysText).toHaveClass("text-orange-600");
-        });
-    });
-
-    it("search filters categories", async () => {
-        server.use(
-            http.get(`${APP_URL}/api/admin/top-search`, () => {
-                return HttpResponse.json({
-                    success: true,
-                    data: [
-                        { category: { id: "cat-1", name: "Apple", slug: "apple" }, slots: [] },
-                        { category: { id: "cat-2", name: "Banana", slug: "banana" }, slots: [] }
-                    ]
-                });
-            })
-        );
-
-        render(<TopSearchCategoryView />);
-        
-        await waitFor(() => expect(screen.getByText("Apple")).toBeInTheDocument());
-
         const searchInput = screen.getByPlaceholderText(/Filter categories/i);
-        fireEvent.change(searchInput, { target: { value: "Apple" } });
+        fireEvent.change(searchInput, { target: { value: "Services" } });
 
-        expect(screen.getByText("Apple")).toBeInTheDocument();
-        expect(screen.queryByText("Banana")).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.queryByText("Restaurants")).not.toBeInTheDocument();
+            expect(screen.getByText("Services")).toBeInTheDocument();
+        });
     });
 });

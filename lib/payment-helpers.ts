@@ -122,16 +122,27 @@ export async function activateTopSearch(
             updated_at: now
         })
         .eq("payment_id", paymentId);
+
     if (tsError) throw tsError;
 
-    // Assign "Sponsored" badge
-    await supabase
-        .from("listing_badges")
-        .insert({
-            listing_id: listingId,
-            badge_id: "sponsored",
-            assigned_at: now
-        });
+    // Assign "Sponsored" badge to the listing array
+    try {
+        const { data: listing } = await supabase
+            .from("listings")
+            .select("badges")
+            .eq("id", listingId)
+            .single();
+        
+        const badges = Array.isArray(listing?.badges) ? listing.badges : [];
+        if (!badges.includes("sponsored")) {
+            await supabase
+                .from("listings")
+                .update({ badges: [...badges, "sponsored"] })
+                .eq("id", listingId);
+        }
+    } catch (badgeErr) {
+        // Don't throw, we still want the placement to be active
+    }
 
     return { startDate, endDate };
 }

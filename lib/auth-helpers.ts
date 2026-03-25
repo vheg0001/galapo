@@ -51,26 +51,41 @@ export async function getServerSession() {
 }
 
 export async function getServerProfile(): Promise<Profile | null> {
-    const session = await getServerSession();
-    if (!session?.user?.id) return null;
+    const start = Date.now();
+    try {
+        console.log(`getServerProfile: Starting at ${start}`);
+        
+        // Use getServerUser directly to save one Auth API call
+        const user = await getServerUser();
+        if (!user?.id) {
+            console.log(`getServerProfile: No user found, elapsed ${Date.now() - start}ms`);
+            return null;
+        }
 
-    // Use admin client to bypass RLS hangs/recursion on the profiles table
-    // This is safe because we are strictly filtering for the authenticated user's own ID
-    const { createAdminSupabaseClient } = await import("./supabase");
-    const admin = createAdminSupabaseClient();
+        console.log(`getServerProfile: User verified (${user.id}), fetching profile from DB. Elapsed ${Date.now() - start}ms`);
 
-    const { data: profile, error } = await admin
-        .from("profiles")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
+        // Use admin client to bypass RLS hangs/recursion on the profiles table
+        const { createAdminSupabaseClient } = await import("./supabase");
+        const admin = createAdminSupabaseClient();
 
-    if (error) {
-        console.error("getServerProfile error:", error);
+        const { data: profile, error } = await admin
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+        const end = Date.now();
+        if (error) {
+            console.error(`getServerProfile error after ${end - start}ms:`, error);
+            return null;
+        }
+
+        console.log(`getServerProfile: Success! Total elapsed ${end - start}ms`);
+        return profile as Profile | null;
+    } catch (err) {
+        console.error(`getServerProfile critical exception after ${Date.now() - start}ms:`, err);
         return null;
     }
-
-    return profile as Profile | null;
 }
 
 /**

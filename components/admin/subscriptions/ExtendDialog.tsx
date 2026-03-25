@@ -58,7 +58,7 @@ export function ExtendDialog({
                 </DialogHeader>
                 <form onSubmit={handleExtend} className="space-y-4">
                     <div className="space-y-2">
-                        <Label>Days to add</Label>
+                        <Label htmlFor="extend-days">Days to add</Label>
                         <div className="flex gap-2 mb-2">
                             {[7, 14, 30].map(d => (
                                 <button
@@ -72,6 +72,7 @@ export function ExtendDialog({
                             ))}
                         </div>
                         <Input
+                            id="extend-days"
                             type="number"
                             min="1"
                             value={days}
@@ -80,8 +81,9 @@ export function ExtendDialog({
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label>Reason (Optional)</Label>
+                        <Label htmlFor="extend-reason">Reason (Optional)</Label>
                         <Textarea 
+                            id="extend-reason"
                             placeholder="Admin notes on why this was extended..." 
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}

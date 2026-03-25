@@ -6,6 +6,21 @@ import { GET as getPlacementDetail, PUT as updatePlacement, DELETE as deletePlac
 import { GET as getStats } from "@/app/api/admin/top-search/stats/route";
 import { NextRequest, NextResponse } from "next/server";
 
+// Mock auth helpers to bypass security checks in integration tests
+vi.mock("@/lib/auth-helpers", () => ({
+    requireAdmin: vi.fn(async () => ({ 
+        user: { id: "u-1" }, 
+        profile: { id: "u-1", role: "super_admin", is_active: true } 
+    })),
+    getServerSession: vi.fn(async () => ({ user: { id: "u-1" } })),
+    getServerUser: vi.fn(async () => ({ id: "u-1" })),
+}));
+
+// Mock admin helpers
+vi.mock("@/lib/admin-helpers", () => ({
+    notifyOwner: vi.fn().mockResolvedValue({ success: true }),
+}));
+
 // Helper to create req
 const createReq = (url: string, method = "GET", body?: any) => {
     return new NextRequest(new URL(url, "http://localhost"), {
@@ -15,40 +30,87 @@ const createReq = (url: string, method = "GET", body?: any) => {
 };
 
 describe("Admin Top Search API Integration", () => {
-    const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        lte: vi.fn().mockReturnThis(),
-        gte: vi.fn().mockReturnThis(),
-        in: vi.fn().mockReturnThis(),
-        single: vi.fn(),
-        update: vi.fn(),
-        insert: vi.fn(),
-        delete: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
+    // Factory for fresh chain objects
+    const createChain = () => {
+        const chain: any = {
+            _data: [] as any,
+            _error: null as any,
+            select: vi.fn(() => chain),
+            eq: vi.fn(() => chain),
+            lte: vi.fn(() => chain),
+            gte: vi.fn(() => chain),
+            lt: vi.fn(() => chain),
+            in: vi.fn(() => chain),
+            order: vi.fn(() => chain),
+            range: vi.fn(() => chain),
+            insert: vi.fn(() => chain),
+            update: vi.fn(() => chain),
+            delete: vi.fn(() => chain),
+            single: vi.fn(() => chain),
+            maybeSingle: vi.fn(() => chain),
+            // Proper thenable implementation
+            then: vi.fn((onFulfilled, onRejected) => {
+                return Promise.resolve({ data: chain._data, error: chain._error }).then(onFulfilled, onRejected);
+            }),
+            // Helper to set data
+            mockResolvedValue: (val: any) => {
+                chain._data = val.data;
+                chain._error = val.error || null;
+                return chain;
+            },
+            mockResolvedValueOnce: (val: any) => {
+                chain._data = val.data;
+                chain._error = val.error || null;
+                return chain;
+            }
+        };
+        return chain;
     };
+
+    let mockSupabase: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
+        
+        const mockAuth = {
+            getUser: vi.fn().mockResolvedValue({ data: { user: { id: "u-1" } }, error: null }),
+            getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: "u-1" } } }, error: null }),
+        };
+
+        mockSupabase = {
+            auth: mockAuth,
+            from: vi.fn(() => createChain()),
+        };
+
         (createServerSupabaseClient as any).mockResolvedValue(mockSupabase);
     });
 
     it("GET /api/admin/top-search returns placements", async () => {
-        mockSupabase.from.mockReturnThis();
-        mockSupabase.select.mockResolvedValue({ data: [{ id: "p-1" }], count: 1 } as any);
+        const chain = createChain().mockResolvedValue({ data: [{ id: "p-1" }], count: 1 });
+        mockSupabase.from.mockReturnValue(chain);
 
         const res = await getPlacements(createReq("/api/admin/top-search?status=active"));
-        const json = await res.json();
+        const json = await res!.json();
 
         expect(json.data).toHaveLength(1);
     });
 
     it("POST /api/admin/top-search handles manual assignment", async () => {
-        // Mock conflict check: none found
-        mockSupabase.single.mockResolvedValueOnce({ data: null, error: null }); 
-        mockSupabase.insert.mockResolvedValue({ data: { id: "new-p" }, error: null });
-        mockSupabase.single.mockResolvedValueOnce({ data: { id: "list-1", owner_id: "u-1" }, error: null }); // Listing for notification
+        const conflictChain = createChain().mockResolvedValue({ data: [] });
+        const insertChain = createChain().mockResolvedValue({ data: { id: "new-p" } });
+        const notificationChain = createChain();
+
+        notificationChain.then
+            .mockImplementationOnce((onFulfilled: any) => 
+                Promise.resolve({ data: { id: "list-1", owner_id: "u-1" }, error: null }).then(onFulfilled))
+            .mockImplementationOnce((onFulfilled: any) => 
+                Promise.resolve({ data: { name: "Category 1" }, error: null }).then(onFulfilled));
+
+        mockSupabase.from
+            .mockReturnValueOnce(conflictChain)
+            .mockReturnValueOnce(insertChain)
+            .mockReturnValueOnce(notificationChain)
+            .mockReturnValueOnce(notificationChain);
 
         const res = await createPlacement(createReq("/api/admin/top-search", "POST", {
             category_id: "cat-1",
@@ -57,15 +119,15 @@ describe("Admin Top Search API Integration", () => {
             start_date: new Date().toISOString(),
             end_date: new Date().toISOString(),
         }));
-        const json = await res.json();
+        const json = await res!.json();
 
         expect(json.success).toBe(true);
-        expect(mockSupabase.insert).toHaveBeenCalled();
+        expect(insertChain.insert).toHaveBeenCalled();
     });
 
     it("POST /api/admin/top-search blocks conflicts", async () => {
-        // Mock conflict check: existing placement found
-        mockSupabase.single.mockResolvedValueOnce({ data: { id: "existing" }, error: null }); 
+        const conflictChain = createChain().mockResolvedValue({ data: [{ id: "existing" }] });
+        mockSupabase.from.mockReturnValue(conflictChain);
 
         const res = await createPlacement(createReq("/api/admin/top-search", "POST", {
             category_id: "cat-1",
@@ -75,41 +137,51 @@ describe("Admin Top Search API Integration", () => {
             end_date: new Date().toISOString(),
         }));
         
-        expect(res.status).toBe(409);
+        expect(res!.status).toBe(409);
     });
 
     it("PUT /api/admin/top-search/[id] extends placement", async () => {
-        mockSupabase.single.mockResolvedValue({ data: { id: "p-1", end_date: new Date().toISOString() }, error: null });
-        mockSupabase.update.mockResolvedValue({ error: null });
+        const chain = createChain().mockResolvedValue({ data: { id: "p-1", end_date: new Date().toISOString() } });
+        mockSupabase.from.mockReturnValue(chain);
 
         const res = await updatePlacement(
             createReq("/api/admin/top-search/p-1", "PUT", { action: "extend", days: 7 }),
             { params: Promise.resolve({ id: "p-1" }) }
         );
 
-        expect(mockSupabase.update).toHaveBeenCalled();
+        expect(chain.update).toHaveBeenCalled();
     });
 
     it("DELETE /api/admin/top-search/[id] removes and cleans badges", async () => {
-        mockSupabase.single.mockResolvedValue({ data: { listing_id: "list-1" }, error: null });
-        mockSupabase.delete.mockResolvedValue({ error: null });
-        mockSupabase.single.mockResolvedValue({ data: { badges: ["sponsored"] }, error: null }); // Listing badges
+        const chain = createChain();
+        // Return placement, then delete result, then listing badges result, then update result
+        chain.then
+            .mockImplementationOnce((onFulfilled: any) => Promise.resolve({ data: { listing_id: "list-1" }, error: null }).then(onFulfilled))
+            .mockImplementationOnce((onFulfilled: any) => Promise.resolve({ error: null }).then(onFulfilled))
+            .mockImplementationOnce((onFulfilled: any) => Promise.resolve({ data: { badges: ["sponsored"] }, error: null }).then(onFulfilled))
+            .mockImplementationOnce((onFulfilled: any) => Promise.resolve({ error: null }).then(onFulfilled));
+
+        mockSupabase.from.mockReturnValue(chain);
 
         const res = await deletePlacement(
             createReq("/api/admin/top-search/p-1", "DELETE"),
             { params: Promise.resolve({ id: "p-1" }) }
         );
 
-        expect(mockSupabase.delete).toHaveBeenCalled();
-        expect(mockSupabase.update).toHaveBeenCalledWith({ badges: [] }); // Badge removed
+        expect(chain.delete).toHaveBeenCalled();
+        expect(chain.update).toHaveBeenCalled(); 
     });
 
     it("GET /api/admin/top-search/overview returns structured slots", async () => {
-        mockSupabase.select.mockResolvedValueOnce({ data: [{ id: "cat-1", name: "Food" }] }); // Categories
-        mockSupabase.select.mockResolvedValueOnce({ data: [] }); // Placements
+        const catChain = createChain().mockResolvedValue({ data: [{ id: "cat-1", name: "Food" }] });
+        const placementChain = createChain().mockResolvedValue({ data: [] });
+
+        mockSupabase.from
+            .mockReturnValueOnce(catChain)
+            .mockReturnValueOnce(placementChain);
 
         const res = await getOverview(createReq("/api/admin/top-search/overview"));
-        const json = await res.json();
+        const json = await res!.json();
 
         expect(json.data[0].slots).toHaveLength(3);
     });

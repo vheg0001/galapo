@@ -1,14 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase";
-import { requireAdmin } from "@/lib/api-helpers";
+import { createAdminSupabaseClient } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/auth-helpers";
 import { notifyOwner } from "@/lib/admin-helpers";
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
-        await requireAdmin();
-        const supabase = await createServerSupabaseClient();
+        const auth = await requireAdmin(req);
+        if ("error" in auth) {
+            return auth.error;
+        }
+        const supabase = createAdminSupabaseClient();
         const { searchParams } = new URL(req.url);
+        const now = new Date().toISOString();
 
+        // ─── GROUPED FORMAT (for Slots By Category view) ───────────────────────
+        if (searchParams.get("format") === "grouped") {
+            const [
+                { data: categories, error: catErr },
+                { data: allPlacements, error: placErr }
+            ] = await Promise.all([
+                supabase
+                    .from("categories")
+                    .select("id, name, slug, icon")
+                    .order("name"),
+                supabase
+                    .from("top_search_placements")
+                    .select("*, listings ( id, business_name, slug, logo_url, owner_id )")
+                    .eq("is_active", true)
+                    .gte("end_date", now)
+                    .order("start_date", { ascending: true }) // Show current/closest first
+            ]);
+
+            if (catErr) throw catErr;
+            if (placErr) console.warn("Placements query warning:", placErr);
+
+            const shaped = (categories || []).map(cat => {
+                const catPlacements = (allPlacements || []).filter(p => p.category_id === cat.id);
+                const slots = [1, 2, 3].map(pos => {
+                    // Find the current active placement for this position if exists, otherwise fallback to any active/future one
+                    const positionPlacements = catPlacements.filter(cp => cp.position === pos);
+                    const current = positionPlacements.find(cp => {
+                        const start = new Date(cp.start_date);
+                        const end = new Date(cp.end_date);
+                        const curr = new Date(now);
+                        return start <= curr && end >= curr;
+                    });
+                    const p = current || positionPlacements[0]; // Fallback to the soonest upcoming one
+
+                    return {
+                        position: pos,
+                        is_available: !p,
+                        placement: p ? { ...p, listing_id: p.listing_id, listings: p.listings } : null,
+                        listing: p?.listings || null,
+                    };
+                });
+                return { category: cat, slots };
+            });
+
+            return NextResponse.json({ success: true, data: shaped });
+        }
+
+        // ─── STANDARD LIST FORMAT ────────────────────────────────────────────────
         const status = searchParams.get("status") || "all";
         const categorySlug = searchParams.get("category_slug");
         const page = parseInt(searchParams.get("page") || "1");
@@ -23,17 +77,13 @@ export async function GET(req: NextRequest) {
                 categories ( id, name, slug )
             `, { count: "exact" });
 
-        // Filter by status
-        const now = new Date().toISOString();
         if (status === "active") {
             query = query.eq("is_active", true).lte("start_date", now).gte("end_date", now);
         } else if (status === "expired") {
             query = query.lt("end_date", now);
         }
 
-        // Filter by category
         if (categorySlug) {
-            // Join condition for category slug
             query = query.eq("categories.slug", categorySlug);
         }
 
@@ -44,18 +94,25 @@ export async function GET(req: NextRequest) {
 
         if (error) throw error;
 
-        // Get status counts
-        const { count: activeCount } = await supabase.from("top_search_placements").select("*", { count: "exact", head: true }).eq("is_active", true).lte("start_date", now).gte("end_date", now);
-        const { count: expiredCount } = await supabase.from("top_search_placements").select("*", { count: "exact", head: true }).lt("end_date", now);
+        const { count: activeCount } = await supabase
+            .from("top_search_placements").select("*", { count: "exact", head: true })
+            .eq("is_active", true).lte("start_date", now).gte("end_date", now);
+        const { count: expiredCount } = await supabase
+            .from("top_search_placements").select("*", { count: "exact", head: true })
+            .lt("end_date", now);
+
+        // Flatten for table display
+        const flattened = (data || []).map(p => ({
+            ...p,
+            business_name: (p.listings as any)?.business_name || "Unknown Business",
+            category_name: (p.categories as any)?.name || "Unknown Category"
+        }));
 
         return NextResponse.json({
             success: true,
-            data: data || [],
+            data: flattened,
             total: count || 0,
-            stats: {
-                active: activeCount || 0,
-                expired: expiredCount || 0
-            }
+            stats: { active: activeCount || 0, expired: expiredCount || 0 }
         });
 
     } catch (error: any) {
@@ -66,12 +123,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        await requireAdmin();
+        const auth = await requireAdmin(req);
+        if ("error" in auth) return auth.error;
         const body = await req.json();
         const { listing_id, category_id, position, start_date, end_date, is_complimentary } = body;
-        const supabase = await createServerSupabaseClient();
+        const supabase = createAdminSupabaseClient();
 
-        // 1. Validate position isn't taken
+        // Validate position isn't taken
         const { data: existing } = await supabase
             .from("top_search_placements")
             .select("id")
@@ -84,7 +142,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Position already occupied." }, { status: 409 });
         }
 
-        // 2. Insert placement
         const { data: placement, error } = await supabase
             .from("top_search_placements")
             .insert({
@@ -97,19 +154,22 @@ export async function POST(req: NextRequest) {
 
         if (error) throw error;
 
-        // 3. Assign "Sponsored" badge to listing
-        // Note: badges are usually in a JSONB array or related table. Assuming listing.badges
-        const { data: listing } = await supabase.from("listings").select("badges, owner_id, business_name").eq("id", listing_id).single();
+        const { data: listing } = await supabase
+            .from("listings")
+            .select("badges, owner_id, business_name")
+            .eq("id", listing_id)
+            .single();
+
         if (listing) {
             const badges = Array.isArray(listing.badges) ? listing.badges : [];
             if (!badges.includes("sponsored")) {
-                await supabase.from("listings").update({ 
-                    badges: [...badges, "sponsored"] 
+                await supabase.from("listings").update({
+                    badges: [...badges, "sponsored"]
                 }).eq("id", listing_id);
             }
 
-            // 4. Notify owner
-            const { data: category } = await supabase.from("categories").select("name").eq("id", category_id).single();
+            const { data: category } = await supabase
+                .from("categories").select("name").eq("id", category_id).single();
             await notifyOwner({
                 ownerId: listing.owner_id,
                 title: "Top Search Assigned!",

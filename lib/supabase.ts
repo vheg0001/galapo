@@ -6,10 +6,12 @@ import { createBrowserClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 // ── Environment Variables ───────────────────────────────
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) console.error("CRITICAL: NEXT_PUBLIC_SUPABASE_URL is missing!");
+if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) console.error("CRITICAL: NEXT_PUBLIC_SUPABASE_ANON_KEY is missing!");
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 // ── Browser Client (Client Components) ─────────────────
 // Singleton instance for browser

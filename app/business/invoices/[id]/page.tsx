@@ -43,7 +43,7 @@ export default async function BusinessInvoiceDetailPage({ params }: PageProps) {
     }
 
     return (
-        <div className="flex flex-col gap-6 p-6 md:p-8 max-w-7xl mx-auto w-full min-h-screen">
+        <div className="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto w-full min-h-screen">
             <div className="space-y-1 print:hidden">
                 <div className="flex items-center gap-2 text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">
                     <Receipt className="h-3 w-3" />

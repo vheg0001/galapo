@@ -35,33 +35,46 @@ export async function middleware(request: NextRequest) {
     const isStaticAsset = pathname.includes('.') || pathname.startsWith('/_next/') || pathname.startsWith('/favicon.ico');
 
     if (!isMaintenanceRoute && !isAdminLoginRoute && !pathname.startsWith('/api/') && !isStaticAsset) {
-        const { data: maintenanceSetting } = await supabase
-            .from("site_settings")
-            .select("value")
-            .eq("key", "maintenance_mode")
-            .maybeSingle();
+        const start = Date.now();
+        try {
+            // Defensive timeout for middleware DB check
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("Middleware check timeout")), 5000);
+            });
 
-        const isMaintenanceOn = maintenanceSetting?.value === true || maintenanceSetting?.value === "true";
+            const dbPromise = supabase
+                .from("site_settings")
+                .select("value")
+                .eq("key", "maintenance_mode")
+                .maybeSingle();
 
-        if (isMaintenanceOn) {
-            const { data: { user } } = await supabase.auth.getUser();
-            let isAdmin = false;
+            const result = await Promise.race([dbPromise, timeoutPromise]) as any;
+            const maintenanceSetting = result.data;
+            const isMaintenanceOn = maintenanceSetting?.value === true || maintenanceSetting?.value === "true";
 
-            if (user) {
-                isAdmin = user.user_metadata?.role === "super_admin";
+            if (isMaintenanceOn) {
+                const { data: { user } } = await supabase.auth.getUser();
+                let isAdmin = false;
+
+                if (user) {
+                    isAdmin = user.user_metadata?.role === "super_admin";
+                    if (!isAdmin) {
+                        const { data: profile } = await supabase
+                            .from("profiles")
+                            .select("role")
+                            .eq("id", user.id)
+                            .maybeSingle();
+                        isAdmin = profile?.role === "super_admin";
+                    }
+                }
+
                 if (!isAdmin) {
-                    const { data: profile } = await supabase
-                        .from("profiles")
-                        .select("role")
-                        .eq("id", user.id)
-                        .maybeSingle();
-                    isAdmin = profile?.role === "super_admin";
+                    return NextResponse.redirect(new URL("/maintenance", request.url));
                 }
             }
-
-            if (!isAdmin) {
-                return NextResponse.redirect(new URL("/maintenance", request.url));
-            }
+        } catch (err) {
+            console.error(`Middleware stabilization check failed/timed out after ${Date.now() - start}ms:`, err);
+            // On error/timeout, default to ALLOWING the request to proceed (safer than blocking)
         }
     }
 

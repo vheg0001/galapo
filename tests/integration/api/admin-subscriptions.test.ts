@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createServerSupabaseClient } from "@/lib/supabase";
 import { GET as getSubscriptions } from "@/app/api/admin/subscriptions/route";
 import { GET as getSubscriptionDetail, PUT as updateSubscription } from "@/app/api/admin/subscriptions/[id]/route";
 import { POST as bulkAction } from "@/app/api/admin/subscriptions/bulk/route";
@@ -14,26 +13,61 @@ const createReq = (url: string, method = "GET", body?: any) => {
     });
 };
 
-describe("Admin Subscriptions API Integration", () => {
+// Mock Auth Helpers to bypass checks
+vi.mock("@/lib/auth-helpers", () => ({
+    requireAdmin: vi.fn().mockResolvedValue({ user: { id: "admin-1" }, profile: { role: "super_admin" } }),
+    requireBusinessOwner: vi.fn().mockResolvedValue({ user: { id: "biz-1" }, profile: { role: "business_owner" } }),
+}));
+
+// Mock Admin Helpers to avoid side effects
+vi.mock("@/lib/admin-helpers", () => ({
+    logSubscriptionAction: vi.fn().mockResolvedValue(undefined),
+    notifyOwner: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock Supabase lib
+vi.mock("@/lib/supabase", () => {
     const mockSupabase = {
         from: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn(),
-        update: vi.fn(),
+        single: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
-        rpc: vi.fn(),
+        rpc: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        lte: vi.fn().mockReturnThis(),
+        range: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockReturnThis(),
+        then: vi.fn(),
     };
+    return {
+        createServerSupabaseClient: vi.fn().mockResolvedValue(mockSupabase),
+        createAdminSupabaseClient: vi.fn().mockReturnValue(mockSupabase),
+    };
+});
 
-    beforeEach(() => {
+describe("Admin Subscriptions API Integration", () => {
+    let mockSupabase: any;
+
+    beforeEach(async () => {
         vi.clearAllMocks();
-        (createServerSupabaseClient as any).mockResolvedValue(mockSupabase);
+        const { createAdminSupabaseClient } = await import("@/lib/supabase");
+        mockSupabase = createAdminSupabaseClient();
+        
+        // Setup default mock values
+        mockSupabase.then.mockImplementation((cb: any) => cb({ data: [], error: null, count: 0 }));
     });
 
     it("GET /api/admin/subscriptions returns filtered data", async () => {
-        mockSupabase.rpc.mockResolvedValue({ data: { all: 10 }, error: null });
-        mockSupabase.from.mockReturnThis();
-        mockSupabase.select.mockResolvedValue({ data: [{ id: "1" }], count: 1 } as any);
+        mockSupabase.rpc.mockImplementation(() => ({
+            then: (cb: any) => cb({ data: { all: 10 }, error: null })
+        }));
+        mockSupabase.then.mockImplementation((cb: any) => cb({ 
+            data: [{ id: "sub-1", listings: { business_name: "Biz" } }], 
+            count: 1 
+        }));
 
         const req = createReq("/api/admin/subscriptions?status=active");
         const res = await getSubscriptions(req);
@@ -44,9 +78,10 @@ describe("Admin Subscriptions API Integration", () => {
     });
 
     it("GET /api/admin/subscriptions/[id] returns detail", async () => {
-        mockSupabase.single.mockResolvedValueOnce({ data: { id: "sub-1", listing_id: "list-1" }, error: null }); // Sub
-        mockSupabase.single.mockResolvedValueOnce({ data: { id: "list-1", business_name: "Biz", users: { id: "u-1" } }, error: null }); // Listing
-        mockSupabase.order.mockResolvedValue({ data: [] }); // Payments & History
+        mockSupabase.then
+            .mockImplementationOnce((cb: any) => cb({ data: { id: "sub-1", listing_id: "list-1" }, error: null })) // Sub
+            .mockImplementationOnce((cb: any) => cb({ data: { id: "list-1", business_name: "Biz", owner_id: "u-1" }, error: null })) // Listing
+            .mockImplementationOnce((cb: any) => cb({ data: [] })); // Payments & History
 
         const res = await getSubscriptionDetail(createReq("/api/admin/subscriptions/sub-1"), { params: Promise.resolve({ id: "sub-1" }) });
         const json = await res.json();
@@ -57,8 +92,9 @@ describe("Admin Subscriptions API Integration", () => {
 
     it("PUT extend increases end_date", async () => {
         const now = new Date();
-        mockSupabase.single.mockResolvedValue({ data: { id: "sub-1", end_date: now.toISOString() }, error: null });
-        mockSupabase.update.mockResolvedValue({ error: null });
+        mockSupabase.then
+            .mockImplementationOnce((cb: any) => cb({ data: { id: "sub-1", end_date: now.toISOString() }, error: null }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }));
 
         const res = await updateSubscription(
             createReq("/api/admin/subscriptions/sub-1", "PUT", { action: "extend", days: 10 }),
@@ -71,8 +107,9 @@ describe("Admin Subscriptions API Integration", () => {
     });
 
     it("PUT cancel set status to cancelled", async () => {
-        mockSupabase.single.mockResolvedValue({ data: { id: "sub-1", listing_id: "list-1" }, error: null });
-        mockSupabase.update.mockResolvedValue({ error: null });
+        mockSupabase.then
+            .mockImplementationOnce((cb: any) => cb({ data: { id: "sub-1", listing_id: "list-1" }, error: null }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }));
 
         const res = await updateSubscription(
             createReq("/api/admin/subscriptions/sub-1", "PUT", { action: "cancel", effective: "immediate" }),
@@ -85,8 +122,14 @@ describe("Admin Subscriptions API Integration", () => {
     });
 
     it("Bulk extend updates multiple rows", async () => {
-        mockSupabase.single.mockResolvedValue({ data: { id: "sub-1", listing_id: "list-1" }, error: null });
-        mockSupabase.update.mockResolvedValue({ error: null });
+        // Mock chain for two iterations
+        mockSupabase.then
+            .mockImplementationOnce((cb: any) => cb({ data: { id: "sub-1", listing_id: "list-1" }, error: null })) // Sub 1
+            .mockImplementationOnce((cb: any) => cb({ data: { id: "list-1", owner_id: "u-1" }, error: null }))    // Listing 1
+            .mockImplementationOnce((cb: any) => cb({ error: null }))                                        // Update 1
+            .mockImplementationOnce((cb: any) => cb({ data: { id: "sub-2", listing_id: "list-2" }, error: null })) // Sub 2
+            .mockImplementationOnce((cb: any) => cb({ data: { id: "list-2", owner_id: "u-2" }, error: null }))    // Listing 2
+            .mockImplementationOnce((cb: any) => cb({ error: null }));                                       // Update 2
 
         const res = await bulkAction(createReq("/api/admin/subscriptions/bulk", "POST", {
             action: "extend",
@@ -99,13 +142,24 @@ describe("Admin Subscriptions API Integration", () => {
     });
 
     it("Stats endpoint returns summary correctly", async () => {
-        mockSupabase.rpc.mockResolvedValue({ data: { active: 5 }, error: null });
-        mockSupabase.select.mockResolvedValue({ data: [{ amount: 100 }, { amount: 200 }] }); // Revenue
+        // Mock the parallel Promise.all calls
+        // 1. activeFeatured
+        // 2. activePremium
+        // 3. expiringNextWeek
+        // 4. expiredThisMonth
+        // 5. revenueData
+        mockSupabase.then
+            .mockImplementationOnce((cb: any) => cb({ count: 2, error: null }))
+            .mockImplementationOnce((cb: any) => cb({ count: 3, error: null }))
+            .mockImplementationOnce((cb: any) => cb({ count: 1, error: null }))
+            .mockImplementationOnce((cb: any) => cb({ count: 0, error: null }))
+            .mockImplementationOnce((cb: any) => cb({ data: [{ amount: 100, created_at: new Date().toISOString() }], error: null }));
 
         const res = await getStats(createReq("/api/admin/subscriptions/stats"));
         const json = await res.json();
 
-        expect(json.stats.active).toBe(5);
-        expect(json.stats.total_revenue).toBe(300);
+        expect(json.active_featured).toBe(2);
+        expect(json.active_premium).toBe(3);
+        expect(json.revenue_this_month).toBe(100);
     });
 });

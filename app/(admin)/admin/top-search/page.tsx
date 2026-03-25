@@ -4,6 +4,8 @@ import { TopSearchCategoryView } from "@/components/admin/top-search/TopSearchCa
 import { TopSearchTable } from "@/components/admin/top-search/TopSearchTable";
 import { createServerSupabaseClient } from "@/lib/supabase";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
     title: "Top Search Placements - GalaPo Admin",
 };

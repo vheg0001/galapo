@@ -10,6 +10,8 @@ export async function GET(request: Request) {
         const parentOnly = searchParams.get("parent_only") === "true";
         const includeFields = searchParams.get("include_fields") === "true";
         const ids = searchParams.get("ids")?.split(",").filter(Boolean);
+        const parentId = searchParams.get("parent_id");
+        const includeParent = searchParams.get("include_parent") === "true";
 
         const supabase = createAdminSupabaseClient();
 
@@ -17,15 +19,22 @@ export async function GET(request: Request) {
         let query = supabase
             .from("categories")
             .select("id, name, slug, icon, parent_id, sort_order, description")
-            .eq("is_active", true)
-            .order("sort_order", { ascending: true })
-            .order("name", { ascending: true });
+            .eq("is_active", true);
 
         if (ids && ids.length > 0) {
             query = query.in("id", ids);
+        } else if (parentId) {
+            if (includeParent) {
+                query = query.or(`id.eq.${parentId},parent_id.eq.${parentId}`);
+            } else {
+                query = query.eq("parent_id", parentId);
+            }
         } else if (parentOnly) {
             query = query.is("parent_id", null);
         }
+
+        query = query.order("sort_order", { ascending: true })
+            .order("name", { ascending: true });
 
         const { data: categories, error: catError } = await query;
         if (catError) throw catError;
@@ -71,7 +80,7 @@ export async function GET(request: Request) {
 
         let responseData = enrichedCategories;
 
-        if (!parentOnly) {
+        if (!parentOnly && !parentId) {
             // Recursive function to build the category tree
             const buildTree = (parentId: string | null): any[] => {
                 const children = enrichedCategories?.filter(c => c.parent_id === parentId) || [];

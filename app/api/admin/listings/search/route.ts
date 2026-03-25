@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { requireAdmin } from "@/lib/api-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function GET(req: NextRequest) {
     try {
-        await requireAdmin();
+        const auth = await requireAdmin(req);
+        if ("error" in auth) return auth.error;
         const supabase = await createServerSupabaseClient();
         const url = new URL(req.url);
         const q = url.searchParams.get("q");
