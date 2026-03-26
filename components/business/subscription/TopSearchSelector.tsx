@@ -66,9 +66,14 @@ export default function TopSearchSelector({
                 const payload = await response.json();
                 if (response.ok) {
                     setAvailability(payload);
-                    // Auto-select lowest available position
+                    // Auto-select lowest available position ONLY if none selected
                     const available = payload.slots.find((s: any) => s.status === "available");
-                    if (available) onSelectPosition(available.position);
+                    // Check if current selectedPosition is still available in new payload
+                    const stillAvailable = payload.slots.find((s: any) => s.position === selectedPosition && s.status === "available");
+                    
+                    if (!selectedPosition || !stillAvailable) {
+                        if (available) onSelectPosition(available.position);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to check availability:", error);
@@ -85,35 +90,37 @@ export default function TopSearchSelector({
             <div className="space-y-4">
                 <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Step 1. Select Target Category</h4>
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {categories.map((cat) => (
-                        <button
-                            key={cat.id}
-                            type="button"
-                            onClick={() => onSelectCategory(cat)}
-                            className={cn(
-                                "flex items-center justify-between rounded-2xl border-2 p-4 text-left transition-all",
-                                selectedCategory?.id === cat.id
-                                    ? "border-[#FF6B35] bg-orange-50/30 ring-4 ring-orange-100"
-                                    : "border-slate-100 bg-white hover:border-slate-200"
-                            )}
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-xl",
-                                    cat.id === categoryId ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"
-                                )}>
-                                    <LayoutList className="h-5 w-5" />
+                    {categories
+                        .filter((cat) => cat.id === categoryId || (subcategoryId && cat.id === subcategoryId))
+                        .map((cat) => (
+                            <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => onSelectCategory(cat)}
+                                className={cn(
+                                    "flex items-center justify-between rounded-2xl border-2 p-4 text-left transition-all",
+                                    selectedCategory?.id === cat.id
+                                        ? "border-[#FF6B35] bg-orange-50/30 ring-4 ring-orange-100"
+                                        : "border-slate-100 bg-white hover:border-slate-200"
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                        "flex h-10 w-10 items-center justify-center rounded-xl",
+                                        cat.id === categoryId ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"
+                                    )}>
+                                        <LayoutList className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900">{cat.name}</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                            {cat.id === categoryId ? "Main Category" : "Subcategory"}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-bold text-slate-900">{cat.name}</p>
-                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                        {cat.id === categoryId ? "Main Category" : "Subcategory"}
-                                    </p>
-                                </div>
-                            </div>
-                            {selectedCategory?.id === cat.id && <CheckCircle2 className="h-5 w-5 text-[#FF6B35]" />}
-                        </button>
-                    ))}
+                                {selectedCategory?.id === cat.id && <CheckCircle2 className="h-5 w-5 text-[#FF6B35]" />}
+                            </button>
+                        ))}
                 </div>
             </div>
 

@@ -156,16 +156,24 @@ export async function POST(req: NextRequest) {
 
         const { data: listing } = await supabase
             .from("listings")
-            .select("badges, owner_id, business_name")
+            .select("owner_id, business_name")
             .eq("id", listing_id)
             .single();
 
         if (listing) {
-            const badges = Array.isArray(listing.badges) ? listing.badges : [];
-            if (!badges.includes("sponsored")) {
-                await supabase.from("listings").update({
-                    badges: [...badges, "sponsored"]
-                }).eq("id", listing_id);
+            // Assign 'sponsored' badge in listing_badges
+            const { error: badgeError } = await supabase
+                .from("listing_badges")
+                .upsert({
+                    listing_id,
+                    badge_id: "sponsored",
+                    is_active: true,
+                    assigned_by: (auth as any).user.id,
+                    assigned_at: new Date().toISOString()
+                }, { onConflict: "listing_id,badge_id" });
+
+            if (badgeError) {
+                console.warn("Failed to assign sponsored badge:", badgeError);
             }
 
             const { data: category } = await supabase

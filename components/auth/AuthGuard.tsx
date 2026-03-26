@@ -21,15 +21,8 @@ export default function AuthGuard({
     const router = useRouter();
     const { isAuthenticated, isLoading, profile, setLoading } = useAuthStore();
 
-    // Safety net: if loading takes more than 10s, force it to false
-    useEffect(() => {
-        if (!isLoading) return;
-        const timer = setTimeout(() => {
-            console.warn("AuthGuard: loading timed out (10s), forcing isLoading to false. This may be due to slow network or RLS issues.");
-            setLoading(false);
-        }, 10000);
-        return () => clearTimeout(timer);
-    }, [isLoading, setLoading]);
+    // Removed redundant safety net timer. Trusting authStore to manage its own isLoading state. 
+    // The store has a 15s timeout and a finally block to ensure isLoading is eventually false.
 
     useEffect(() => {
         if (isLoading) return;

@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     user: null,
     profile: null,
     session: null,
-    isLoading: false, // Default to false to avoid being stuck on boot
+    isLoading: true, // Default to true so AuthGuard waits for initialize() to run
     isProfileLoading: false,
     isAuthenticated: false,
 

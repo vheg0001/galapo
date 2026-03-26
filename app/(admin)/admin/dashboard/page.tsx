@@ -65,6 +65,22 @@ export default async function AdminDashboardPage() {
                     href="/admin/listings"
                 />
                 <AdminStatsCard
+                    label="Active Subscriptions"
+                    value={activeSubscriptions ?? 0}
+                    icon={Users}
+                    iconColor="text-sky-600"
+                    iconBg="bg-sky-100"
+                    href="/admin/subscriptions"
+                />
+                <AdminStatsCard
+                    label="Page Views (This Month)"
+                    value={(viewsThisMonthCount ?? 0).toLocaleString()}
+                    icon={BarChart2}
+                    iconColor="text-[#FF6B35]"
+                    iconBg="bg-[#FF6B35]/10"
+                    href="/admin/analytics"
+                />
+                <AdminStatsCard
                     label="Pending Approvals"
                     value={pendingListings ?? 0}
                     icon={Building2}
@@ -90,22 +106,6 @@ export default async function AdminDashboardPage() {
                     iconBg="bg-purple-100"
                     href="/admin/claims"
                     urgent
-                />
-                <AdminStatsCard
-                    label="Active Subscriptions"
-                    value={activeSubscriptions ?? 0}
-                    icon={Users}
-                    iconColor="text-sky-600"
-                    iconBg="bg-sky-100"
-                    href="/admin/subscriptions"
-                />
-                <AdminStatsCard
-                    label="Page Views (This Month)"
-                    value={(viewsThisMonthCount ?? 0).toLocaleString()}
-                    icon={BarChart2}
-                    iconColor="text-[#FF6B35]"
-                    iconBg="bg-[#FF6B35]/10"
-                    href="/admin/analytics"
                 />
             </div>
 

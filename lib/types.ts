@@ -101,6 +101,7 @@ export enum NotificationType {
     NEW_PAYMENT_UPLOADED = "new_payment_uploaded",
     ANNUAL_CHECK_FLAGGED = "annual_check_flagged",
     ANNUAL_CHECK_NO_RESPONSE = "annual_check_no_response",
+    TOP_SEARCH_REMOVED = "top_search_removed",
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -591,6 +592,7 @@ export interface PaymentInstructionsConfig {
 export interface SubscriptionListItem {
     listing_id: string;
     listing_name: string;
+    listing_slug?: string | null;
     category_id?: string | null;
     category_name?: string | null;
     subcategory_id?: string | null;
@@ -625,6 +627,7 @@ export interface SubscriptionListItem {
         start_date: string | null;
         end_date: string | null;
         payment_id?: string | null;
+        listing_slug?: string | null;
     }>;
 }
 

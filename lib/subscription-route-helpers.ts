@@ -287,6 +287,7 @@ export function buildSubscriptionListItems({
         return {
             listing_id: listing.id,
             listing_name: listing.business_name,
+            listing_slug: listing.slug,
             category_id: listing.category_id,
             category_name: listing.category_id ? categories[listing.category_id]?.name ?? null : null,
             subcategory_id: listing.subcategory_id,
@@ -347,6 +348,7 @@ export function buildSubscriptionListItems({
                     start_date: placement.start_date,
                     end_date: placement.end_date,
                     payment_id: placement.payment_id,
+                    listing_slug: listing.slug,
                 };
             }),
         } satisfies SubscriptionListItem;

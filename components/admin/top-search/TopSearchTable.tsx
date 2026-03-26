@@ -6,10 +6,13 @@ import { XCircle } from "lucide-react";
 import DataTable, { Column } from "@/components/admin/shared/DataTable";
 import { cn } from "@/lib/utils";
 import { getDaysRemaining } from "@/lib/subscription-helpers";
+import { RemovePlacementModal } from "./RemovePlacementModal";
 
 export function TopSearchTable() {
     const [rows, setRows] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedPlacement, setSelectedPlacement] = useState<any>(null);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -28,15 +31,39 @@ export function TopSearchTable() {
         loadData();
     }, [loadData]);
 
-    async function handleRemove(id: string) {
-        if (!confirm("Are you sure you want to remove this top search placement?")) return;
+    function handleRemoveRequest(placement: any) {
+        setSelectedPlacement(placement);
+        setModalOpen(true);
+    }
+
+    async function handleConfirmRemove(reason: string) {
+        if (!selectedPlacement) return;
+        console.log("TopSearchTable: handleConfirmRemove", { id: selectedPlacement.id, reason });
         try {
-            const res = await fetch(`/api/admin/top-search/${id}`, { method: "DELETE" });
-            if (!res.ok) throw new Error("Failed to remove placement");
+            const res = await fetch(`/api/admin/top-search/${selectedPlacement.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "remove", effective: "immediate", reason })
+            });
+            if (!res.ok) {
+                const text = await res.text().catch(() => "");
+                let reason = "Failed to remove placement";
+                try {
+                    const json = JSON.parse(text);
+                    reason = json.error || reason;
+                } catch {
+                    reason = `Server error (${res.status}): ${text.slice(0, 100)}...`;
+                }
+                throw new Error(reason);
+            }
+            setModalOpen(false);
             loadData();
-        } catch (error) {
-            console.error(error);
-            alert("Failed to remove placement.");
+        } catch (error: any) {
+            console.error("TopSearchTable Error:", error);
+            const debugMsg = `ERROR: ${error.message}\n` + 
+                           (error.stack ? `Stack: ${error.stack.split('\n')[0]}\n` : "") +
+                           `Please check the browser console for details.`;
+            alert(debugMsg);
         }
     }
 
@@ -117,7 +144,7 @@ export function TopSearchTable() {
             header: "Actions",
             render: (r) => (
                 <button
-                    onClick={() => handleRemove(r.id)}
+                    onClick={() => handleRemoveRequest(r)}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                     title="Remove Placement"
                 >
@@ -137,6 +164,13 @@ export function TopSearchTable() {
                 emptyMessage="No top search placements found."
                 className="p-4"
                 persistKey="admin-top-search-table"
+            />
+
+            <RemovePlacementModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onConfirm={handleConfirmRemove}
+                businessName={selectedPlacement?.business_name || "Unknown"}
             />
         </div>
     );

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { CategorySlotCard } from "./CategorySlotCard";
 
@@ -24,6 +25,7 @@ interface CategoryGroup {
 }
 
 export function TopSearchCategoryView() {
+    const router = useRouter();
     const [groups, setGroups] = useState<CategoryGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -34,12 +36,15 @@ export function TopSearchCategoryView() {
             const res = await fetch("/api/admin/top-search?format=grouped");
             const json = await res.json();
             setGroups(json.data || []);
+            
+            // Re-fetch server components (like the stats row)
+            router.refresh();
         } catch (error) {
             console.error("Failed to load grouped categories:", error);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [router]);
 
     useEffect(() => {
         loadData();

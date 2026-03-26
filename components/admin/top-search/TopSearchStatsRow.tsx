@@ -9,10 +9,10 @@ async function getTopSearchStats() {
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
     const nextWeekIso = nextWeek.toISOString();
-
     const [
         { count: activeCount },
         { count: expiringCount },
+        { data: paidActiveData },
         { data: allCategories }
     ] = await Promise.all([
         supabase
@@ -27,6 +27,11 @@ async function getTopSearchStats() {
             .gte("end_date", now)
             .lte("end_date", nextWeekIso),
         supabase
+            .from("top_search_placements")
+            .select("payments(amount)")
+            .eq("is_active", true)
+            .gte("end_date", now),
+        supabase
             .from("categories")
             .select("id")
     ]);
@@ -36,8 +41,10 @@ async function getTopSearchStats() {
     const activePlacements = activeCount || 0;
     const availableSlots = Math.max(0, totalSlots - activePlacements);
 
-    // Placeholder for revenue if paid manually or otherwise tracked
-    const mrr = 0; 
+    // Calculate MRR based on actual payments
+    const mrr = paidActiveData?.reduce((sum, item: any) => {
+        return sum + (Number(item.payments?.amount) || 0);
+    }, 0) || 0;
     
     return {
         activePlacements,

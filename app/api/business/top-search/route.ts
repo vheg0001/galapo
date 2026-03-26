@@ -65,12 +65,8 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { listing_id, category_id, subcategory_id, position: requestedPosition } = body as {
-            listing_id: string,
-            category_id: string,
-            subcategory_id?: string,
-            position?: number,
-        };
+        const { listing_id, category_id, subcategory_id, position: rawPosition } = body;
+        const requestedPosition = typeof rawPosition === "string" ? parseInt(rawPosition) : rawPosition;
 
         if (!listing_id || !category_id) {
             return NextResponse.json({ error: "Missing listing_id or category_id" }, { status: 400 });
@@ -81,7 +77,29 @@ export async function POST(request: NextRequest) {
         // 1. Validate listing belongs to user
         const listing = await ensureOwnedListing(profile.id, listing_id);
 
-        // 2. Check for existing pending placement and payment
+        // 2. Check availability first to determine valid position
+        const availability = await getTopSearchAvailability(category_id);
+        const availablePositions = availability.slots
+            .filter((slot) => slot.status === "available")
+            .map((slot) => slot.position);
+        
+        const position =
+            typeof requestedPosition === "number"
+                ? availablePositions.includes(requestedPosition)
+                    ? requestedPosition
+                    : null
+                : getLowestAvailablePosition(availability);
+
+        if (position === null) {
+            return NextResponse.json({
+                error:
+                    typeof requestedPosition === "number"
+                        ? `Position #${requestedPosition} is no longer available for the ${availability.category_name} category.`
+                        : `All positions taken for the ${availability.category_name} category.`
+            }, { status: 409 });
+        }
+
+        // 3. Check for existing pending placement and payment
         const { data: existingPlacement } = await admin
             .from("top_search_placements")
             .select("*")
@@ -91,6 +109,16 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
 
         if (existingPlacement) {
+            // Update position if it differs from what was requested/available
+            if (existingPlacement.position !== position) {
+                await admin
+                    .from("top_search_placements")
+                    .update({ position })
+                    .eq("id", existingPlacement.id);
+                
+                existingPlacement.position = position;
+            }
+
             let existingPayment = null;
             if (existingPlacement.payment_id) {
                 const { data } = await admin
@@ -112,34 +140,13 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // 3. Check availability
-        const availability = await getTopSearchAvailability(category_id);
-        const availablePositions = availability.slots
-            .filter((slot) => slot.status === "available")
-            .map((slot) => slot.position);
-        const position =
-            typeof requestedPosition === "number"
-                ? availablePositions.includes(requestedPosition)
-                    ? requestedPosition
-                    : null
-                : getLowestAvailablePosition(availability);
-
-        if (position === null) {
-            return NextResponse.json({
-                error:
-                    typeof requestedPosition === "number"
-                        ? `Position #${requestedPosition} is no longer available for the ${availability.category_name} category.`
-                        : `All positions taken for the ${availability.category_name} category.`
-            }, { status: 409 });
-        }
-
         // 4. Get pricing and instructions
         const { paymentInstructions } = await getTopSearchPricingAndInstructions();
 
         // 5. Calculate initial period (can be adjusted by admin upon verification)
         const period = calculateFutureBillingPeriod();
 
-        // 6. Create placement without a linked payment initially.
+        // 6. Create placement
         const { data: placement, error: placeError } = await admin
             .from("top_search_placements")
             .insert({

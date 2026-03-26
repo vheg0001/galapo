@@ -11,8 +11,9 @@ export default async function AdminDashboardDeepSections() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-
+ 
     const [
         { data: revenueThisMonth },
         { data: revenueLastMonth },
@@ -25,16 +26,16 @@ export default async function AdminDashboardDeepSections() {
         { count: annualChecksDue },
         { count: annualChecksNoResponse },
     ] = await Promise.all([
-        admin.from("payments").select("amount, plan_type").eq("status", "verified").gte("verified_at", startOfMonth),
+        admin.from("payments").select("amount, description").eq("status", "verified").gte("verified_at", startOfMonth),
         admin.from("payments").select("amount").eq("status", "verified").gte("verified_at", startOfLastMonth).lte("verified_at", endOfLastMonth),
-        admin.from("payments").select("amount").eq("status", "verified"),
+        admin.from("payments").select("amount, description").eq("status", "verified"),
         admin.from("listings").select("id, business_name, created_at, status, profiles!listings_owner_id_fkey(full_name)").eq("status", "pending").order("created_at", { ascending: false }).limit(10),
         admin.from("payments").select("id, amount, description, created_at, status, profiles!payments_user_id_fkey(full_name, email)").eq("status", "pending").order("created_at", { ascending: false }).limit(10),
         admin.from("listings").select("id, business_name, claimed_at, status, profiles!listings_owner_id_fkey(full_name, email)").eq("status", "claimed_pending").order("claimed_at", { ascending: false }).limit(10),
         admin.from("notifications").select("id, type, title, message, created_at, data").in("type", [
             "new_listing_submitted", "new_payment_uploaded", "new_claim_request",
             "listing_approved", "listing_rejected", "annual_check_flagged", "annual_check_no_response",
-        ]).order("created_at", { ascending: false }).limit(20),
+        ]).gte("created_at", oneDayAgo).order("created_at", { ascending: false }).limit(20),
         admin.from("listing_analytics").select("listing_id").eq("event_type", "page_view").gte("created_at", startOfMonth).limit(5000),
         admin.from("annual_checks").select("id", { count: "exact", head: true }).eq("status", "pending").lte("response_deadline", nextWeek).gte("response_deadline", now.toISOString().split("T")[0]),
         admin.from("annual_checks").select("id", { count: "exact", head: true }).eq("status", "no_response"),
@@ -47,12 +48,17 @@ export default async function AdminDashboardDeepSections() {
     const allTimeRevenue_ = sumAmount(allTimeRevenue as any);
 
     const breakdown = { subscriptions: 0, ad_placements: 0, top_search: 0, reactivation_fees: 0 };
-    (revenueThisMonth ?? []).forEach((p: any) => {
-        const plan: string = p.plan_type ?? "";
-        if (plan.includes("ad")) breakdown.ad_placements += Number(p.amount);
-        else if (plan.includes("top_search")) breakdown.top_search += Number(p.amount);
-        else if (plan.includes("reactivation")) breakdown.reactivation_fees += Number(p.amount);
-        else breakdown.subscriptions += Number(p.amount);
+    (allTimeRevenue ?? []).forEach((p: any) => {
+        const desc = (p.description ?? "").toLowerCase();
+        if (desc.includes("ad placement") || desc.includes("banner ad")) {
+            breakdown.ad_placements += Number(p.amount);
+        } else if (desc.includes("top search")) {
+            breakdown.top_search += Number(p.amount);
+        } else if (desc.includes("reactivation")) {
+            breakdown.reactivation_fees += Number(p.amount);
+        } else {
+            breakdown.subscriptions += Number(p.amount);
+        }
     });
 
     const viewCountMap: Record<string, number> = {};

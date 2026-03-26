@@ -29,7 +29,7 @@ export default async function SubscriptionPage() {
     // Fetch all context for the user's listings and subscriptions
     const { data: listings } = await admin
         .from("listings")
-        .select("id, business_name, status, is_featured, is_premium, category_id, subcategory_id")
+        .select("id, business_name, slug, status, is_featured, is_premium, category_id, subcategory_id")
         .eq("owner_id", session.user.id);
 
     const listingIds = (listings ?? []).map(l => l.id);

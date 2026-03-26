@@ -6,6 +6,7 @@ import { Plus, XCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDaysRemaining } from "@/lib/subscription-helpers";
 import { AssignPlacementModal } from "./AssignPlacementModal";
+import { RemovePlacementModal } from "./RemovePlacementModal";
 
 export function SlotRow({
     categoryId,
@@ -23,19 +24,36 @@ export function SlotRow({
 
     const { is_available, placement, position } = slot;
 
-    async function handleRemove() {
-        if (!confirm("Are you sure you want to remove this top search placement?")) return;
+    async function handleConfirmRemove(reason: string) {
         setRemoving(true);
+        console.log("SlotRow: handleConfirmRemove", { id: placement.id, reason });
         try {
-            // we will create DELETE endpoint at /api/admin/top-search/[id]
-            const res = await fetch(`/api/admin/top-search/${placement.id}`, { method: "DELETE" });
-            if (!res.ok) throw new Error("Failed to remove placement");
+            const res = await fetch(`/api/admin/top-search/${placement.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "remove", effective: "immediate", reason })
+            });
+            if (!res.ok) {
+                const text = await res.text().catch(() => "");
+                let reasonMsg = "Failed to remove placement";
+                try {
+                    const json = JSON.parse(text);
+                    reasonMsg = json.error || reasonMsg;
+                } catch {
+                    reasonMsg = `Server error (${res.status}): ${text.slice(0, 100)}...`;
+                }
+                throw new Error(reasonMsg);
+            }
             onUpdated();
-        } catch (error) {
-            console.error(error);
-            alert("Failed to remove placement.");
+        } catch (error: any) {
+            console.error("SlotRow Error:", error);
+            const debugMsg = `ERROR: ${error.message}\n` + 
+                           (error.stack ? `Stack: ${error.stack.split('\n')[0]}\n` : "") +
+                           `Please check the browser console for details.`;
+            alert(debugMsg);
         } finally {
             setRemoving(false);
+            setModalOpen(false);
         }
     }
 
@@ -94,13 +112,20 @@ export function SlotRow({
             </div>
             
             <button
-                onClick={handleRemove}
+                onClick={() => setModalOpen(true)}
                 disabled={removing}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                 title="Remove Placement"
             >
                 <XCircle className="h-4 w-4" />
             </button>
+
+            <RemovePlacementModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onConfirm={handleConfirmRemove}
+                businessName={placement.listings?.business_name || "Unknown"}
+            />
         </div>
     );
 }

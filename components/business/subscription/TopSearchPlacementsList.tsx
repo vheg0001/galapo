@@ -8,6 +8,7 @@ import type { SubscriptionListItem } from "@/lib/types";
 type TopSearchPlacementRow = SubscriptionListItem["top_search_placements"][number] & {
     listing_id: string;
     listing_name: string;
+    listing_slug?: string | null;
 };
 
 interface TopSearchPlacementsListProps {
@@ -20,6 +21,7 @@ function buildPlacementRows(items: SubscriptionListItem[]): TopSearchPlacementRo
             ...placement,
             listing_id: item.listing_id,
             listing_name: item.listing_name,
+            listing_slug: item.listing_slug,
         }))
     );
 }
@@ -75,8 +77,34 @@ export default function TopSearchPlacementsList({ items }: TopSearchPlacementsLi
                                 #{placement.position}
                             </div>
                             <div className="min-w-0">
-                                <p className="truncate text-sm font-bold text-slate-900">{placement.category_name}</p>
-                                <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-400">{placement.listing_name}</p>
+                                <Link
+                                    href={`/olongapo/${placement.listing_slug}`}
+                                    target="_blank"
+                                    className="block group"
+                                >
+                                    <p className="truncate text-sm font-bold text-slate-900 group-hover:text-blue-600 group-hover:underline transition-colors">
+                                        {placement.category_name}
+                                    </p>
+                                    <p className="truncate text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-slate-500">
+                                        {placement.listing_name}
+                                    </p>
+                                </Link>
+                                
+                                {placement.status === "active" && placement.end_date && (
+                                    <p className="mt-1 text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                        <span className="text-slate-400 uppercase tracking-tight">Expires:</span>
+                                        {new Date(placement.end_date).toLocaleDateString([], { 
+                                            month: 'short', 
+                                            day: 'numeric', 
+                                            year: 'numeric' 
+                                        })}
+                                        <span className="text-slate-300">•</span>
+                                        {new Date(placement.end_date).toLocaleTimeString([], { 
+                                            hour: '2-digit', 
+                                            minute: '2-digit' 
+                                        })}
+                                    </p>
+                                )}
                             </div>
                         </div>
 

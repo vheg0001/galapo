@@ -29,6 +29,7 @@ const TYPE_ICONS: Record<string, string> = {
     new_payment_uploaded: "💰",
     annual_check_flagged: "🚩",
     annual_check_no_response: "📭",
+    top_search_removed: "🏆",
 };
 
 export default function RecentActivity({ notifications, loading = false }: RecentActivityProps) {
