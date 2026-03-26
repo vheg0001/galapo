@@ -32,7 +32,15 @@ export async function POST(
             return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
         }
 
-        // 2. Format data for HTML generator
+        // 2. Fetch site settings for dynamic branding
+        const { data: settingsData } = await supabase
+            .from("site_settings")
+            .select("key, value");
+        
+        const settings: Record<string, any> = {};
+        (settingsData ?? []).forEach(s => settings[s.key] = s.value);
+
+        // 3. Format data for HTML generator
         const invoiceData = {
             invoiceNumber: invoice.invoice_number,
             issueDate: invoice.issued_at,
@@ -45,7 +53,8 @@ export async function POST(
             subtotal: invoice.amount,
             total: invoice.amount,
             paymentMethod: invoice.payments.payment_method,
-            referenceNumber: invoice.payments.reference_number
+            referenceNumber: invoice.payments.reference_number,
+            settings
         };
 
         const html = generateInvoiceHTML(invoiceData);

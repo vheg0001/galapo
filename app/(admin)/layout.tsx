@@ -102,8 +102,11 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             )
             .subscribe();
 
+        window.addEventListener("admin_notifications_read", loadStats);
+
         return () => {
             supabase.removeChannel(channel);
+            window.removeEventListener("admin_notifications_read", loadStats);
         };
     }, []);
 

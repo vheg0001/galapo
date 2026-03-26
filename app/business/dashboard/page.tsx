@@ -22,6 +22,8 @@ function getTodayPhilippine(): string {
     });
 }
 
+import VerificationBanner from "@/components/business/dashboard/VerificationBanner";
+
 export default function BusinessDashboardPage() {
     const { profile, user } = useAuthStore();
     const {
@@ -45,6 +47,8 @@ export default function BusinessDashboardPage() {
 
     return (
         <div className="space-y-6">
+            <VerificationBanner />
+            
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">

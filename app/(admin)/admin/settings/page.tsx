@@ -81,6 +81,9 @@ function GeneralTab({ s, set }: { s: any; set: (k: string, v: any) => void }) {
                     <SettingsInput type="tel" value={s.support_phone ?? ""} onChange={(v) => set("support_phone", v)} placeholder="+63 9XX XXX XXXX" />
                 </Field>
             </div>
+            <Field label="Site Address" hint="Main office address shown on invoices.">
+                <SettingsInput value={s.site_address ?? ""} onChange={(v) => set("site_address", v)} placeholder="Santa Rosa City, Laguna, Philippines" />
+            </Field>
 
             <SectionLabel>Social Media</SectionLabel>
             <div className="grid grid-cols-2 gap-4">

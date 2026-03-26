@@ -53,6 +53,7 @@ export interface InvoiceData {
     total: number;
     paymentMethod: string;
     referenceNumber?: string;
+    settings?: Record<string, any>;
 }
 
 /**
@@ -135,11 +136,17 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     <body>
         <div class="container">
             <div class="header">
-                <div class="logo">GalaPo City Directory</div>
+                <div class="logo">${data.settings?.site_name || "GalaPo City Directory"}</div>
                 <div class="invoice-info">
                     <h1 style="margin: 0; font-size: 32px;">INVOICE</h1>
                     <p style="margin: 4px 0; color: #718096;"># ${data.invoiceNumber}</p>
                 </div>
+            </div>
+
+            <div style="margin-bottom: 20px; color: #718096; font-size: 14px;">
+                <p style="margin: 0;">${data.settings?.site_address || "Santa Rosa City, Laguna, Philippines"}</p>
+                <p style="margin: 0;">${data.settings?.contact_email || "support@galapo.com"}</p>
+                <p style="margin: 0;">${data.settings?.support_phone || "+63 900 000 0000"}</p>
             </div>
 
             <div class="details">

@@ -34,6 +34,14 @@ export default async function AdminInvoiceDetailPage({ params }: PageProps) {
         notFound();
     }
 
+    // Fetch site settings for dynamic business info
+    const { data: settingsData } = await supabase
+        .from("site_settings")
+        .select("key, value");
+    
+    const settings: Record<string, any> = {};
+    (settingsData ?? []).forEach(s => settings[s.key] = s.value);
+
     return (
         <div className="flex flex-col gap-6 p-6 md:p-8 max-w-7xl mx-auto w-full min-h-screen">
             <div className="space-y-1 print:hidden">
@@ -46,7 +54,7 @@ export default async function AdminInvoiceDetailPage({ params }: PageProps) {
                 </h1>
             </div>
 
-            <InvoiceView invoice={invoice} />
+            <InvoiceView invoice={invoice} settings={settings} />
         </div>
     );
 }

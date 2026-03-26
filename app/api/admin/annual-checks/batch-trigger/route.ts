@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-helpers";
+import { requireAdmin } from "@/lib/auth-helpers";
 import { createAdminSupabaseClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -14,20 +14,17 @@ export async function POST(request: NextRequest) {
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
     try {
-        // Find listings that haven't been verified in over 1 year and are still active
         const { data: listings, error: listingErr } = await admin
             .from("listings")
             .select("id, business_name, owner_id, last_verified_at")
             .eq("is_active", true)
-            .in("status", ["approved", "claimed_pending"])
             .or(`last_verified_at.is.null,last_verified_at.lt.${oneYearAgo.toISOString()}`);
 
         if (listingErr) throw listingErr;
         if (!listings || listings.length === 0) {
-            return NextResponse.json({ triggered_count: 0, message: "No listings require annual checks at this time." });
+            return NextResponse.json({ triggered: 0, owners_notified: 0, pre_populated_flagged: 0 });
         }
 
-        // Find which already have a pending check
         const listingIds = listings.map((l: any) => l.id);
         const { data: existingChecks } = await admin
             .from("annual_checks")
@@ -39,13 +36,12 @@ export async function POST(request: NextRequest) {
         const toCheck = listings.filter((l: any) => !alreadyPending.has(l.id));
 
         if (toCheck.length === 0) {
-            return NextResponse.json({ triggered_count: 0, message: "All eligible listings already have pending checks." });
+            return NextResponse.json({ triggered: 0, owners_notified: 0, pre_populated_flagged: 0 });
         }
 
         const deadline = new Date(now);
-        deadline.setDate(deadline.getDate() + 14);
+        deadline.setDate(deadline.getDate() + 7);
 
-        // Batch insert annual_checks
         const checkRows = toCheck.map((l: any) => ({
             listing_id: l.id,
             status: "pending",
@@ -57,16 +53,14 @@ export async function POST(request: NextRequest) {
         const { error: insertErr } = await admin.from("annual_checks").insert(checkRows);
         if (insertErr) throw insertErr;
 
-        // Batch notifications for owners
         const notificationRows = toCheck
             .filter((l: any) => l.owner_id)
             .map((l: any) => ({
                 user_id: l.owner_id,
                 type: "annual_check",
-                title: "Annual Listing Check — Action Required",
-                message: `Please confirm that "${l.business_name}" is still active before ${deadline.toDateString()} to keep it live on GalaPo.`,
+                title: "Annual Listing Verification Required",
+                message: `Your listing "${l.business_name}" is due for its annual verification. Please confirm its status.`,
                 data: { listing_id: l.id, listing_name: l.business_name },
-                is_read: false,
                 created_at: now.toISOString(),
             }));
 
@@ -74,9 +68,20 @@ export async function POST(request: NextRequest) {
             await admin.from("notifications").insert(notificationRows);
         }
 
+        const owners_notified = notificationRows.length;
+        const pre_populated_flagged = toCheck.length - owners_notified;
+
+        // Log pre-populated in notes so admins know
+        const flaggedListings = toCheck.filter((l: any) => !l.owner_id);
+        if (flaggedListings.length > 0) {
+            console.log(`[Batch Trigger] ${flaggedListings.length} pre-populated listings require admin review`);
+            // Custom admin notes or logs could go here
+        }
+
         return NextResponse.json({
-            triggered_count: toCheck.length,
-            message: `Triggered annual checks for ${toCheck.length} listing(s).`,
+            triggered: toCheck.length,
+            owners_notified,
+            pre_populated_flagged
         });
     } catch (err: any) {
         console.error("[admin/annual-checks/batch-trigger POST]", err);

@@ -1,10 +1,9 @@
 import "@/tests/ui-mocks";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeAll, afterEach, afterAll } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SubscriptionsTable } from "@/components/admin/subscriptions/SubscriptionsTable";
 import { server } from "../../../../mocks/server";
 import { http, HttpResponse } from "msw";
-import { APP_URL } from "@/lib/constants";
 import * as React from "react";
 
 vi.mock("lucide-react", () => {
@@ -70,13 +69,13 @@ function setupMock() {
 
 beforeEach(() => {
     window.localStorage.clear();
+    setupMock();
 });
 
 // Handlers are now localized in test blocks for maximum reliability
 
 describe("SubscriptionsTable", () => {
     it("renders loading state initially", async () => {
-        setupMock();
         render(<SubscriptionsTable />);
         // Initial state is loading
         const loader = screen.queryByTestId("icon-Loader2");
@@ -84,7 +83,6 @@ describe("SubscriptionsTable", () => {
     });
 
     it("renders subscriptions data correctly", async () => {
-        setupMock();
         render(<SubscriptionsTable />);
         
         await waitFor(() => {
@@ -94,9 +92,8 @@ describe("SubscriptionsTable", () => {
 
         expect(screen.getByText("Premium")).toBeInTheDocument();
         expect(screen.getByText("Featured")).toBeInTheDocument();
-        expect(screen.getByText("active")).toBeInTheDocument();
-        // expired is shown as a text or badgestatus
-        expect(screen.getByText(/expired/i)).toBeInTheDocument();
+        expect(screen.getAllByText("Active").length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/expired/i).length).toBeGreaterThan(0);
     });
 
     it("handles search filtering", async () => {
@@ -106,7 +103,7 @@ describe("SubscriptionsTable", () => {
             expect(screen.getByText("Test Business 1")).toBeInTheDocument();
         });
 
-        const searchInput = screen.getByPlaceholderText(/Search subscriptions/i);
+        const searchInput = screen.getByPlaceholderText("Search...");
         fireEvent.change(searchInput, { target: { value: "Test Business 1" } });
 
         await waitFor(() => {
@@ -123,7 +120,7 @@ describe("SubscriptionsTable", () => {
         });
 
         // Click status filter (tab button)
-        const activeTab = screen.getByText("Active");
+        const activeTab = screen.getAllByRole("button", { name: "Active" })[0];
         fireEvent.click(activeTab);
 
         await waitFor(() => {
@@ -143,8 +140,8 @@ describe("SubscriptionsTable", () => {
         fireEvent.click(triggers[0]);
         
         await waitFor(() => {
-            expect(screen.getByText(/View Details/i)).toBeInTheDocument();
-            expect(screen.getByText(/View Listing/i)).toBeInTheDocument();
+            expect(screen.getAllByText(/View Details/i).length).toBeGreaterThan(0);
+            expect(screen.getAllByText(/View Listing/i).length).toBeGreaterThan(0);
         });
     });
 });

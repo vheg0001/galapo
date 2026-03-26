@@ -22,10 +22,11 @@ import { useSearchParams } from "next/navigation";
 
 interface InvoiceViewProps {
     invoice: any;
+    settings?: Record<string, any>;
     backUrl?: string;
 }
 
-export default function InvoiceView({ invoice, backUrl = "/admin/invoices" }: InvoiceViewProps) {
+export default function InvoiceView({ invoice, settings = {}, backUrl = "/admin/invoices" }: InvoiceViewProps) {
     const searchParams = useSearchParams();
     
     useEffect(() => {
@@ -86,12 +87,14 @@ export default function InvoiceView({ invoice, backUrl = "/admin/invoices" }: In
                                 <div className="bg-[#FF6B35] p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg shadow-orange-950/20" style={{ boxShadow: 'inset 0 0 0 1000px #FF6B35' } as any}>
                                     <Receipt className="h-5 w-5 sm:h-10 sm:w-10 text-white" />
                                 </div>
-                                <h1 className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight leading-tight">GalaPo City Directory</h1>
+                                <h1 className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight leading-tight">
+                                    {settings.site_name || "GalaPo City Directory"}
+                                </h1>
                             </div>
                             <div className="space-y-1 text-slate-400 text-[10px] sm:text-sm font-medium ml-1">
-                                <p>Santa Rosa City, Laguna, Philippines</p>
-                                <p>support@galapo.com</p>
-                                <p>+63 900 000 0000</p>
+                                <p>{settings.site_address || "Santa Rosa City, Laguna, Philippines"}</p>
+                                <p>{settings.contact_email || "support@galapo.com"}</p>
+                                <p>{settings.support_phone || "+63 900 000 0000"}</p>
                             </div>
                         </div>
 
@@ -192,7 +195,7 @@ export default function InvoiceView({ invoice, backUrl = "/admin/invoices" }: In
                             <div className="max-w-xs space-y-4">
                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Important Notes</h4>
                                 <p className="text-[13px] leading-relaxed text-slate-500 font-bold italic opacity-75">
-                                    This invoice serves as your official receipt for the payment made. Digital services are activated immediately after verification. For support, please contact us at support@galapo.com.
+                                    This invoice serves as your official receipt for the payment made. Digital services are activated immediately after verification. For support, please contact us at {settings.contact_email || "support@galapo.com"}.
                                 </p>
                             </div>
 

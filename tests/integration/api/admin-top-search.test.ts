@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createAdminSupabaseClient, createServerSupabaseClient } from "@/lib/supabase";
 import { GET as getPlacements, POST as createPlacement } from "@/app/api/admin/top-search/route";
 import { GET as getOverview } from "@/app/api/admin/top-search/overview/route";
 import { GET as getPlacementDetail, PUT as updatePlacement, DELETE as deletePlacement } from "@/app/api/admin/top-search/[id]/route";
@@ -44,6 +44,7 @@ describe("Admin Top Search API Integration", () => {
             order: vi.fn(() => chain),
             range: vi.fn(() => chain),
             insert: vi.fn(() => chain),
+            upsert: vi.fn(() => chain),
             update: vi.fn(() => chain),
             delete: vi.fn(() => chain),
             single: vi.fn(() => chain),
@@ -83,6 +84,7 @@ describe("Admin Top Search API Integration", () => {
         };
 
         (createServerSupabaseClient as any).mockResolvedValue(mockSupabase);
+        (createAdminSupabaseClient as any).mockReturnValue(mockSupabase);
     });
 
     it("GET /api/admin/top-search returns placements", async () => {
