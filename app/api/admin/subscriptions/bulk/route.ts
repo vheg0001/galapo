@@ -55,8 +55,24 @@ export async function POST(req: NextRequest) {
                         break;
                     }
 
-                    case "send_reminder": {
-                        await logSubscriptionAction({ subscriptionId: id, action: "reminder_sent", details: { is_bulk: true } });
+                    case "remind": {
+                        const daysRemaining = sub.end_date ? Math.ceil((new Date(sub.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                        
+                        await logSubscriptionAction({ 
+                            subscriptionId: id, 
+                            action: "reminder_sent", 
+                            details: { is_bulk: true, days_remaining: daysRemaining } 
+                        });
+
+                        if (listing?.owner_id) {
+                            await notifyOwner({
+                                ownerId: listing.owner_id,
+                                title: "Subscription Renewal Reminder",
+                                message: `Your ${sub.plan_type} subscription for your listing is expiring shortly (${daysRemaining} days left). Please renew to maintain your status.`,
+                                type: "subscription_expiring",
+                                link: `/dashboard/subscriptions/${id}`
+                            });
+                        }
                         break;
                     }
 

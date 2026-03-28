@@ -9,6 +9,7 @@ import Badge from "@/components/shared/Badge";
 import { cn } from "@/lib/utils";
 import { formatPeso, getDaysRemaining } from "@/lib/subscription-helpers";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ExtendDialog } from "./ExtendDialog";
 
 export type SubscriptionRow = {
     id: string;
@@ -41,6 +42,10 @@ export function SubscriptionsTable() {
     const [search, setSearch] = useState("");
     const [activeTab, setActiveTab] = useState("all");
     const [total, setTotal] = useState(0);
+    
+    // Extend Dialog State
+    const [extendDialogOpen, setExtendDialogOpen] = useState(false);
+    const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
 
     const loadRows = useCallback(async () => {
         setLoading(true);
@@ -214,8 +219,14 @@ export function SubscriptionsTable() {
                         
                         <div className="my-1 h-px bg-border/50" />
                         
-                        <DropdownMenuItem onSelect={() => bulk("extend", [r])} className="cursor-pointer text-xs font-bold text-emerald-600 focus:text-emerald-700">
-                            <CalendarDays className="mr-2 h-3.5 w-3.5" /> Quick Extend 30d
+                        <DropdownMenuItem 
+                            onSelect={() => {
+                                setSelectedSubId(r.id);
+                                setExtendDialogOpen(true);
+                            }} 
+                            className="cursor-pointer text-xs font-bold text-emerald-600 focus:text-emerald-700"
+                        >
+                            <CalendarDays className="mr-2 h-3.5 w-3.5" /> Extend Subscription
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => bulk("remind", [r])} className="cursor-pointer text-xs font-bold text-blue-600 focus:text-blue-700">
                             <ShieldAlert className="mr-2 h-3.5 w-3.5" /> Send Reminder
@@ -268,6 +279,18 @@ export function SubscriptionsTable() {
                 className="p-4"
                 persistKey="admin-subscriptions"
             />
+
+            {selectedSubId && (
+                <ExtendDialog
+                    subscriptionId={selectedSubId}
+                    isOpen={extendDialogOpen}
+                    onClose={() => {
+                        setExtendDialogOpen(false);
+                        setSelectedSubId(null);
+                    }}
+                    onSuccess={loadRows}
+                />
+            )}
         </div>
     );
 }

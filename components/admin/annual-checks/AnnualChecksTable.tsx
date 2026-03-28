@@ -58,9 +58,9 @@ export default function AnnualChecksTable() {
             const res = await fetch(`/api/admin/annual-checks?status=${status === 'all' ? '' : status}&page=${page}`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            setChecks(data.checks);
-            setStats(data.stats);
-            setTotal(data.total);
+            setChecks(data.checks || data.data || []);
+            setStats(data.stats || null);
+            setTotal(data.total ?? data.pagination?.total ?? 0);
         } catch (err: any) {
             toast.error(err.message || "Failed to fetch checks");
         } finally {

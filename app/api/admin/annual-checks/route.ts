@@ -153,8 +153,10 @@ export async function GET(request: NextRequest) {
         ]);
 
         return NextResponse.json({
-            data: checks,
-            pagination: { total, page, limit },
+            checks,
+            total,
+            page,
+            limit,
             stats: {
                 pending_response: pendingCountVal ?? 0,
                 no_response: overdueCountVal ?? 0,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
+import { addMonths } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,8 @@ export async function GET(request: NextRequest) {
                 )
             `, { count: "exact" })
             .eq("is_active", true)
-            .gte("end_date", today);
+            .gte("end_date", today)
+            .lte("start_date", addMonths(new Date(), 1).toISOString());
 
         // Filters
         if (category) query = query.eq("listing.category.slug", category);

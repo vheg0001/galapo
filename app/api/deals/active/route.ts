@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-helpers";
+import { addMonths } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,9 @@ export async function GET(request: Request) {
         const limit = limitParam ? parseInt(limitParam, 10) : 8;
 
         const supabase = await createServerSupabaseClient();
-        const now = new Date().toISOString();
+        const now = new Date();
+        const nowIso = now.toISOString();
+        const oneMonthFromNow = addMonths(now, 1).toISOString();
 
         const { data, error } = await supabase
             .from("deals")
@@ -21,11 +24,13 @@ export async function GET(request: Request) {
                 description,
                 image_url,
                 discount_text,
+                start_date,
                 end_date,
                 listings!inner ( slug, business_name, status, is_active, categories (name) )
             `)
             .eq("is_active", true)
-            .gte("end_date", now)
+            .gte("end_date", nowIso)
+            .lte("start_date", oneMonthFromNow)
             .in("listings.status", ["approved", "claimed_pending"])
             .eq("listings.is_active", true)
             .order("end_date", { ascending: true })

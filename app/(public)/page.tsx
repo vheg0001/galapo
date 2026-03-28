@@ -4,6 +4,7 @@ import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/sup
 import { APP_NAME } from "@/lib/constants";
 import { fetchPublicEvents } from "@/lib/event-helpers";
 import { getPublishedBlogPosts } from "@/lib/blog-helpers";
+import { addMonths } from "date-fns";
 import SearchBar from "@/components/shared/SearchBar";
 import ListingCard from "@/components/shared/ListingCard";
 import EventCard from "@/components/shared/EventCard";
@@ -101,6 +102,7 @@ export default async function HomePage() {
             `)
             .eq("is_active", true)
             .gte("end_date", new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }))
+            .lte("start_date", addMonths(new Date(), 1).toISOString())
             .order("end_date", { ascending: true })
             .limit(6),
         getPublishedBlogPosts({ limit: 3 }),

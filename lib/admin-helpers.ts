@@ -52,7 +52,7 @@ export async function logSubscriptionAction({
     details?: any;
     performedBy?: string | null;
 }) {
-    const supabase = await createServerSupabaseClient();
+    const supabase = createAdminSupabaseClient();
     
     const { error } = await supabase
         .from("subscription_history")
@@ -85,7 +85,7 @@ export async function notifyOwner({
     type?: string;
     link?: string | null;
 }) {
-    const supabase = await createServerSupabaseClient();
+    const supabase = createAdminSupabaseClient();
     
     const { error } = await supabase
         .from("notifications")
@@ -94,7 +94,7 @@ export async function notifyOwner({
             title,
             message,
             type,
-            link,
+            data: link ? { link } : {},
             is_read: false,
             created_at: new Date().toISOString()
         });

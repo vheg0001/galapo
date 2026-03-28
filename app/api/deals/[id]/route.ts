@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
+import { addMonths } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,9 @@ export async function GET(
 ) {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
-    const today = new Date().toISOString();
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const oneMonthFromNow = addMonths(now, 1).toISOString();
 
     try {
         const { data, error } = await supabase
@@ -29,7 +32,8 @@ export async function GET(
             `)
             .eq("id", id)
             .eq("is_active", true)
-            .gte("end_date", today)
+            .gte("end_date", nowIso)
+            .lte("start_date", oneMonthFromNow)
             .single();
 
         if (error) {

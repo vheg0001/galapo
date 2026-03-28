@@ -1,5 +1,6 @@
 import { PlanType, Deal, DealStatus } from "./types";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { addMonths, isBefore, isAfter, parseISO } from "date-fns";
 
 /**
  * Returns the maximum number of active deals allowed for a given plan type.
@@ -88,6 +89,27 @@ export function isDealActive(deal: Deal): boolean {
     const start = new Date(deal.start_date);
     const end = new Date(deal.end_date);
     return now >= start && now <= end;
+}
+
+/**
+ * Checks if a deal should be visible to the public.
+ * Deals are visible if:
+ * 1. is_active is true
+ * 2. Current date is within 1 month before start_date
+ * 3. Current date is not after end_date
+ */
+export function isDealVisible(deal: Deal): boolean {
+    if (!deal.is_active) return false;
+
+    const now = new Date();
+    const start = parseISO(deal.start_date);
+    const end = parseISO(deal.end_date);
+
+    // 1 month before start date
+    const visibilityWindowStart = addMonths(start, -1);
+
+    // Visible if today is >= 1 month before start AND today is <= end
+    return now >= visibilityWindowStart && now <= end;
 }
 
 /**

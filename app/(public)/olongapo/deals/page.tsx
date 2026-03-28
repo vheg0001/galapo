@@ -7,6 +7,7 @@ import FeaturedDeals from "@/components/public/deals/FeaturedDeals";
 import DealFilterBar from "@/components/public/deals/DealFilterBar";
 import AdSlot from "@/components/shared/AdSlot";
 import { Metadata } from "next";
+import { addMonths } from "date-fns";
 
 export const metadata: Metadata = {
     title: "Deals & Offers in Olongapo City",
@@ -70,7 +71,8 @@ export default async function DealsPage(props: DealsPageProps) {
             )
         `, { count: "exact" })
         .eq("is_active", true)
-        .gte("end_date", today);
+        .gte("end_date", today)
+        .lte("start_date", addMonths(new Date(), 1).toISOString());
 
 
     // Apply filters from searchParams using resolved IDs

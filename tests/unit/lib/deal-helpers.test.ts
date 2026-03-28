@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
     getDealLimit,
     isDealActive,
+    isDealVisible,
     getDealStatus,
     formatExpiryText,
     canCreateDeal
@@ -70,6 +71,51 @@ describe("deal-helpers", () => {
         it("returns false for an expired deal", () => {
             vi.setSystemTime(new Date("2025-01-01"));
             expect(isDealActive(baseDeal)).toBe(false);
+        });
+    });
+
+    describe("isDealVisible", () => {
+        const baseDeal: Deal = {
+            id: "1",
+            listing_id: "listing-1",
+            title: "Test Deal",
+            description: "Test Desc",
+            discount_text: "10% OFF",
+            image_url: null,
+            terms_conditions: null,
+            is_active: true,
+            start_date: "2024-06-01",
+            end_date: "2024-12-31",
+            created_at: "2024-01-01"
+        };
+
+        it("returns false if is_active is false", () => {
+            expect(isDealVisible({ ...baseDeal, is_active: false })).toBe(false);
+        });
+
+        it("returns true for a currently active deal", () => {
+            vi.setSystemTime(new Date("2024-07-01"));
+            expect(isDealVisible(baseDeal)).toBe(true);
+        });
+
+        it("returns true for a deal starting in 15 days", () => {
+            vi.setSystemTime(new Date("2024-05-17"));
+            expect(isDealVisible(baseDeal)).toBe(true);
+        });
+
+        it("returns true for a deal starting exactly 1 month from now", () => {
+            vi.setSystemTime(new Date("2024-05-01"));
+            expect(isDealVisible(baseDeal)).toBe(true);
+        });
+
+        it("returns false for a deal starting in 2 months", () => {
+            vi.setSystemTime(new Date("2024-04-01"));
+            expect(isDealVisible(baseDeal)).toBe(false);
+        });
+
+        it("returns false for an expired deal", () => {
+            vi.setSystemTime(new Date("2025-01-01"));
+            expect(isDealVisible(baseDeal)).toBe(false);
         });
     });
 

@@ -3,6 +3,7 @@
 // ──────────────────────────────────────────────────────────
 
 import { SupabaseClient } from "@supabase/supabase-js";
+import { isDealVisible } from "./deal-helpers";
 
 interface ListingFilters {
     isFeatured?: boolean;
@@ -567,14 +568,16 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
         return a.sort_order - b.sort_order;
     });
 
-    // Filter active and upcoming deals (not expired)
-    // Use PH timezone for consistent "today" comparison
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+    // Filter active and visible deals (within 1 month of start and not expired)
+    // Use PH timezone for consistent "today" comparison if needed, or stick to ISO if helpers handle it
     const activeDeals = (listing.deals || []).filter((d: any) => {
-        return d.is_active && d.end_date >= today;
+        // We use the helper logic here. Since it's a client-side filter for the fetched data,
+        // we can use isDealVisible from deal-helpers.
+        return isDealVisible(d);
     }).sort((a: any, b: any) => a.start_date.localeCompare(b.start_date));
 
     // Filter upcoming events
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
     const upcomingEvents = (listing.events || []).filter((e: any) => {
         return e.is_active && e.event_date >= today;
     }).sort((a: any, b: any) => a.event_date.localeCompare(b.event_date));

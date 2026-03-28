@@ -78,16 +78,35 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const { action } = body;
         const supabase = createAdminSupabaseClient();
 
-        // Get current sub for context
-        const { data: currentSub } = await supabase.from("subscriptions").select("listing_id, end_date, plan_type").eq("id", id).single();
-        if (!currentSub) return NextResponse.json({ error: "Subscription not found" }, { status: 404 });
+        // Get current sub and owner for context
+        const { data: subInfo, error: fetchErr } = await supabase
+            .from("subscriptions")
+            .select(`
+                plan_type,
+                end_date,
+                listing_id,
+                listings (
+                    id,
+                    owner_id
+                )
+            `)
+            .eq("id", id)
+            .single();
 
+        if (fetchErr || !subInfo) return NextResponse.json({ error: "Subscription not found" }, { status: 404 });
+        
+        // Robustly get owner_id (handle if listings is an object or array)
+        const listingData = (subInfo as any).listings;
+        const listing = Array.isArray(listingData) ? listingData[0] : listingData;
+        const ownerId = listing?.owner_id;
+        const listingId = listing?.id;
+        
         let result: any = null;
 
         switch (action) {
             case "extend": {
                 const { days, reason } = body;
-                const newEndDate = new Date(currentSub.end_date || new Date());
+                const newEndDate = new Date(subInfo.end_date || new Date());
                 newEndDate.setDate(newEndDate.getDate() + (days || 30));
                 
                 const { error } = await supabase
@@ -101,11 +120,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 if (error) throw error;
 
                 await logSubscriptionAction({ subscriptionId: id, action: "extended", details: { days, reason } });
-                await notifyOwner({ 
-                    ownerId: body.owner_id, 
-                    title: "Subscription Extended", 
-                    message: `Your ${currentSub.plan_type} subscription has been extended by ${days} days.` 
-                });
+                
+                if (ownerId) {
+                    await notifyOwner({ 
+                        ownerId, 
+                        title: "Subscription Extended", 
+                        message: `Your ${subInfo.plan_type} subscription has been extended by ${days} days.${reason ? ' Reason: ' + reason : ''}`,
+                        type: "payment_confirmed" // Use existing confirmed enum type
+                    });
+                }
                 break;
             }
 
@@ -120,18 +143,21 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                     .eq("id", id);
                 if (error) throw error;
 
-                // Sync with listing flags if immediate (assuming listed logic)
                 await supabase.from("listings").update({ 
                     is_premium: new_plan === "premium",
                     is_featured: new_plan === "featured"
-                }).eq("id", currentSub.listing_id);
+                }).eq("id", subInfo.listing_id);
 
-                await logSubscriptionAction({ subscriptionId: id, action: "upgraded", details: { from: currentSub.plan_type, to: new_plan } });
-                await notifyOwner({ 
-                    ownerId: body.owner_id, 
-                    title: "Plan Upgraded", 
-                    message: `Your listing has been upgraded to ${new_plan}.` 
-                });
+                await logSubscriptionAction({ subscriptionId: id, action: "upgraded", details: { from: subInfo.plan_type, to: new_plan } });
+                
+                if (ownerId) {
+                    await notifyOwner({ 
+                        ownerId, 
+                        title: "Plan Upgraded", 
+                        message: `Your listing has been upgraded to ${new_plan}.`,
+                        type: "payment_confirmed"
+                    });
+                }
                 break;
             }
 
@@ -144,10 +170,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                         updated_at: new Date().toISOString()
                     }).eq("id", id);
                     
-                    // Immediately remove listing benefits
-                    await supabase.from("listings").update({ is_premium: false, is_featured: false }).eq("id", currentSub.listing_id);
+                    await supabase.from("listings").update({ is_premium: false, is_featured: false }).eq("id", subInfo.listing_id);
                 } else {
-                    // end_of_cycle
                     await supabase.from("subscriptions").update({ 
                         auto_renew: false,
                         updated_at: new Date().toISOString()
@@ -155,17 +179,29 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 }
 
                 await logSubscriptionAction({ subscriptionId: id, action: "cancelled", details: { effective, reason } });
-                await notifyOwner({ 
-                    ownerId: body.owner_id, 
-                    title: "Subscription Cancelled", 
-                    message: `Your subscription has been cancelled (${effective}).` 
-                });
+                
+                if (ownerId) {
+                    await notifyOwner({ 
+                        ownerId, 
+                        title: "Subscription Cancelled", 
+                        message: `Your subscription has been cancelled (${effective}).`,
+                        type: "listing_deactivated"
+                    });
+                }
                 break;
             }
 
             case "send_reminder": {
-                // Logic for sending email would go here (Resend)
                 await logSubscriptionAction({ subscriptionId: id, action: "reminder_sent" });
+                
+                if (ownerId) {
+                    await notifyOwner({
+                        ownerId,
+                        title: "Subscription Renewal Reminder",
+                        message: `Your ${subInfo.plan_type} subscription is expiring soon. Please renew to keep your premium benefits.`,
+                        type: "subscription_expiring"
+                    });
+                }
                 break;
             }
 
