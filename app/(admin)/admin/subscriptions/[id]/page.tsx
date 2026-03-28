@@ -10,6 +10,7 @@ import { SubscriptionTimeline } from "@/components/admin/subscriptions/Subscript
 import { ExtendDialog } from "@/components/admin/subscriptions/ExtendDialog";
 import { CancelDialog } from "@/components/admin/subscriptions/CancelDialog";
 import { UpgradeDialog } from "@/components/admin/subscriptions/UpgradeDialog";
+import { getPlanChangeDirection } from "@/lib/subscription-helpers";
 
 export default function AdminSubscriptionDetailPage({
     params,
@@ -28,6 +29,11 @@ export default function AdminSubscriptionDetailPage({
     const [extendOpen, setExtendOpen] = useState(false);
     const [cancelOpen, setCancelOpen] = useState(false);
     const [upgradeOpen, setUpgradeOpen] = useState(false);
+    const defaultTargetPlan = subscription?.plan_type === "premium" ? "featured" : "premium";
+    const planActionLabel =
+        getPlanChangeDirection(subscription?.plan_type, defaultTargetPlan) === "downgrade"
+            ? "Downgrade Plan"
+            : "Upgrade Plan";
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -85,7 +91,7 @@ export default function AdminSubscriptionDetailPage({
                             onClick={() => setUpgradeOpen(true)}
                             className="flex h-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-200 px-4 text-xs font-bold transition-all hover:bg-blue-100"
                         >
-                            Change Plan
+                            {planActionLabel}
                         </button>
                         <button
                             onClick={() => setExtendOpen(true)}

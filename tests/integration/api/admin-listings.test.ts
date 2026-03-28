@@ -70,6 +70,7 @@ const { mockSupabase, mockRequireAdmin, resetMockState, mockState } = vi.hoisted
 
     const requireAdmin = vi.fn().mockResolvedValue({
         userId: "admin-1",
+        user: { id: "admin-1" },
         session: { user: { id: "admin-1" } },
         adminClient: mockClient,
     });
@@ -85,6 +86,7 @@ const { mockSupabase, mockRequireAdmin, resetMockState, mockState } = vi.hoisted
         requireAdmin.mockReset();
         requireAdmin.mockResolvedValue({
             userId: "admin-1",
+            user: { id: "admin-1" },
             session: { user: { id: "admin-1" } },
             adminClient: mockClient,
         });
@@ -98,6 +100,10 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 vi.mock("@/lib/admin-helpers", () => ({
+    requireAdmin: mockRequireAdmin,
+}));
+
+vi.mock("@/lib/auth-helpers", () => ({
     requireAdmin: mockRequireAdmin,
 }));
 
@@ -288,6 +294,10 @@ describe("Admin Listings API Integration", () => {
 
     it("PUT /api/admin/listings/[id] updates listing without forcing re-approval", async () => {
         mockState.singleQueue.push({
+            data: { id: "l1", is_featured: false, is_premium: false },
+            error: null,
+        });
+        mockState.singleQueue.push({
             data: { id: "l1", status: "approved", short_description: "Updated copy" },
             error: null,
         });
@@ -302,6 +312,58 @@ describe("Admin Listings API Integration", () => {
         const json = await res!.json();
         expect(json.data.status).toBe("approved");
         expect(mockState.calls.update[0]).toMatchObject({ short_description: "Updated copy" });
+    });
+
+    it("PUT /api/admin/listings/[id] syncs the latest subscription and badges when plan override changes", async () => {
+        mockState.singleQueue.push(
+            {
+                data: { id: "l1", is_featured: true, is_premium: true },
+                error: null,
+            },
+            {
+                data: { id: "l1", status: "approved", is_featured: true, is_premium: false },
+                error: null,
+            }
+        );
+        mockState.maybeSingleQueue.push({
+            data: { id: "sub1", plan_type: "premium", status: "active" },
+            error: null,
+        });
+        mockState.thenQueue.push(
+            { error: null },
+            {
+                data: [
+                    { id: "badge-featured", slug: "featured" },
+                    { id: "badge-premium", slug: "premium" },
+                ],
+                error: null,
+            },
+            { error: null },
+            { error: null },
+            { error: null }
+        );
+
+        const req = new NextRequest("http://localhost/api/admin/listings/l1", {
+            method: "PUT",
+            body: JSON.stringify({ is_featured: true, is_premium: false }),
+        });
+        const res = await putListingById(req, { params: Promise.resolve({ id: "l1" }) });
+
+        expect(res!.status).toBe(200);
+        expect(mockState.calls.from).toContain("subscriptions");
+        expect(mockState.calls.from).toContain("badges");
+        expect(mockState.calls.from).toContain("listing_badges");
+        expect(mockState.calls.update).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ is_featured: true, is_premium: false }),
+                expect.objectContaining({ plan_type: "featured" }),
+            ])
+        );
+        expect(
+            mockState.calls.insert.some(
+                (payload) => payload?.listing_id === "l1" && payload?.badge_id === "badge-featured"
+            )
+        ).toBe(true);
     });
 
     it("POST /api/admin/listings/[id]/approve approves and creates notification", async () => {

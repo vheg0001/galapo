@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
     normalizePlanType,
+    getPlanChangeDirection,
     isUpgrade,
     getSubscriptionStatus,
     mapPricingSettings,
@@ -33,6 +34,20 @@ describe("Subscription Helpers", () => {
             expect(isUpgrade("premium", "featured")).toBe(false);
             expect(isUpgrade("premium", "premium")).toBe(false);
             expect(isUpgrade("featured", "featured")).toBe(false);
+        });
+    });
+
+    describe("getPlanChangeDirection", () => {
+        it("returns upgrade when moving to a higher paid tier", () => {
+            expect(getPlanChangeDirection("featured", "premium")).toBe("upgrade");
+        });
+
+        it("returns downgrade when moving to a lower paid tier", () => {
+            expect(getPlanChangeDirection("premium", "featured")).toBe("downgrade");
+        });
+
+        it("returns same when the plan does not change", () => {
+            expect(getPlanChangeDirection("premium", "premium")).toBe("same");
         });
     });
 

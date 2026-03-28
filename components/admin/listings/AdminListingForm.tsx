@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 
 import { Building2, MapPin, Phone, Mail, Globe, Facebook, Instagram, Twitter, Youtube, Clock, Info, Sparkles, Image as ImageIcon, Send, ShieldCheck, CheckCircle2, XCircle, LayoutGrid, Eye, EyeOff, MessageSquare } from "lucide-react";
 import { cn, formatPhoneNumberInput } from "@/lib/utils";
+import { deriveListingPlanTier, getListingPlanFlags } from "@/lib/listing-plan-helpers";
 import MapPinSelector from "@/components/business/listings/MapPinSelector";
 import OperatingHoursEditor from "@/components/business/listings/OperatingHoursEditor";
 import DynamicFieldsForm from "@/components/business/listings/DynamicFieldsForm";
@@ -123,6 +125,7 @@ function normalizeDescriptionInput(value: unknown) {
 
 export default function AdminListingForm({ mode, listingId }: AdminListingFormProps) {
     const [form, setForm] = useState<any>(EMPTY_FORM);
+    const [currentSubscription, setCurrentSubscription] = useState<any>(null);
     const [categories, setCategories] = useState<any[]>([]);
     const [subcategories, setSubcategories] = useState<any[]>([]);
     const [barangays, setBarangays] = useState<any[]>([]);
@@ -171,10 +174,17 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
             const json = await res.json();
             if (!json.listing) return;
             const listing = json.listing;
+            const subscription = json.current_subscription ?? null;
             const dynamicFields = (json.dynamic_field_values ?? []).reduce((acc: Record<string, any>, row: any) => {
                 if (row?.field_id) acc[row.field_id] = row.value;
                 return acc;
             }, {});
+            const planFlags = subscription?.plan_type
+                ? getListingPlanFlags(subscription.plan_type)
+                : {
+                    is_featured: !!listing.is_featured,
+                    is_premium: !!listing.is_premium,
+                };
             setForm({
                 business_name: listing.business_name ?? "",
                 short_description: listing.short_description ?? "",
@@ -199,8 +209,8 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                 barangay_id: listing.barangay_id ?? "",
                 owner_id: listing.owner_id ?? "",
                 status: listing.status ?? "pending",
-                is_featured: !!listing.is_featured,
-                is_premium: !!listing.is_premium,
+                is_featured: planFlags.is_featured,
+                is_premium: planFlags.is_premium,
                 is_active: !!listing.is_active,
                 payment_methods: Array.isArray(listing.payment_methods) ? listing.payment_methods : [],
                 operating_hours: listing.operating_hours ?? EMPTY_FORM.operating_hours,
@@ -208,6 +218,7 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                 tags: Array.isArray(listing.tags) ? listing.tags : [],
                 image_urls: Array.isArray(json.images) ? json.images.map((img: any) => img.image_url).filter(Boolean) : [],
             });
+            setCurrentSubscription(subscription);
             const loadedPhotos: AdminPhotoItem[] = Array.isArray(json.images)
                 ? json.images
                     .map((img: any, idx: number) => ({
@@ -392,8 +403,12 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
         setMessage("");
         try {
             const baseImageUrls = photoItems.filter((p) => !p.url.startsWith("blob:")).map((p) => p.url);
+            const normalizedPlanFlags = currentSubscription?.plan_type
+                ? getListingPlanFlags(currentSubscription.plan_type)
+                : getListingPlanFlags(deriveListingPlanTier(form));
             const payload = {
                 ...form,
+                ...normalizedPlanFlags,
                 image_urls: baseImageUrls,
             };
 
@@ -513,7 +528,8 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
         const email = String(o.email ?? "").toLowerCase();
         return name.includes(q) || email.includes(q);
     });
-    const isFreePlan = !form.is_featured && !form.is_premium;
+    const selectedPlan = deriveListingPlanTier(form);
+    const isFreePlan = selectedPlan === "free";
 
     return (
         <div className="space-y-8 max-w-5xl mx-auto pb-20">
@@ -539,15 +555,15 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                 <div className="rounded-2xl border border-border/50 bg-background/40 p-4 shadow-sm backdrop-blur-sm ring-1 ring-border/50 flex items-center gap-4">
                     <div className={cn(
                         "flex h-12 w-12 items-center justify-center rounded-xl transition-all shadow-sm",
-                        form.is_featured ? "bg-amber-500/10 text-amber-600" :
-                            form.is_premium ? "bg-violet-500/10 text-violet-600" :
+                        selectedPlan === "premium" ? "bg-violet-500/10 text-violet-600" :
+                            selectedPlan === "featured" ? "bg-amber-500/10 text-amber-600" :
                                 "bg-emerald-500/10 text-emerald-600"
                     )}>
                         <ShieldCheck className="h-6 w-6" />
                     </div>
                     <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Subscription</p>
-                        <p className="text-sm font-bold">{form.is_featured ? "Featured" : form.is_premium ? "Premium" : "Free"}</p>
+                        <p className="text-sm font-bold capitalize">{selectedPlan}</p>
                     </div>
                 </div>
 
@@ -1086,44 +1102,64 @@ export default function AdminListingForm({ mode, listingId }: AdminListingFormPr
                     </div>
 
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Subscription Tier</label>
-                        <div className="flex h-14 w-full gap-1.5 rounded-[1.25rem] border border-primary/10 bg-muted/40 p-1.5 shadow-inner">
-                            <button
-                                type="button"
-                                onClick={() => setForm({ ...form, is_featured: false, is_premium: false })}
-                                className={cn(
-                                    "flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                    isFreePlan
-                                        ? "bg-emerald-600 text-white shadow-md scale-[1.02] ring-1 ring-emerald-400/20"
-                                        : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                Free
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setForm({ ...form, is_featured: true, is_premium: false })}
-                                className={cn(
-                                    "flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                    form.is_featured
-                                        ? "bg-amber-500 text-white shadow-md scale-[1.02] ring-1 ring-amber-400/20"
-                                        : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                Featured
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setForm({ ...form, is_premium: true, is_featured: false })}
-                                className={cn(
-                                    "flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                    form.is_premium
-                                        ? "bg-violet-600 text-white shadow-md scale-[1.02] ring-1 ring-violet-400/20"
-                                        : "text-muted-foreground/60 hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                Premium
-                            </button>
+                        <div className="flex items-center justify-between gap-3">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Subscription Tier</label>
+                            {mode === "edit" && (
+                                currentSubscription ? (
+                                    <Link
+                                        href={`/admin/subscriptions/${currentSubscription.id}`}
+                                        className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                                    >
+                                        Manage in Subscriptions
+                                    </Link>
+                                ) : (
+                                    <Link
+                                        href="/admin/subscriptions"
+                                        className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                                    >
+                                        Open Subscriptions
+                                    </Link>
+                                )
+                            )}
+                        </div>
+                        <div className="space-y-3 rounded-[1.25rem] border border-primary/10 bg-muted/40 p-3 shadow-inner">
+                            <div className="flex h-14 w-full gap-1.5 rounded-[1rem] bg-background/50 p-1.5">
+                                <div
+                                    className={cn(
+                                        "flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        isFreePlan
+                                            ? "bg-emerald-600 text-white shadow-md scale-[1.02] ring-1 ring-emerald-400/20"
+                                            : "text-muted-foreground/60"
+                                    )}
+                                >
+                                    Free
+                                </div>
+                                <div
+                                    className={cn(
+                                        "flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        selectedPlan === "featured"
+                                            ? "bg-amber-500 text-white shadow-md scale-[1.02] ring-1 ring-amber-400/20"
+                                            : "text-muted-foreground/60"
+                                    )}
+                                >
+                                    Featured
+                                </div>
+                                <div
+                                    className={cn(
+                                        "flex flex-1 items-center justify-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        selectedPlan === "premium"
+                                            ? "bg-violet-600 text-white shadow-md scale-[1.02] ring-1 ring-violet-400/20"
+                                            : "text-muted-foreground/60"
+                                    )}
+                                >
+                                    Premium
+                                </div>
+                            </div>
+                            <p className="px-1 text-[11px] font-medium text-muted-foreground">
+                                {mode === "create"
+                                    ? "New listings start with their current tier shown here. Upgrade or downgrade from Subscriptions after creation."
+                                    : "Plan changes are managed in Subscriptions so plan history, listing badges, and listing flags stay in sync."}
+                            </p>
                         </div>
                     </div>
 

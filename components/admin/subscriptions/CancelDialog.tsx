@@ -14,7 +14,7 @@ export function CancelDialog({
     subscriptionId: string;
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void;
+    onSuccess: () => void | Promise<void>;
 }) {
     const [loading, setLoading] = useState(false);
     const [reason, setReason] = useState("");
@@ -35,7 +35,7 @@ export function CancelDialog({
             });
 
             if (!res.ok) throw new Error("Failed to cancel subscription.");
-            onSuccess();
+            await onSuccess();
             onClose();
         } catch (error) {
             console.error(error);

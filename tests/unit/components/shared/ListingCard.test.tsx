@@ -36,6 +36,42 @@ describe("ListingCard Component", () => {
         expect(screen.getByText("Premium")).toBeInTheDocument();
     });
 
+    it("renders database premium plan badges with the shared premium styling", () => {
+        const premiumPlanBadge = {
+            id: "lb-premium",
+            listing_id: "1",
+            badge_id: "badge-premium",
+            assigned_by: null,
+            assigned_at: "2026-03-28T00:00:00.000Z",
+            expires_at: null,
+            note: null,
+            is_active: true,
+            created_at: "2026-03-28T00:00:00.000Z",
+            badge: {
+                id: "badge-premium",
+                name: "Premium",
+                slug: "premium",
+                description: null,
+                icon: "Crown",
+                icon_lucide: "crown",
+                color: "#D97706",
+                text_color: "#FFFFFF",
+                type: "plan",
+                priority: 20,
+                auto_expires: false,
+                default_expiry_days: null,
+                is_filterable: false,
+                is_active: true,
+                created_at: "2026-03-28T00:00:00.000Z",
+                updated_at: "2026-03-28T00:00:00.000Z",
+            },
+        };
+
+        render(<ListingCard {...defaultProps} badges={[premiumPlanBadge as any]} isPremium={true} />);
+
+        expect(screen.getByText("Premium")).toHaveClass("bg-gradient-to-br");
+    });
+
     it("renders clickable phone number", () => {
         render(<ListingCard {...defaultProps} />);
         const phoneEl = screen.getByText("+639123456789");

@@ -5,6 +5,7 @@ import {
     NotificationType 
 } from "./types";
 import { addDays } from "date-fns";
+import { syncListingPlanBadges } from "./listing-plan-badges";
 
 /**
  * getSignedProofUrl
@@ -79,23 +80,8 @@ export async function activateSubscription(
         .eq("id", listingId);
     if (lError) throw lError;
 
-    // 3. Assign plan badge to listing_badges
-    // First, remove old plan badges
-    await supabase
-        .from("listing_badges")
-        .delete()
-        .eq("listing_id", listingId)
-        .in("badge_id", ["featured", "premium"]); // Assuming IDs match
-
-    // Add new badge
-    const badgeId = plan === "premium" ? "premium" : "featured";
-    await supabase
-        .from("listing_badges")
-        .insert({
-            listing_id: listingId,
-            badge_id: badgeId,
-            assigned_at: now
-        });
+    // 3. Sync plan badge to listing_badges
+    await syncListingPlanBadges(supabase, listingId, plan, now);
 
     return { startDate, endDate };
 }

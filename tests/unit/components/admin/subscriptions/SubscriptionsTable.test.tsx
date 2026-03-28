@@ -142,6 +142,26 @@ describe("SubscriptionsTable", () => {
         await waitFor(() => {
             expect(screen.getAllByText(/View Details/i).length).toBeGreaterThan(0);
             expect(screen.getAllByText(/View Listing/i).length).toBeGreaterThan(0);
+            expect(screen.getAllByText(/Downgrade Plan/i).length).toBeGreaterThan(0);
+        });
+    });
+
+    it("opens the upgrade dialog from row actions", async () => {
+        render(<SubscriptionsTable />);
+
+        await waitFor(() => {
+            const triggers = screen.getAllByTestId("dropdown-trigger");
+            expect(triggers.length).toBeGreaterThan(0);
+        });
+
+        fireEvent.click(screen.getAllByTestId("dropdown-trigger")[0]);
+        fireEvent.click(screen.getAllByText(/Downgrade Plan/i)[0]);
+
+        await waitFor(() => {
+            expect(screen.getAllByText("Downgrade Plan").length).toBeGreaterThan(0);
+            expect(screen.getByText("Premium Plan")).toBeInTheDocument();
+            expect(screen.getByText("Featured Plan")).toBeInTheDocument();
+            expect(screen.getByRole("button", { name: /confirm downgrade/i })).toBeInTheDocument();
         });
     });
 });

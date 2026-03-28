@@ -15,7 +15,7 @@ export function ExtendDialog({
     subscriptionId: string;
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void;
+    onSuccess: () => void | Promise<void>;
 }) {
     const [loading, setLoading] = useState(false);
     const [days, setDays] = useState("30");
@@ -37,7 +37,7 @@ export function ExtendDialog({
             });
 
             if (!res.ok) throw new Error("Failed to extend subscription.");
-            onSuccess();
+            await onSuccess();
             onClose();
         } catch (error) {
             console.error(error);

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { logSubscriptionAction, notifyOwner } from "@/lib/admin-helpers";
+import { syncListingPlanBadges } from "@/lib/listing-plan-badges";
+import { getPlanChangeDirection, normalizePlanType } from "@/lib/subscription-helpers";
 
 // GET Detail
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -134,27 +136,53 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
             case "upgrade": {
                 const { new_plan } = body;
+                if (!["featured", "premium"].includes(new_plan)) {
+                    return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
+                }
+
+                const currentPlan = normalizePlanType(subInfo.plan_type);
+                const targetPlan = normalizePlanType(new_plan);
+                const changeDirection = getPlanChangeDirection(currentPlan, targetPlan);
+
+                if (changeDirection === "same") {
+                    return NextResponse.json({ error: "Subscription is already on that plan" }, { status: 400 });
+                }
+
+                const now = new Date().toISOString();
+
                 const { error } = await supabase
                     .from("subscriptions")
                     .update({ 
                         plan_type: new_plan,
-                        updated_at: new Date().toISOString()
+                        updated_at: now
                     })
                     .eq("id", id);
                 if (error) throw error;
 
-                await supabase.from("listings").update({ 
+                const { error: listingError } = await supabase.from("listings").update({ 
                     is_premium: new_plan === "premium",
-                    is_featured: new_plan === "featured"
+                    is_featured: new_plan === "featured" || new_plan === "premium",
+                    updated_at: now
                 }).eq("id", subInfo.listing_id);
+                if (listingError) throw listingError;
 
-                await logSubscriptionAction({ subscriptionId: id, action: "upgraded", details: { from: subInfo.plan_type, to: new_plan } });
+                if (listingId) {
+                    await syncListingPlanBadges(supabase, listingId, new_plan, now);
+                }
+
+                const actionLabel = changeDirection === "downgrade" ? "downgraded" : "upgraded";
+                const notificationTitle = changeDirection === "downgrade" ? "Plan Downgraded" : "Plan Upgraded";
+                const notificationMessage = changeDirection === "downgrade"
+                    ? `Your listing has been downgraded to ${new_plan}.`
+                    : `Your listing has been upgraded to ${new_plan}.`;
+
+                await logSubscriptionAction({ subscriptionId: id, action: actionLabel, details: { from: subInfo.plan_type, to: new_plan } });
                 
                 if (ownerId) {
                     await notifyOwner({ 
                         ownerId, 
-                        title: "Plan Upgraded", 
-                        message: `Your listing has been upgraded to ${new_plan}.`,
+                        title: notificationTitle,
+                        message: notificationMessage,
                         type: "payment_confirmed"
                     });
                 }
@@ -171,6 +199,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                     }).eq("id", id);
                     
                     await supabase.from("listings").update({ is_premium: false, is_featured: false }).eq("id", subInfo.listing_id);
+                    if (listingId) {
+                        await syncListingPlanBadges(supabase, listingId, "free");
+                    }
                 } else {
                     await supabase.from("subscriptions").update({ 
                         auto_renew: false,

@@ -7,9 +7,10 @@ import DataTable, { Column } from "@/components/admin/shared/DataTable";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import Badge from "@/components/shared/Badge";
 import { cn } from "@/lib/utils";
-import { formatPeso, getDaysRemaining } from "@/lib/subscription-helpers";
+import { formatPeso, getDaysRemaining, getPlanChangeDirection } from "@/lib/subscription-helpers";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExtendDialog } from "./ExtendDialog";
+import { UpgradeDialog } from "./UpgradeDialog";
 
 export type SubscriptionRow = {
     id: string;
@@ -36,7 +37,11 @@ const TABS = [
     { label: "Cancelled", value: "cancelled" }
 ];
 
-export function SubscriptionsTable() {
+export function SubscriptionsTable({
+    onDataChanged,
+}: {
+    onDataChanged?: () => void;
+}) {
     const [rows, setRows] = useState<SubscriptionRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -46,6 +51,8 @@ export function SubscriptionsTable() {
     // Extend Dialog State
     const [extendDialogOpen, setExtendDialogOpen] = useState(false);
     const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+    const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+    const [selectedUpgradeRow, setSelectedUpgradeRow] = useState<SubscriptionRow | null>(null);
 
     const loadRows = useCallback(async () => {
         setLoading(true);
@@ -95,6 +102,7 @@ export function SubscriptionsTable() {
             }
 
             await loadRows();
+            onDataChanged?.();
         } catch (error) {
             console.error(`Failed to ${action} subscriptions`, error);
             alert(`Failed to ${action} selected subscriptions.`);
@@ -200,46 +208,62 @@ export function SubscriptionsTable() {
         {
             key: "actions",
             header: "Actions",
-            render: (r) => (
-                <DropdownMenu>
-                    <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-background/50 transition-colors hover:bg-muted outline-none">
-                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-xl">
-                        <DropdownMenuItem asChild>
-                            <Link href={`/admin/subscriptions/${r.id}`} className="cursor-pointer text-xs font-bold w-full text-foreground/80">
-                                <FileText className="mr-2 h-3.5 w-3.5" /> View Details
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href={`/admin/listings/${r.listing_id}`} className="cursor-pointer text-xs font-bold w-full text-foreground/80">
-                                <ExternalLink className="mr-2 h-3.5 w-3.5" /> View Listing
-                            </Link>
-                        </DropdownMenuItem>
-                        
-                        <div className="my-1 h-px bg-border/50" />
-                        
-                        <DropdownMenuItem 
-                            onSelect={() => {
-                                setSelectedSubId(r.id);
-                                setExtendDialogOpen(true);
-                            }} 
-                            className="cursor-pointer text-xs font-bold text-emerald-600 focus:text-emerald-700"
-                        >
-                            <CalendarDays className="mr-2 h-3.5 w-3.5" /> Extend Subscription
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => bulk("remind", [r])} className="cursor-pointer text-xs font-bold text-blue-600 focus:text-blue-700">
-                            <ShieldAlert className="mr-2 h-3.5 w-3.5" /> Send Reminder
-                        </DropdownMenuItem>
-                        
-                        <div className="my-1 h-px bg-border/50" />
-                        
-                        <DropdownMenuItem onSelect={() => bulk("cancel", [r])} className="cursor-pointer text-xs font-bold text-red-600 focus:text-red-700">
-                            <XCircle className="mr-2 h-3.5 w-3.5" /> Cancel Subscription
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )
+            render: (r) => {
+                const planActionLabel =
+                    getPlanChangeDirection(r.plan_type, r.plan_type === "premium" ? "featured" : "premium") === "downgrade"
+                        ? "Downgrade Plan"
+                        : "Upgrade Plan";
+
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-background/50 transition-colors hover:bg-muted outline-none">
+                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-xl">
+                            <DropdownMenuItem asChild>
+                                <Link href={`/admin/subscriptions/${r.id}`} className="cursor-pointer text-xs font-bold w-full text-foreground/80">
+                                    <FileText className="mr-2 h-3.5 w-3.5" /> View Details
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/admin/listings/${r.listing_id}`} className="cursor-pointer text-xs font-bold w-full text-foreground/80">
+                                    <ExternalLink className="mr-2 h-3.5 w-3.5" /> View Listing
+                                </Link>
+                            </DropdownMenuItem>
+
+                            <div className="my-1 h-px bg-border/50" />
+
+                            <DropdownMenuItem
+                                onSelect={() => {
+                                    setSelectedUpgradeRow(r);
+                                    setUpgradeDialogOpen(true);
+                                }}
+                                className="cursor-pointer text-xs font-bold text-violet-600 focus:text-violet-700"
+                            >
+                                <RotateCw className="mr-2 h-3.5 w-3.5" /> {planActionLabel}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onSelect={() => {
+                                    setSelectedSubId(r.id);
+                                    setExtendDialogOpen(true);
+                                }}
+                                className="cursor-pointer text-xs font-bold text-emerald-600 focus:text-emerald-700"
+                            >
+                                <CalendarDays className="mr-2 h-3.5 w-3.5" /> Extend Subscription
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => bulk("remind", [r])} className="cursor-pointer text-xs font-bold text-blue-600 focus:text-blue-700">
+                                <ShieldAlert className="mr-2 h-3.5 w-3.5" /> Send Reminder
+                            </DropdownMenuItem>
+
+                            <div className="my-1 h-px bg-border/50" />
+
+                            <DropdownMenuItem onSelect={() => bulk("cancel", [r])} className="cursor-pointer text-xs font-bold text-red-600 focus:text-red-700">
+                                <XCircle className="mr-2 h-3.5 w-3.5" /> Cancel Subscription
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                );
+            }
         }
     ], []);
 
@@ -288,7 +312,26 @@ export function SubscriptionsTable() {
                         setExtendDialogOpen(false);
                         setSelectedSubId(null);
                     }}
-                    onSuccess={loadRows}
+                    onSuccess={async () => {
+                        await loadRows();
+                        onDataChanged?.();
+                    }}
+                />
+            )}
+
+            {selectedUpgradeRow && (
+                <UpgradeDialog
+                    subscriptionId={selectedUpgradeRow.id}
+                    currentPlan={selectedUpgradeRow.plan_type}
+                    isOpen={upgradeDialogOpen}
+                    onClose={() => {
+                        setUpgradeDialogOpen(false);
+                        setSelectedUpgradeRow(null);
+                    }}
+                    onSuccess={async () => {
+                        await loadRows();
+                        onDataChanged?.();
+                    }}
                 />
             )}
         </div>

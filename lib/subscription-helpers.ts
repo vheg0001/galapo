@@ -49,6 +49,18 @@ export function isDowngrade(currentPlan: PlanTier, newPlan: PlanTier): boolean {
     return PLAN_HIERARCHY[newPlan] < PLAN_HIERARCHY[currentPlan];
 }
 
+export function getPlanChangeDirection(
+    currentPlan?: string | null,
+    newPlan?: string | null
+): "upgrade" | "downgrade" | "same" {
+    const normalizedCurrentPlan = normalizePlanType(currentPlan);
+    const normalizedNewPlan = normalizePlanType(newPlan);
+
+    if (isUpgrade(normalizedCurrentPlan, normalizedNewPlan)) return "upgrade";
+    if (isDowngrade(normalizedCurrentPlan, normalizedNewPlan)) return "downgrade";
+    return "same";
+}
+
 export function calculateBillingPeriod(startDate: Date | string = new Date()) {
     const start = new Date(startDate);
     const end = addDays(start, 30);

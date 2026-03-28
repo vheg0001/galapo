@@ -33,6 +33,7 @@ vi.mock("@/lib/supabase", () => {
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockReturnThis(),
         update: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         rpc: vi.fn().mockReturnThis(),
         in: vi.fn().mockReturnThis(),
@@ -108,7 +109,24 @@ describe("Admin Subscriptions API Integration", () => {
 
     it("PUT cancel set status to cancelled", async () => {
         mockSupabase.then
-            .mockImplementationOnce((cb: any) => cb({ data: { id: "sub-1", listing_id: "list-1" }, error: null }))
+            .mockImplementationOnce((cb: any) => cb({
+                data: {
+                    id: "sub-1",
+                    listing_id: "list-1",
+                    plan_type: "featured",
+                    listings: { id: "list-1", owner_id: "u-1" }
+                },
+                error: null
+            }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({
+                data: [
+                    { id: "badge-featured", slug: "featured" },
+                    { id: "badge-premium", slug: "premium" }
+                ],
+                error: null
+            }))
             .mockImplementationOnce((cb: any) => cb({ error: null }));
 
         const res = await updateSubscription(
@@ -118,6 +136,110 @@ describe("Admin Subscriptions API Integration", () => {
 
         expect(mockSupabase.update).toHaveBeenCalledWith(expect.objectContaining({
             status: "cancelled"
+        }));
+    });
+
+    it("PUT upgrade promotes featured subscriptions to premium and syncs badges", async () => {
+        mockSupabase.then
+            .mockImplementationOnce((cb: any) => cb({
+                data: {
+                    plan_type: "featured",
+                    end_date: new Date().toISOString(),
+                    listing_id: "list-1",
+                    listings: { id: "list-1", owner_id: "u-1" }
+                },
+                error: null
+            }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({
+                data: [
+                    { id: "badge-featured", slug: "featured" },
+                    { id: "badge-premium", slug: "premium" }
+                ],
+                error: null
+            }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }));
+
+        const res = await updateSubscription(
+            createReq("/api/admin/subscriptions/sub-1", "PUT", { action: "upgrade", new_plan: "premium" }),
+            { params: Promise.resolve({ id: "sub-1" }) }
+        );
+        const json = await res.json();
+        const { logSubscriptionAction, notifyOwner } = await import("@/lib/admin-helpers");
+
+        expect(json.success).toBe(true);
+        expect(mockSupabase.from).toHaveBeenCalledWith("badges");
+        expect(mockSupabase.from).toHaveBeenCalledWith("listing_badges");
+        expect(mockSupabase.update).toHaveBeenCalledWith(expect.objectContaining({
+            plan_type: "premium"
+        }));
+        expect(mockSupabase.update).toHaveBeenCalledWith(expect.objectContaining({
+            is_featured: true,
+            is_premium: true
+        }));
+        expect(mockSupabase.delete).toHaveBeenCalled();
+        expect(mockSupabase.insert).toHaveBeenCalledWith(expect.objectContaining({
+            listing_id: "list-1",
+            badge_id: "badge-premium"
+        }));
+        expect(logSubscriptionAction).toHaveBeenCalledWith(expect.objectContaining({
+            subscriptionId: "sub-1",
+            action: "upgraded"
+        }));
+        expect(notifyOwner).toHaveBeenCalledWith(expect.objectContaining({
+            ownerId: "u-1",
+            title: "Plan Upgraded"
+        }));
+    });
+
+    it("PUT upgrade downgrades premium subscriptions to featured with downgraded labels", async () => {
+        mockSupabase.then
+            .mockImplementationOnce((cb: any) => cb({
+                data: {
+                    plan_type: "premium",
+                    end_date: new Date().toISOString(),
+                    listing_id: "list-1",
+                    listings: { id: "list-1", owner_id: "u-1" }
+                },
+                error: null
+            }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({
+                data: [
+                    { id: "badge-featured", slug: "featured" },
+                    { id: "badge-premium", slug: "premium" }
+                ],
+                error: null
+            }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }));
+
+        const res = await updateSubscription(
+            createReq("/api/admin/subscriptions/sub-1", "PUT", { action: "upgrade", new_plan: "featured" }),
+            { params: Promise.resolve({ id: "sub-1" }) }
+        );
+        const json = await res.json();
+        const { logSubscriptionAction, notifyOwner } = await import("@/lib/admin-helpers");
+
+        expect(json.success).toBe(true);
+        expect(mockSupabase.update).toHaveBeenCalledWith(expect.objectContaining({
+            plan_type: "featured"
+        }));
+        expect(mockSupabase.update).toHaveBeenCalledWith(expect.objectContaining({
+            is_featured: true,
+            is_premium: false
+        }));
+        expect(logSubscriptionAction).toHaveBeenCalledWith(expect.objectContaining({
+            subscriptionId: "sub-1",
+            action: "downgraded"
+        }));
+        expect(notifyOwner).toHaveBeenCalledWith(expect.objectContaining({
+            ownerId: "u-1",
+            title: "Plan Downgraded",
+            message: "Your listing has been downgraded to featured."
         }));
     });
 
@@ -142,24 +264,28 @@ describe("Admin Subscriptions API Integration", () => {
     });
 
     it("Stats endpoint returns summary correctly", async () => {
-        // Mock the parallel Promise.all calls
-        // 1. activeFeatured
-        // 2. activePremium
-        // 3. expiringNextWeek
-        // 4. expiredThisMonth
-        // 5. revenueData
         mockSupabase.then
-            .mockImplementationOnce((cb: any) => cb({ count: 2, error: null }))
-            .mockImplementationOnce((cb: any) => cb({ count: 3, error: null }))
-            .mockImplementationOnce((cb: any) => cb({ count: 1, error: null }))
+            .mockImplementationOnce((cb: any) => cb({
+                data: [
+                    { plan_type: "featured", end_date: new Date(Date.now() + 86400000).toISOString(), amount: 199 },
+                    { plan_type: "featured", end_date: new Date(Date.now() + 172800000).toISOString(), amount: 199 },
+                    { plan_type: "premium", end_date: new Date(Date.now() + 2592000000).toISOString(), amount: 399 },
+                ],
+                error: null
+            }))
             .mockImplementationOnce((cb: any) => cb({ count: 0, error: null }))
-            .mockImplementationOnce((cb: any) => cb({ data: [{ amount: 100, created_at: new Date().toISOString() }], error: null }));
+            .mockImplementationOnce((cb: any) => cb({
+                data: [{ amount: 100, created_at: new Date().toISOString(), subscription_id: { plan_type: "featured" } }],
+                error: null
+            }));
 
         const res = await getStats(createReq("/api/admin/subscriptions/stats"));
         const json = await res.json();
 
         expect(json.active_featured).toBe(2);
-        expect(json.active_premium).toBe(3);
+        expect(json.active_premium).toBe(1);
+        expect(json.expiring_this_week).toBe(2);
+        expect(json.active_mrr).toBe(797);
         expect(json.revenue_this_month).toBe(100);
     });
 });

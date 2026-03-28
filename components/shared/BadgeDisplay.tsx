@@ -34,36 +34,42 @@ export default function BadgeDisplay({
 }: BadgeDisplayProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
+    const renderBadgeNode = (lb: ListingBadge, showTooltip = false) => {
+        if (lb.badge?.type === "plan") {
+            const variant = lb.badge.slug === "premium" ? "premium" : "featured";
+            return (
+                <Badge key={lb.id} variant={variant}>
+                    {lb.badge.name}
+                </Badge>
+            );
+        }
+
+        return (
+            <BadgeChip
+                key={lb.id}
+                badge={lb.badge}
+                size={size}
+                showTooltip={showTooltip}
+            />
+        );
+    };
+
     if ((!badges || badges.length === 0) && !isPremium && !isFeatured) return null;
 
     // ── Card mode: max 2 badges (plan badge first, then top admin/system badge) ──
     if (mode === "card") {
         const cardBadges = getCardBadges(badges, isPremium, isFeatured);
 
-        // Build react elements for the approved badges
-        let displayItems: React.ReactNode[] = cardBadges.map((lb) => (
-            <BadgeChip key={lb.id} badge={lb.badge} size={size} showTooltip={false} />
-        ));
+        let displayItems: React.ReactNode[] = cardBadges.map((lb) => renderBadgeNode(lb));
 
-        // Inject legacy plan badge if no DB plan badge explicitly exists
-        // Inject legacy plan badge if no DB plan badge explicitly exists
         const hasPlanBadgeInDb = cardBadges.some(lb => lb.badge?.type === "plan");
         if (!hasPlanBadgeInDb) {
-            // Ensure Featured shows for both isFeatured and isPremium
-            if (isFeatured || isPremium) {
-                displayItems.unshift(<Badge key="legacy-featured" variant="featured">Featured</Badge>);
-            }
-            // Premium shows only if isPremium
             if (isPremium) {
                 displayItems.unshift(<Badge key="legacy-premium" variant="premium">Premium</Badge>);
+            } else if (isFeatured) {
+                displayItems.unshift(<Badge key="legacy-featured" variant="featured">Featured</Badge>);
             }
         }
-
-        // Remove duplicate Featured if it was already unshifted via isPremium
-        // (Wait, the logic above already handles it: 
-        // if both true: unshift Featured, then unshift Premium -> [Premium, Featured])
-        // if only Premium: unshift Featured, then unshift Premium -> [Premium, Featured])
-        // if only Featured: unshift Featured -> [Featured])
 
         if (displayItems.length === 0) return null;
 
@@ -77,21 +83,14 @@ export default function BadgeDisplay({
     // ── Detail mode: all badges with optional expand ──
     const sortedBadges = getSortedBadges(badges);
 
-    // Build react elements for the approved badges
-    const allItems: React.ReactNode[] = sortedBadges.map((lb) => (
-        <BadgeChip key={lb.id} badge={lb.badge} size={size} />
-    ));
+    const allItems: React.ReactNode[] = sortedBadges.map((lb) => renderBadgeNode(lb, true));
 
-    // Inject legacy plan badge if no DB plan badge explicitly exists
-    // Inject legacy plan badge if no DB plan badge explicitly exists
-    // Inject legacy plan badge if no DB plan badge explicitly exists
     const hasPlanBadgeInDb = sortedBadges.some(lb => lb.badge?.type === "plan");
     if (!hasPlanBadgeInDb) {
-        if (isFeatured || isPremium) {
-            allItems.unshift(<Badge key="legacy-featured" variant="featured">Featured</Badge>);
-        }
         if (isPremium) {
             allItems.unshift(<Badge key="legacy-premium" variant="premium">Premium</Badge>);
+        } else if (isFeatured) {
+            allItems.unshift(<Badge key="legacy-featured" variant="featured">Featured</Badge>);
         }
     }
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { createAdminSupabaseClient } from "@/lib/supabase";
 import { simplifyError } from "@/lib/api-helpers";
+import { deriveListingPlanTier } from "@/lib/listing-plan-helpers";
+import { syncListingPlanBadges } from "@/lib/listing-plan-badges";
 
 export const dynamic = "force-dynamic";
 
@@ -209,10 +211,20 @@ export async function PUT(
         const dynamicFields =
             body?.dynamic_fields && typeof body.dynamic_fields === "object"
                 ? body.dynamic_fields
-                : null;
+            : null;
         const imageUrls = Array.isArray(body?.image_urls)
             ? body.image_urls.filter((u: any) => typeof u === "string" && u.trim())
             : null;
+
+        const { data: existingListing, error: existingListingError } = await admin
+            .from("listings")
+            .select("id, is_featured, is_premium")
+            .eq("id", id)
+            .single();
+        if (existingListingError) {
+            console.error("[admin/listings/[id] PUT] listings.select existing error:", existingListingError);
+            throw existingListingError;
+        }
 
         const updatePayload: Record<string, any> = {
             ...body,
@@ -251,6 +263,44 @@ export async function PUT(
         if (error) {
             console.error("[admin/listings/[id] PUT] listings.update error:", error);
             throw error;
+        }
+
+        const previousPlan = deriveListingPlanTier(existingListing ?? {});
+        const nextPlan = deriveListingPlanTier({
+            is_featured: "is_featured" in updatePayload ? updatePayload.is_featured : existingListing?.is_featured,
+            is_premium: "is_premium" in updatePayload ? updatePayload.is_premium : existingListing?.is_premium,
+        });
+
+        if (previousPlan !== nextPlan) {
+            const { data: currentSubscription, error: currentSubscriptionError } = await admin
+                .from("subscriptions")
+                .select("id, plan_type, status")
+                .eq("listing_id", id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (currentSubscriptionError) {
+                console.error("[admin/listings/[id] PUT] subscriptions.select current error:", currentSubscriptionError);
+                throw currentSubscriptionError;
+            }
+
+            if (currentSubscription && currentSubscription.plan_type !== nextPlan) {
+                const { error: subscriptionUpdateError } = await admin
+                    .from("subscriptions")
+                    .update({
+                        plan_type: nextPlan,
+                        updated_at: updatePayload.updated_at,
+                    })
+                    .eq("id", currentSubscription.id);
+
+                if (subscriptionUpdateError) {
+                    console.error("[admin/listings/[id] PUT] subscriptions.update error:", subscriptionUpdateError);
+                    throw subscriptionUpdateError;
+                }
+            }
+
+            await syncListingPlanBadges(admin, id, nextPlan, updatePayload.updated_at);
         }
 
         if (dynamicFields !== null) {

@@ -129,15 +129,18 @@ export const handlers = [
 
     http.get(`${APP_URL}/api/admin/subscriptions/stats`, () => {
         return HttpResponse.json({
-            stats: { 
-                active: 10, total_revenue: 5000, 
-                revenue_growth: 15, prev_revenue: 4347 
+            active_featured: 2,
+            active_premium: 3,
+            expiring_this_week: 1,
+            expired_this_month: 0,
+            active_mrr: 5000,
+            revenue_this_month: 5000,
+            revenue_last_month: 4347,
+            revenue_by_plan: {
+                featured: 2200,
+                premium: 1800,
             },
-            plan_breakdown: [
-                { plan_type: "basic", count: 5, revenue: 1000 },
-                { plan_type: "premium", count: 3, revenue: 1800 },
-                { plan_type: "featured", count: 2, revenue: 2200 }
-            ]
+            monthly_trend: [],
         });
     }),
 
