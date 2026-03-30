@@ -31,6 +31,7 @@ vi.mock("@/lib/supabase", () => {
         from: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        neq: vi.fn().mockReturnThis(),
         single: vi.fn().mockReturnThis(),
         update: vi.fn().mockReturnThis(),
         delete: vi.fn().mockReturnThis(),
@@ -76,6 +77,7 @@ describe("Admin Subscriptions API Integration", () => {
 
         expect(json.data).toHaveLength(1);
         expect(mockSupabase.eq).toHaveBeenCalledWith("status", "active");
+        expect(mockSupabase.neq).toHaveBeenCalledWith("plan_type", "free");
     });
 
     it("GET /api/admin/subscriptions/[id] returns detail", async () => {
@@ -239,7 +241,61 @@ describe("Admin Subscriptions API Integration", () => {
         expect(notifyOwner).toHaveBeenCalledWith(expect.objectContaining({
             ownerId: "u-1",
             title: "Plan Downgraded",
-            message: "Your listing has been downgraded to featured."
+            message: "Your listing has been downgraded to the featured plan."
+        }));
+    });
+
+    it("PUT upgrade downgrades featured subscriptions to free and clears paid subscription fields", async () => {
+        mockSupabase.then
+            .mockImplementationOnce((cb: any) => cb({
+                data: {
+                    plan_type: "featured",
+                    end_date: new Date().toISOString(),
+                    listing_id: "list-1",
+                    listings: { id: "list-1", owner_id: "u-1" }
+                },
+                error: null
+            }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({
+                data: [
+                    { id: "badge-featured", slug: "featured" },
+                    { id: "badge-premium", slug: "premium" }
+                ],
+                error: null
+            }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }))
+            .mockImplementationOnce((cb: any) => cb({ error: null }));
+
+        const res = await updateSubscription(
+            createReq("/api/admin/subscriptions/sub-1", "PUT", { action: "upgrade", new_plan: "free" }),
+            { params: Promise.resolve({ id: "sub-1" }) }
+        );
+        const json = await res.json();
+        const { logSubscriptionAction, notifyOwner } = await import("@/lib/admin-helpers");
+
+        expect(json.success).toBe(true);
+        expect(mockSupabase.update).toHaveBeenCalledWith(expect.objectContaining({
+            plan_type: "free",
+            amount: 0,
+            auto_renew: false
+        }));
+        expect(mockSupabase.update).toHaveBeenCalledWith(expect.objectContaining({
+            is_featured: false,
+            is_premium: false
+        }));
+        expect(mockSupabase.delete).toHaveBeenCalled();
+        expect(mockSupabase.insert).not.toHaveBeenCalled();
+        expect(logSubscriptionAction).toHaveBeenCalledWith(expect.objectContaining({
+            subscriptionId: "sub-1",
+            action: "downgraded",
+            details: expect.objectContaining({ to: "free" })
+        }));
+        expect(notifyOwner).toHaveBeenCalledWith(expect.objectContaining({
+            ownerId: "u-1",
+            title: "Plan Downgraded",
+            message: "Your listing has been downgraded to the free plan."
         }));
     });
 

@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             name, slug, description, icon, icon_lucide,
             color, text_color, type, priority,
             auto_expires, default_expiry_days,
-            is_filterable, is_active
+            is_filterable, is_active, animation_color
         } = body;
 
         // Check if badge exists and its type (plan/system badges have restrictions)
@@ -99,6 +99,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                 default_expiry_days,
                 is_filterable,
                 is_active,
+                animation_type: body.animation_type,
+                animation_color: animation_color,
                 updated_at: new Date().toISOString(),
             })
             .eq("id", id)

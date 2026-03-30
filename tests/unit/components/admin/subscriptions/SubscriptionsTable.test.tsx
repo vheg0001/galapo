@@ -143,6 +143,7 @@ describe("SubscriptionsTable", () => {
             expect(screen.getAllByText(/View Details/i).length).toBeGreaterThan(0);
             expect(screen.getAllByText(/View Listing/i).length).toBeGreaterThan(0);
             expect(screen.getAllByText(/Downgrade Plan/i).length).toBeGreaterThan(0);
+            expect(screen.queryByText(/Cancel Subscription/i)).not.toBeInTheDocument();
         });
     });
 
@@ -159,8 +160,8 @@ describe("SubscriptionsTable", () => {
 
         await waitFor(() => {
             expect(screen.getAllByText("Downgrade Plan").length).toBeGreaterThan(0);
-            expect(screen.getByText("Premium Plan")).toBeInTheDocument();
             expect(screen.getByText("Featured Plan")).toBeInTheDocument();
+            expect(screen.getByText("Free Plan")).toBeInTheDocument();
             expect(screen.getByRole("button", { name: /confirm downgrade/i })).toBeInTheDocument();
         });
     });

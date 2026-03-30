@@ -76,16 +76,15 @@ export default function ListingCard({
 
             {/* Image */}
             <div className={cn(
-                "relative overflow-hidden bg-muted",
-                layout === "grid" ? "aspect-[16/10] w-full" : "aspect-[16/10] w-full sm:aspect-auto sm:h-full sm:w-48 md:w-56"
+                "relative aspect-[16/10] overflow-hidden bg-muted flex-shrink-0",
+                layout === "grid" ? "w-full" : "w-full sm:w-48 md:w-56"
             )}>
                 <LazyImage
                     src={displayImage}
                     alt={businessName}
                     className={cn(
                         "object-cover transition-transform duration-700 group-hover:scale-110",
-                        isPremium && "animate-pulse-subtle",
-                        layout === "list" && "sm:h-full"
+                        isPremium && "animate-pulse-subtle"
                     )}
                     priority={priority}
                 />
@@ -114,7 +113,7 @@ export default function ListingCard({
             </div>
 
             {/* Content */}
-            <div className="flex flex-1 flex-col p-4 relative z-10">
+            <div className={cn("flex flex-1 flex-col p-4 relative z-10", isPremium && "pb-6")}>
                 {/* Premium Glow Accent */}
                 {isPremium && (
                     <div className="absolute -top-4 -right-4 h-24 w-24 bg-amber-400/10 rounded-full blur-3xl group-hover:bg-amber-400/20 transition-colors duration-500" />
@@ -177,9 +176,9 @@ export default function ListingCard({
                 </div>
             </div>
             
-            {/* Premium Golden Bottom Line */}
+            {/* Premium Golden Bottom Line - Absolutely positioned so it doesn't break flex layout in List view */}
             {isPremium && (
-                <div className="h-1.5 w-full premium-gold-gradient opacity-80 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute bottom-0 left-0 h-1.5 w-full premium-gold-gradient opacity-80 group-hover:opacity-100 transition-opacity z-20" />
             )}
         </Link>
     );

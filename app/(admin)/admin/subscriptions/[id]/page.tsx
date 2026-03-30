@@ -2,15 +2,13 @@
 
 import { useState, useEffect, useCallback, use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, CalendarPlus, ShieldAlert, XCircle } from "lucide-react";
+import { ArrowLeft, CalendarPlus } from "lucide-react";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 import { SubscriptionDetail } from "@/components/admin/subscriptions/SubscriptionDetail";
 import { SubscriptionTimeline } from "@/components/admin/subscriptions/SubscriptionTimeline";
 import { ExtendDialog } from "@/components/admin/subscriptions/ExtendDialog";
-import { CancelDialog } from "@/components/admin/subscriptions/CancelDialog";
 import { UpgradeDialog } from "@/components/admin/subscriptions/UpgradeDialog";
-import { getPlanChangeDirection } from "@/lib/subscription-helpers";
+import { getAdminPlanActionLabel } from "@/lib/subscription-helpers";
 
 export default function AdminSubscriptionDetailPage({
     params,
@@ -18,7 +16,6 @@ export default function AdminSubscriptionDetailPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = use(params);
-    const router = useRouter();
 
     const [subscription, setSubscription] = useState<any>(null);
     const [listing, setListing] = useState<any>(null);
@@ -27,13 +24,8 @@ export default function AdminSubscriptionDetailPage({
     const [loading, setLoading] = useState(true);
 
     const [extendOpen, setExtendOpen] = useState(false);
-    const [cancelOpen, setCancelOpen] = useState(false);
     const [upgradeOpen, setUpgradeOpen] = useState(false);
-    const defaultTargetPlan = subscription?.plan_type === "premium" ? "featured" : "premium";
-    const planActionLabel =
-        getPlanChangeDirection(subscription?.plan_type, defaultTargetPlan) === "downgrade"
-            ? "Downgrade Plan"
-            : "Upgrade Plan";
+    const planActionLabel = getAdminPlanActionLabel(subscription?.plan_type);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -99,12 +91,6 @@ export default function AdminSubscriptionDetailPage({
                         >
                             <CalendarPlus className="mr-2 h-4 w-4" /> Extend
                         </button>
-                        <button
-                            onClick={() => setCancelOpen(true)}
-                            className="flex h-10 items-center justify-center rounded-xl bg-red-50 text-red-600 border border-red-200 px-4 text-xs font-bold transition-all hover:bg-red-100"
-                        >
-                            <XCircle className="mr-2 h-4 w-4" /> Cancel
-                        </button>
                     </div>
                 }
             />
@@ -129,12 +115,6 @@ export default function AdminSubscriptionDetailPage({
                 subscriptionId={id} 
                 isOpen={extendOpen} 
                 onClose={() => setExtendOpen(false)} 
-                onSuccess={loadData} 
-            />
-            <CancelDialog 
-                subscriptionId={id} 
-                isOpen={cancelOpen} 
-                onClose={() => setCancelOpen(false)} 
                 onSuccess={loadData} 
             />
             <UpgradeDialog 

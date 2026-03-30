@@ -99,7 +99,26 @@ BEGIN
                     'subcategory_name', sc.name,
                     'barangay_name', b.name,
                     'primary_image', COALESCE((SELECT image_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY is_primary DESC, sort_order ASC NULLS LAST LIMIT 1), l.logo_url),
-                    'is_sponsored', true
+                    'is_sponsored', true,
+                    'listing_badges', (
+                        SELECT json_agg(json_build_object(
+                            'id', lb.id,
+                            'is_active', lb.is_active,
+                            'badge', json_build_object(
+                                'id', b2.id,
+                                'name', b2.name,
+                                'slug', b2.slug,
+                                'type', b2.type,
+                                'animation_type', b2.animation_type,
+                                'color', b2.color,
+                                'text_color', b2.text_color,
+                                'priority', b2.priority
+                            )
+                        ))
+                        FROM listing_badges lb
+                        JOIN badges b2 ON lb.badge_id = b2.id
+                        WHERE lb.listing_id = l.id AND lb.is_active = true
+                    )
                 ) AS sponsored_listings
             FROM top_search_placements p
             JOIN listings l ON p.listing_id = l.id
@@ -126,6 +145,25 @@ BEGIN
             sc.name AS subcategory_name,
             b.name AS barangay_name,
             COALESCE((SELECT image_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY is_primary DESC, sort_order ASC NULLS LAST LIMIT 1), l.logo_url) AS primary_image,
+            (
+                SELECT json_agg(json_build_object(
+                    'id', lb.id,
+                    'is_active', lb.is_active,
+                    'badge', json_build_object(
+                        'id', b2.id,
+                        'name', b2.name,
+                        'slug', b2.slug,
+                        'type', b2.type,
+                        'animation_type', b2.animation_type,
+                        'color', b2.color,
+                        'text_color', b2.text_color,
+                        'priority', b2.priority
+                    )
+                ))
+                FROM listing_badges lb
+                JOIN badges b2 ON lb.badge_id = b2.id
+                WHERE lb.listing_id = l.id AND lb.is_active = true
+            ) as listing_badges,
             
             CASE 
                 WHEN search_query IS NOT NULL THEN

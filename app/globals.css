@@ -191,19 +191,39 @@
   }
 
   @keyframes pulse-subtle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.95; }
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.95;
+    }
   }
 
   @keyframes premium-shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
   }
 
   @keyframes glint {
-    0% { transform: translateX(-150%) skewX(-25deg); }
-    20% { transform: translateX(150%) skewX(-25deg); }
-    100% { transform: translateX(150%) skewX(-25deg); }
+    0% {
+      transform: translateX(-150%) skewX(-25deg);
+    }
+
+    20% {
+      transform: translateX(150%) skewX(-25deg);
+    }
+
+    100% {
+      transform: translateX(150%) skewX(-25deg);
+    }
   }
 
   .animate-pulse-subtle {
@@ -226,9 +246,17 @@
   }
 
   @keyframes premium-border {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
   }
 
   .premium-gold-gradient {
@@ -392,4 +420,333 @@
 .selectedCell {
   background: var(--primary)/10;
   position: relative;
+}
+
+
+/* Flair & Badge Animations */
+[class*='flair-anim-'] {
+  display: inline-flex !important;
+}
+
+.flair-anim-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.flair-anim-shimmer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(to bottom right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0) 40%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 60%,
+      rgba(255, 255, 255, 0) 100%);
+  transform: rotate(45deg);
+  animation: flair-shimmer 3s infinite linear;
+}
+
+@keyframes flair-shimmer {
+  0% {
+    transform: translateX(-150%) rotate(45deg);
+  }
+
+  100% {
+    transform: translateX(150%) rotate(45deg);
+  }
+}
+
+.flair-anim-glint {
+  position: relative;
+}
+
+.flair-anim-glint::before {
+  content: '✨';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  font-size: 10px;
+  animation: flair-glint 4.5s infinite;
+  opacity: 0;
+  z-index: 10;
+}
+
+@keyframes flair-glint {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+
+  20% {
+    opacity: 1;
+    transform: scale(1.5) rotate(90deg);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.5) rotate(180deg);
+  }
+
+  80% {
+    opacity: 0;
+    transform: scale(0.5) rotate(270deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(270deg);
+  }
+}
+
+.flair-anim-refract {
+  position: relative;
+  overflow: hidden;
+}
+
+.flair-anim-refract::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg,
+      transparent,
+      var(--flair-color, rgba(255, 255, 255, 0.4)),
+      transparent,
+      var(--flair-color, rgba(255, 255, 255, 0.4)),
+      transparent);
+  background-size: 400% 400%;
+  animation: flair-refract 4s infinite linear;
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: screen;
+  opacity: 0.8;
+}
+
+@keyframes flair-refract {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.flair-anim-twinkle {
+  position: relative;
+}
+
+.flair-twinkle-star {
+  position: absolute;
+  font-size: 10px;
+  color: var(--flair-color, white);
+  opacity: 0;
+  text-shadow: 0 0 8px var(--flair-color, rgba(255, 255, 255, 0.8));
+  z-index: 10;
+  pointer-events: none;
+  animation: flair-twinkle-main 3s infinite ease-in-out;
+}
+
+@keyframes flair-twinkle-main {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(180deg);
+  }
+}
+
+.flair-anim-bevel {
+  position: relative;
+  overflow: hidden;
+}
+
+.flair-anim-bevel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 3px 3px var(--flair-color, rgba(255, 255, 255, 0.4));
+  animation: flair-bevel 3s infinite ease-in-out;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes flair-bevel {
+
+  0%,
+  100% {
+    box-shadow: inset 0 0 2px 1px rgba(255, 255, 255, 0.2);
+  }
+
+  50% {
+    box-shadow: inset 0 0 10px 2px var(--flair-color, rgba(255, 255, 255, 0.5));
+  }
+}
+
+
+.flair-anim-liquid {
+  position: relative;
+  overflow: hidden;
+}
+
+.flair-anim-liquid::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(-45deg,
+      transparent 0%,
+      var(--flair-color, rgba(255, 255, 255, 0.5)) 50%,
+      transparent 100%);
+  background-size: 200% 200%;
+  animation: flair-liquid-anim 3s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes flair-liquid-anim {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+    opacity: 0.4;
+  }
+
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.8;
+  }
+}
+
+.flair-anim-pulse-inner {
+  position: relative;
+  animation: flair-pulse-badge 2s infinite ease-in-out;
+}
+
+.flair-anim-pulse-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, var(--flair-color, rgba(255, 255, 255, 0.9)) 0%, transparent 80%);
+  animation: flair-pulse-inner 2s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+}
+
+@keyframes flair-pulse-badge {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+@keyframes flair-pulse-inner {
+
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.03);
+  }
+}
+
+/* Border Focus Animations */
+
+
+
+.flair-anim-radiant {
+  animation: flair-radiant 2s infinite ease-in-out;
+}
+
+@keyframes flair-radiant {
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px 0px var(--flair-color, currentColor);
+  }
+
+  50% {
+    box-shadow: 0 0 15px 2px var(--flair-color, currentColor);
+  }
+}
+
+.flair-anim-neon {
+  animation: flair-neon 3s infinite;
+}
+
+@keyframes flair-neon {
+
+  0%,
+  100%,
+  40%,
+  45%,
+  55%,
+  60% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+
+  42%,
+  58% {
+    opacity: 0.8;
+    filter: brightness(1.5);
+    box-shadow: 0 0 10px var(--flair-color, currentColor);
+  }
+}
+
+.flair-anim-halo {
+  position: relative;
+}
+
+.flair-anim-halo::before,
+.flair-anim-halo::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--flair-color, currentColor);
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.flair-anim-halo::before {
+  animation: flair-halo 2s infinite;
+}
+
+.flair-anim-halo::after {
+  animation: flair-halo 2s infinite 1s;
+}
+
+@keyframes flair-halo {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
 }

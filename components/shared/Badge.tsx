@@ -14,17 +14,28 @@ interface BadgeProps {
     variant?: BadgeVariant;
     children: React.ReactNode;
     className?: string;
+    animationType?: string | null;
+    animationColor?: string | null;
 }
 
-export default function Badge({ variant = "default", children, className }: BadgeProps) {
+export default function Badge({ variant = "default", children, className, animationType, animationColor }: BadgeProps) {
     return (
         <span
             className={cn(
                 "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase",
                 variantClasses[variant],
+                animationType && animationType !== "none" && `flair-anim-${animationType}`,
                 className
             )}
+            style={{ ["--flair-color" as any]: animationColor || undefined }}
         >
+            {animationType === "twinkle" && (
+                <>
+                    <span className="flair-twinkle-star" style={{ top: "-4px", left: "10%", animationDelay: "0s" }}>★</span>
+                    <span className="flair-twinkle-star" style={{ top: "40%", right: "-2px", animationDelay: "1s" }}>★</span>
+                    <span className="flair-twinkle-star" style={{ bottom: "-4px", left: "30%", animationDelay: "2s" }}>★</span>
+                </>
+            )}
             {children}
         </span>
     );

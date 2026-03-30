@@ -106,7 +106,10 @@ export default function BadgeAssignment({ listingId }: BadgeAssignmentProps) {
                                 <div key={lb.id} className="flex flex-col gap-2 p-3 rounded-2xl bg-background border border-border/40 shadow-sm animate-in fade-in slide-in-from-right-2">
                                     <div className="flex items-center justify-between">
                                         <div
-                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm"
+                                            className={cn(
+                                                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm transition-all duration-300",
+                                                lb.badge.animation_type && lb.badge.animation_type !== "none" && `flair-anim-${lb.badge.animation_type}`
+                                            )}
                                             style={{ backgroundColor: lb.badge.color, color: lb.badge.text_color }}
                                         >
                                             {renderBadgeIcon(lb.badge)}

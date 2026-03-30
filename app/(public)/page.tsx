@@ -69,7 +69,7 @@ export default async function HomePage() {
                 subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
                 barangays ( name, slug ),
                 listing_images ( image_url, is_primary ),
-                listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
+                listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active, animation_type ) )
             `)
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)
@@ -87,7 +87,7 @@ export default async function HomePage() {
                 subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
                 barangays ( name, slug ),
                 listing_images ( image_url, is_primary ),
-                listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
+                listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active, animation_type ) )
             `)
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)

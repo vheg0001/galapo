@@ -48,6 +48,8 @@ export async function GET(req: NextRequest) {
                 )
             `, { count: "exact" });
 
+        query = query.neq("plan_type", "free");
+
         // Filters
         if (status !== "all") {
             if (status === "expiring_soon") {

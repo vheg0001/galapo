@@ -38,7 +38,12 @@ export default function BadgeDisplay({
         if (lb.badge?.type === "plan") {
             const variant = lb.badge.slug === "premium" ? "premium" : "featured";
             return (
-                <Badge key={lb.id} variant={variant}>
+                <Badge 
+                    key={lb.id} 
+                    variant={variant} 
+                    animationType={lb.badge.animation_type}
+                    animationColor={lb.badge.animation_color}
+                >
                     {lb.badge.name}
                 </Badge>
             );
@@ -65,9 +70,9 @@ export default function BadgeDisplay({
         const hasPlanBadgeInDb = cardBadges.some(lb => lb.badge?.type === "plan");
         if (!hasPlanBadgeInDb) {
             if (isPremium) {
-                displayItems.unshift(<Badge key="legacy-premium" variant="premium">Premium</Badge>);
+                displayItems.unshift(<Badge key="legacy-premium" variant="premium" className="uppercase tracking-wider">Premium</Badge>);
             } else if (isFeatured) {
-                displayItems.unshift(<Badge key="legacy-featured" variant="featured">Featured</Badge>);
+                displayItems.unshift(<Badge key="legacy-featured" variant="featured" className="uppercase tracking-wider">Featured</Badge>);
             }
         }
 
@@ -88,9 +93,9 @@ export default function BadgeDisplay({
     const hasPlanBadgeInDb = sortedBadges.some(lb => lb.badge?.type === "plan");
     if (!hasPlanBadgeInDb) {
         if (isPremium) {
-            allItems.unshift(<Badge key="legacy-premium" variant="premium">Premium</Badge>);
+            allItems.unshift(<Badge key="legacy-premium" variant="premium" className="uppercase tracking-wider">Premium</Badge>);
         } else if (isFeatured) {
-            allItems.unshift(<Badge key="legacy-featured" variant="featured">Featured</Badge>);
+            allItems.unshift(<Badge key="legacy-featured" variant="featured" className="uppercase tracking-wider">Featured</Badge>);
         }
     }
 

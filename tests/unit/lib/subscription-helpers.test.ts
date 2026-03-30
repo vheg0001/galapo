@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
     normalizePlanType,
     getPlanChangeDirection,
+    getDefaultPlanTarget,
+    getAdminPlanActionLabel,
     isUpgrade,
     getSubscriptionStatus,
     mapPricingSettings,
@@ -44,10 +46,37 @@ describe("Subscription Helpers", () => {
 
         it("returns downgrade when moving to a lower paid tier", () => {
             expect(getPlanChangeDirection("premium", "featured")).toBe("downgrade");
+            expect(getPlanChangeDirection("featured", "free")).toBe("downgrade");
         });
 
         it("returns same when the plan does not change", () => {
             expect(getPlanChangeDirection("premium", "premium")).toBe("same");
+        });
+    });
+
+    describe("getDefaultPlanTarget", () => {
+        it("picks the nearest lower plan for paid subscriptions", () => {
+            expect(getDefaultPlanTarget("premium")).toBe("featured");
+            expect(getDefaultPlanTarget("featured")).toBe("free");
+        });
+
+        it("defaults free listings to featured for admin upgrades", () => {
+            expect(getDefaultPlanTarget("free")).toBe("featured");
+            expect(getDefaultPlanTarget(null)).toBe("featured");
+        });
+    });
+
+    describe("getAdminPlanActionLabel", () => {
+        it("returns downgrade for premium subscriptions", () => {
+            expect(getAdminPlanActionLabel("premium")).toBe("Downgrade Plan");
+        });
+
+        it("returns change plan when both upgrade and downgrade paths exist", () => {
+            expect(getAdminPlanActionLabel("featured")).toBe("Change Plan");
+        });
+
+        it("returns upgrade for free listings", () => {
+            expect(getAdminPlanActionLabel("free")).toBe("Upgrade Plan");
         });
     });
 

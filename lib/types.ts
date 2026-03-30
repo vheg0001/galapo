@@ -182,6 +182,8 @@ export interface Badge {
     default_expiry_days: number | null;
     is_filterable: boolean;
     is_active: boolean;
+    animation_type: string | null;
+    animation_color: string | null;
     created_at: string;
     updated_at: string;
 }

@@ -3,7 +3,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { getPlanChangeDirection } from "@/lib/subscription-helpers";
+import { getDefaultPlanTarget, getPlanChangeDirection, normalizePlanType } from "@/lib/subscription-helpers";
+import type { PlanTier } from "@/lib/types";
+
+const PLAN_META: Record<PlanTier, { label: string; activeClassName: string; textClassName: string }> = {
+    premium: {
+        label: "Premium Plan",
+        activeClassName: "border-amber-500 bg-amber-50 ring-1 ring-amber-500",
+        textClassName: "text-amber-700",
+    },
+    featured: {
+        label: "Featured Plan",
+        activeClassName: "border-blue-500 bg-blue-50 ring-1 ring-blue-500",
+        textClassName: "text-blue-700",
+    },
+    free: {
+        label: "Free Plan",
+        activeClassName: "border-slate-400 bg-slate-50 ring-1 ring-slate-400",
+        textClassName: "text-slate-700",
+    },
+};
 
 export function UpgradeDialog({
     subscriptionId,
@@ -19,12 +38,17 @@ export function UpgradeDialog({
     onSuccess: () => void | Promise<void>;
 }) {
     const [loading, setLoading] = useState(false);
-    const [newPlan, setNewPlan] = useState(currentPlan === "premium" ? "featured" : "premium");
-    const changeDirection = useMemo(
-        () => getPlanChangeDirection(currentPlan, newPlan),
-        [currentPlan, newPlan]
+    const normalizedCurrentPlan = normalizePlanType(currentPlan);
+    const [newPlan, setNewPlan] = useState<PlanTier>(() => getDefaultPlanTarget(currentPlan));
+    const availablePlans = useMemo(
+        () => (["premium", "featured", "free"] as PlanTier[]).filter((plan) => plan !== normalizedCurrentPlan),
+        [normalizedCurrentPlan]
     );
-    const targetPlanLabel = newPlan === "premium" ? "Premium" : "Featured";
+    const changeDirection = useMemo(
+        () => getPlanChangeDirection(normalizedCurrentPlan, newPlan),
+        [normalizedCurrentPlan, newPlan]
+    );
+    const targetPlanLabel = PLAN_META[newPlan].label.replace(" Plan", "");
     const dialogTitle =
         changeDirection === "downgrade"
             ? "Downgrade Plan"
@@ -39,13 +63,13 @@ export function UpgradeDialog({
                 : "Save Plan";
     const changeDescription =
         changeDirection === "downgrade"
-            ? `Downgrade this subscription to ${targetPlanLabel}. This updates the subscription, listing flags, and plan badges without creating a new invoice.`
+            ? `Downgrade this subscription to the ${targetPlanLabel} plan. This updates the subscription, listing flags, and plan badges without creating a new invoice.`
             : changeDirection === "upgrade"
-                ? `Upgrade this subscription to ${targetPlanLabel}. This updates the subscription, listing flags, and plan badges without creating a new invoice.`
+                ? `Upgrade this subscription to the ${targetPlanLabel} plan. This updates the subscription, listing flags, and plan badges without creating a new invoice.`
                 : "Select the target plan for this subscription. This updates the subscription, listing flags, and plan badges without creating a new invoice.";
 
     useEffect(() => {
-        setNewPlan(currentPlan === "premium" ? "featured" : "premium");
+        setNewPlan(getDefaultPlanTarget(currentPlan));
     }, [currentPlan, isOpen]);
 
     async function handleUpgrade(e: React.FormEvent) {
@@ -83,15 +107,30 @@ export function UpgradeDialog({
                 <form onSubmit={handleUpgrade} className="space-y-4">
                     <div className="space-y-3">
                         <Label>Select Plan</Label>
-                        <div className="flex gap-4">
-                            <label className={`flex-1 flex items-center justify-center gap-2 p-3 border rounded-xl cursor-pointer transition ${newPlan === 'premium' ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500' : 'hover:bg-muted'}`}>
-                                <input type="radio" className="sr-only" name="plan" value="premium" checked={newPlan === 'premium'} onChange={() => setNewPlan('premium')} />
-                                <div className="text-sm font-bold text-amber-700">Premium Plan</div>
-                            </label>
-                            <label className={`flex-1 flex items-center justify-center gap-2 p-3 border rounded-xl cursor-pointer transition ${newPlan === 'featured' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'hover:bg-muted'}`}>
-                                <input type="radio" className="sr-only" name="plan" value="featured" checked={newPlan === 'featured'} onChange={() => setNewPlan('featured')} />
-                                <div className="text-sm font-bold text-blue-700">Featured Plan</div>
-                            </label>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            {availablePlans.map((plan) => {
+                                const isSelected = newPlan === plan;
+                                const meta = PLAN_META[plan];
+
+                                return (
+                                    <label
+                                        key={plan}
+                                        className={`flex items-center justify-center gap-2 rounded-xl border p-3 transition cursor-pointer ${
+                                            isSelected ? meta.activeClassName : "hover:bg-muted"
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            className="sr-only"
+                                            name="plan"
+                                            value={plan}
+                                            checked={isSelected}
+                                            onChange={() => setNewPlan(plan)}
+                                        />
+                                        <div className={`text-sm font-bold ${meta.textClassName}`}>{meta.label}</div>
+                                    </label>
+                                );
+                            })}
                         </div>
                     </div>
                     <DialogFooter className="mt-6">
@@ -106,7 +145,7 @@ export function UpgradeDialog({
                         <button
                             type="submit"
                             className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition"
-                            disabled={loading || newPlan === currentPlan}
+                            disabled={loading || newPlan === normalizedCurrentPlan}
                         >
                             {loading ? "Saving..." : submitLabel}
                         </button>

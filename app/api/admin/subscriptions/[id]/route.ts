@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase";
+import { createAdminSupabaseClient } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { logSubscriptionAction, notifyOwner } from "@/lib/admin-helpers";
 import { syncListingPlanBadges } from "@/lib/listing-plan-badges";
@@ -102,8 +102,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const listing = Array.isArray(listingData) ? listingData[0] : listingData;
         const ownerId = listing?.owner_id;
         const listingId = listing?.id;
-        
-        let result: any = null;
 
         switch (action) {
             case "extend": {
@@ -136,7 +134,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
             case "upgrade": {
                 const { new_plan } = body;
-                if (!["featured", "premium"].includes(new_plan)) {
+                if (!["free", "featured", "premium"].includes(new_plan)) {
                     return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
                 }
 
@@ -149,34 +147,46 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 }
 
                 const now = new Date().toISOString();
+                const subscriptionUpdates: Record<string, unknown> = {
+                    plan_type: targetPlan,
+                    updated_at: now,
+                };
+
+                if (targetPlan === "free") {
+                    subscriptionUpdates.amount = 0;
+                    subscriptionUpdates.auto_renew = false;
+                }
 
                 const { error } = await supabase
                     .from("subscriptions")
-                    .update({ 
-                        plan_type: new_plan,
-                        updated_at: now
-                    })
+                    .update(subscriptionUpdates)
                     .eq("id", id);
                 if (error) throw error;
 
                 const { error: listingError } = await supabase.from("listings").update({ 
-                    is_premium: new_plan === "premium",
-                    is_featured: new_plan === "featured" || new_plan === "premium",
+                    is_premium: targetPlan === "premium",
+                    is_featured: targetPlan === "featured" || targetPlan === "premium",
                     updated_at: now
                 }).eq("id", subInfo.listing_id);
                 if (listingError) throw listingError;
 
                 if (listingId) {
-                    await syncListingPlanBadges(supabase, listingId, new_plan, now);
+                    await syncListingPlanBadges(supabase, listingId, targetPlan, now);
                 }
 
                 const actionLabel = changeDirection === "downgrade" ? "downgraded" : "upgraded";
                 const notificationTitle = changeDirection === "downgrade" ? "Plan Downgraded" : "Plan Upgraded";
+                const targetPlanLabel =
+                    targetPlan === "premium"
+                        ? "the premium plan"
+                        : targetPlan === "featured"
+                            ? "the featured plan"
+                            : "the free plan";
                 const notificationMessage = changeDirection === "downgrade"
-                    ? `Your listing has been downgraded to ${new_plan}.`
-                    : `Your listing has been upgraded to ${new_plan}.`;
+                    ? `Your listing has been downgraded to ${targetPlanLabel}.`
+                    : `Your listing has been upgraded to ${targetPlanLabel}.`;
 
-                await logSubscriptionAction({ subscriptionId: id, action: actionLabel, details: { from: subInfo.plan_type, to: new_plan } });
+                await logSubscriptionAction({ subscriptionId: id, action: actionLabel, details: { from: subInfo.plan_type, to: targetPlan } });
                 
                 if (ownerId) {
                     await notifyOwner({ 

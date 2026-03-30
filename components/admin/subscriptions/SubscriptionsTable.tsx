@@ -2,12 +2,12 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { MoreHorizontal, FileText, ExternalLink, CalendarDays, ShieldAlert, XCircle, RotateCw } from "lucide-react";
+import { MoreHorizontal, FileText, ExternalLink, CalendarDays, ShieldAlert, RotateCw } from "lucide-react";
 import DataTable, { Column } from "@/components/admin/shared/DataTable";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import Badge from "@/components/shared/Badge";
 import { cn } from "@/lib/utils";
-import { formatPeso, getDaysRemaining, getPlanChangeDirection } from "@/lib/subscription-helpers";
+import { formatPeso, getAdminPlanActionLabel, getDaysRemaining } from "@/lib/subscription-helpers";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExtendDialog } from "./ExtendDialog";
 import { UpgradeDialog } from "./UpgradeDialog";
@@ -76,13 +76,12 @@ export function SubscriptionsTable({
         loadRows();
     }, [loadRows]);
 
-    async function bulk(action: "remind" | "extend" | "cancel", selectedRows: SubscriptionRow[]) {
+    async function bulk(action: "remind" | "extend", selectedRows: SubscriptionRow[]) {
         if (!selectedRows.length) return;
         
         let confirmMessage = "";
         if (action === "remind") confirmMessage = `Send renewal reminders to ${selectedRows.length} subscriptions?`;
         if (action === "extend") confirmMessage = `Are you sure you want to extend ${selectedRows.length} subscriptions by 30 days?`;
-        if (action === "cancel") confirmMessage = `Are you sure you want to immediately cancel ${selectedRows.length} subscriptions?`;
 
         if (confirmMessage && !window.confirm(confirmMessage)) return;
 
@@ -209,10 +208,7 @@ export function SubscriptionsTable({
             key: "actions",
             header: "Actions",
             render: (r) => {
-                const planActionLabel =
-                    getPlanChangeDirection(r.plan_type, r.plan_type === "premium" ? "featured" : "premium") === "downgrade"
-                        ? "Downgrade Plan"
-                        : "Upgrade Plan";
+                const planActionLabel = getAdminPlanActionLabel(r.plan_type);
 
                 return (
                     <DropdownMenu>
@@ -254,12 +250,6 @@ export function SubscriptionsTable({
                             <DropdownMenuItem onSelect={() => bulk("remind", [r])} className="cursor-pointer text-xs font-bold text-blue-600 focus:text-blue-700">
                                 <ShieldAlert className="mr-2 h-3.5 w-3.5" /> Send Reminder
                             </DropdownMenuItem>
-
-                            <div className="my-1 h-px bg-border/50" />
-
-                            <DropdownMenuItem onSelect={() => bulk("cancel", [r])} className="cursor-pointer text-xs font-bold text-red-600 focus:text-red-700">
-                                <XCircle className="mr-2 h-3.5 w-3.5" /> Cancel Subscription
-                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 );
@@ -297,7 +287,6 @@ export function SubscriptionsTable({
                 bulkActions={[
                     { label: "Remind Selected", onClick: (selected) => bulk("remind", selected) },
                     { label: "Extend Selected 30d", onClick: (selected) => bulk("extend", selected) },
-                    { label: "Cancel Selected", onClick: (selected) => bulk("cancel", selected), variant: "destructive" },
                 ]}
                 emptyMessage="No subscriptions found matching the active filters."
                 className="p-4"

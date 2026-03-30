@@ -61,6 +61,22 @@ export function getPlanChangeDirection(
     return "same";
 }
 
+export function getDefaultPlanTarget(currentPlan?: string | null): PlanTier {
+    const normalizedCurrentPlan = normalizePlanType(currentPlan);
+
+    if (normalizedCurrentPlan === "premium") return "featured";
+    if (normalizedCurrentPlan === "featured") return "free";
+    return "featured";
+}
+
+export function getAdminPlanActionLabel(currentPlan?: string | null): "Upgrade Plan" | "Downgrade Plan" | "Change Plan" {
+    const normalizedCurrentPlan = normalizePlanType(currentPlan);
+
+    if (normalizedCurrentPlan === "premium") return "Downgrade Plan";
+    if (normalizedCurrentPlan === "free") return "Upgrade Plan";
+    return "Change Plan";
+}
+
 export function calculateBillingPeriod(startDate: Date | string = new Date()) {
     const start = new Date(startDate);
     const end = addDays(start, 30);

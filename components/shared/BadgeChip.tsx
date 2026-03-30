@@ -49,31 +49,42 @@ export default function BadgeChip({
     return (
         <div
             className={cn(
-                "group relative inline-flex items-center rounded-full font-bold transition-all",
+                "group relative inline-flex items-center rounded-full font-bold transition-all duration-300",
                 sizeClasses[size],
-                isPlan
-                    ? "border-2"
-                    : "shadow-sm",
+                isPlan ? "shadow-sm uppercase tracking-wider" : "shadow-sm",
+                badge.slug === "premium" && "bg-gradient-to-br from-[#FFD700] via-[#FFF4B0] to-[#B8860B] text-black border border-amber-400/30",
+                badge.animation_type && badge.animation_type !== "none" && `flair-anim-${badge.animation_type}`,
                 onClick && "cursor-pointer hover:scale-105 active:scale-95",
                 className
             )}
             style={{
-                backgroundColor: isPlan ? "transparent" : badge.color,
-                color: isPlan ? badge.color : badge.text_color,
-                borderColor: isPlan ? badge.color : "transparent",
+                backgroundColor: badge.slug === "premium" ? undefined : (isPlan ? badge.color : badge.color),
+                color: badge.slug === "premium" ? undefined : (isPlan ? badge.text_color : badge.text_color),
+                borderColor: badge.slug === "premium" ? undefined : "transparent",
                 opacity: (isActive || !onClick) ? 1 : 0.7,
+                ["--flair-color" as any]: badge.animation_color || undefined,
             }}
             onClick={onClick}
             title={showTooltip ? (badge.description || badge.name) : undefined}
             role={onClick ? "button" : "status"}
             aria-label={badge.description || badge.name}
         >
-            {/* Icon (Lucide or Emoji) */}
-            <span className={cn("flex shrink-0 items-center justify-center", iconSizes[size])}>
-                {Icon ? <Icon strokeWidth={2.5} /> : <span className="leading-none">{badge.icon}</span>}
-            </span>
+            {/* Icon (Lucide or Emoji) - Hidden for Plan Badges */}
+            {!isPlan && (
+                <span className={cn("flex shrink-0 items-center justify-center", iconSizes[size])}>
+                    {Icon ? <Icon strokeWidth={2.5} /> : <span className="leading-none">{badge.icon}</span>}
+                </span>
+            )}
 
             {/* Name */}
+            {/* Name */}
+            {badge.animation_type === "twinkle" && (
+                <>
+                    <span className="flair-twinkle-star" style={{ top: "-4px", left: "10%", animationDelay: "0s" }}>★</span>
+                    <span className="flair-twinkle-star" style={{ top: "40%", right: "-2px", animationDelay: "1s" }}>★</span>
+                    <span className="flair-twinkle-star" style={{ bottom: "-4px", left: "30%", animationDelay: "2s" }}>★</span>
+                </>
+            )}
             <span className="truncate">{badge.name}</span>
 
             {/* Description Tooltip (Simplified native title is used, but we can add a custom one if needed) */}

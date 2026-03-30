@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { GripVertical, Edit2, Trash2, CheckCircle2, XCircle, ExternalLink, Hash, Loader2, Search } from "lucide-react";
 import { Badge } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import * as LucideIcons from "lucide-react";
+import BadgeChip from "@/components/shared/BadgeChip";
 
 interface BadgeTableProps {
     badges: (Badge & { assigned_count: number })[];
@@ -67,13 +67,6 @@ export default function BadgeTable({
         setDragOverId(null);
     };
 
-    const renderIcon = (badge: Badge) => {
-        if (badge.icon_lucide) {
-            const Icon = (LucideIcons as any)[badge.icon_lucide];
-            if (Icon) return <Icon className="h-4 w-4" />;
-        }
-        return <span className="text-lg leading-none">{badge.icon}</span>;
-    };
 
     return (
         <div className="flex flex-col gap-4">
@@ -82,7 +75,7 @@ export default function BadgeTable({
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                     <input
                         type="text"
-                        placeholder="Search badges by name or slug..."
+                        placeholder="Search flairs by name or slug..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="h-10 w-full pl-10 pr-4 rounded-xl border border-border/50 bg-background/50 text-sm focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10 transition-all outline-none"
@@ -125,13 +118,7 @@ export default function BadgeTable({
                                     </div>
                                 </td>
                                 <td className="px-4 py-3">
-                                    <span
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold shadow-sm whitespace-nowrap"
-                                        style={{ backgroundColor: badge.color, color: badge.text_color }}
-                                    >
-                                        {renderIcon(badge)}
-                                        {badge.name}
-                                    </span>
+                                    <BadgeChip badge={badge} size="md" showTooltip={false} />
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex flex-col">
@@ -193,7 +180,7 @@ export default function BadgeTable({
                                         <button
                                             onClick={() => onEdit(badge)}
                                             className="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-all"
-                                            title="Edit Badge"
+                                            title="Edit Flair"
                                         >
                                             <Edit2 className="h-4 w-4" />
                                         </button>
@@ -206,7 +193,7 @@ export default function BadgeTable({
                                                     ? "text-muted-foreground/20 cursor-not-allowed"
                                                     : "text-muted-foreground hover:bg-red-50 hover:text-red-500"
                                             )}
-                                            title={badge.assigned_count > 0 ? "Cannot delete assigned badge" : badge.type === "plan" ? "Cannot delete plan badge" : "Delete Badge"}
+                                            title={badge.assigned_count > 0 ? "Cannot delete assigned flair" : badge.type === "plan" ? "Cannot delete plan badge" : "Delete Flair"}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </button>
@@ -221,7 +208,7 @@ export default function BadgeTable({
                                         <div className="p-4 rounded-full bg-muted/30">
                                             <Search className="h-8 w-8 text-muted-foreground/20" />
                                         </div>
-                                        <p className="text-sm font-medium">No badges found matching your search.</p>
+                                        <p className="text-sm font-medium">No flairs found matching your search.</p>
                                     </div>
                                 </td>
                             </tr>

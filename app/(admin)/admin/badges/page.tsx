@@ -120,13 +120,16 @@ export default function AdminBadgesPage() {
         }
     };
 
+    const planBadges = badges.filter(b => b.type === "plan");
+    const flairBadges = badges.filter(b => b.type !== "plan");
+
     return (
         <div className="flex flex-col h-full bg-background">
             <div className="border-b border-border/50 px-4 md:px-8 py-5">
                 <AdminPageHeader
-                    title="Badge Management"
-                    description="Configure visually distinct badges to highlight premium status, amenities, and trust."
-                    breadcrumbs={[{ label: "Admin" }, { label: "Badges" }]}
+                    title="Flair Management"
+                    description="Configure visually distinct flairs to highlight premium status, amenities, and trust."
+                    breadcrumbs={[{ label: "Admin" }, { label: "Flairs" }]}
                     actions={
                         <button
                             type="button"
@@ -134,22 +137,22 @@ export default function AdminBadgesPage() {
                             className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:scale-105 active:scale-95"
                         >
                             <Plus className="h-4 w-4" />
-                            Add Badge
+                            Add Flair
                         </button>
                     }
                 />
             </div>
 
             <div className="flex-1 overflow-auto p-4 md:p-8">
-                <div className="mx-auto max-w-6xl">
+                <div className="mx-auto max-w-6xl space-y-12">
                     {/* Priority Hint */}
-                    <div className="mb-6 flex items-start gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/30 p-4 text-sm text-indigo-700 dark:border-indigo-900/40 dark:bg-indigo-950/20 dark:text-indigo-400 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-start gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/30 p-4 text-sm text-indigo-700 dark:border-indigo-900/40 dark:bg-indigo-950/20 dark:text-indigo-400 animate-in fade-in slide-in-from-top-2">
                         <Sparkles className="h-5 w-5 shrink-0" />
                         <div className="space-y-1">
                             <p className="font-bold">Priority Ranking Tip:</p>
                             <p className="leading-relaxed text-muted-foreground/80">
-                                Badges appear in search based on priority: <span className="font-mono text-[11px] font-bold">Plan Badges: 0-9</span> • <span className="font-mono text-[11px] font-bold">Trust: 10-19</span> • <span className="font-mono text-[11px] font-bold">Status: 20-29</span> • <span className="font-mono text-[11px] font-bold">Identity: 30-39</span> • <span className="font-mono text-[11px] font-bold">Amenities: 40-49</span>.
-                                Drag handles to reorder instantly.
+                                Flairs appear in search based on priority: <span className="font-mono text-[11px] font-bold">Plan Badges: 0-9</span> • <span className="font-mono text-[11px] font-bold">Trust: 10-19</span> • <span className="font-mono text-[11px] font-bold">Status: 20-29</span> • <span className="font-mono text-[11px] font-bold">Identity: 30-39</span> • <span className="font-mono text-[11px] font-bold">Amenities: 40-49</span>.
+                                Drag handles to reorder within each group.
                             </p>
                         </div>
                     </div>
@@ -157,17 +160,52 @@ export default function AdminBadgesPage() {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20">
                             <Loader2 className="h-10 w-10 animate-spin text-primary/30" />
-                            <p className="mt-4 text-sm font-medium text-muted-foreground">Loading badge system...</p>
+                            <p className="mt-4 text-sm font-medium text-muted-foreground">Loading flair system...</p>
                         </div>
                     ) : (
-                        <BadgeTable
-                            badges={badges}
-                            onEdit={handleEditBadge}
-                            onDelete={(b) => setConfirmDelete(b)}
-                            onToggleActive={handleToggleActive}
-                            onToggleFilterable={handleToggleFilterable}
-                            onReorder={handleReorder}
-                        />
+                        <>
+                            {/* Section 1: Plan Badges */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 px-2">
+                                    <div className="h-5 w-1 rounded-full bg-violet-500" />
+                                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Subscription Plan Badges</h3>
+                                </div>
+                                <BadgeTable
+                                    badges={planBadges}
+                                    onEdit={handleEditBadge}
+                                    onDelete={(b) => setConfirmDelete(b)}
+                                    onToggleActive={handleToggleActive}
+                                    onToggleFilterable={handleToggleFilterable}
+                                    onReorder={handleReorder}
+                                />
+                                {planBadges.length === 0 && (
+                                    <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                                        No plan badges configured.
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Section 2: General Flairs */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 px-2">
+                                    <div className="h-5 w-1 rounded-full bg-emerald-500" />
+                                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">General Listing Flairs</h3>
+                                </div>
+                                <BadgeTable
+                                    badges={flairBadges}
+                                    onEdit={handleEditBadge}
+                                    onDelete={(b) => setConfirmDelete(b)}
+                                    onToggleActive={handleToggleActive}
+                                    onToggleFilterable={handleToggleFilterable}
+                                    onReorder={handleReorder}
+                                />
+                                {flairBadges.length === 0 && (
+                                    <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                                        No general flairs configured.
+                                    </div>
+                                )}
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
@@ -184,9 +222,9 @@ export default function AdminBadgesPage() {
                 open={!!confirmDelete}
                 onClose={() => setConfirmDelete(null)}
                 onConfirm={handleDelete}
-                title="Delete Badge?"
-                description={`This will permanently remove the "${confirmDelete?.name}" badge. This action cannot be undone.`}
-                confirmLabel="Delete Badge"
+                title="Delete Flair?"
+                description={`This will permanently remove the "${confirmDelete?.name}" flair. This action cannot be undone.`}
+                confirmLabel="Delete Flair"
                 variant="destructive"
                 loading={isDeleting}
             />

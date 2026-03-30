@@ -180,8 +180,8 @@ export async function getCategoryListings(supabase: SupabaseClient, filters: Cat
         subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
         barangays ( name, slug ),
         ${badgeIds.length > 0 
-            ? "listing_badges!inner ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )"
-            : "listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )"}
+            ? "listing_badges!inner ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active, animation_type ) )"
+            : "listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active, animation_type ) )"}
     `;
 
     let query = supabase
@@ -375,7 +375,7 @@ const LISTING_FULL_SELECT = `
     subcategories:categories!listings_subcategory_id_fkey ( id, name, slug, icon ),
     barangays ( id, name, slug ),
     listing_images ( image_url, sort_order, is_primary ),
-    listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, description, is_active ) ),
+    listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, description, is_active, animation_type ) ),
     deals ( id ),
     subscriptions ( plan_type, status, end_date )
 `;
@@ -544,7 +544,7 @@ export async function getListingBySlug(supabase: SupabaseClient, slug: string) {
             subcategories:categories!listings_subcategory_id_fkey ( id, name, slug, icon ),
             barangays ( id, name, slug ),
             listing_images ( id, image_url, alt_text, sort_order, is_primary ),
-            listing_badges ( id, is_active, expires_at, created_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, description, is_active ) ),
+            listing_badges ( id, is_active, expires_at, created_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, description, is_active, animation_type ) ),
             listing_field_values (
                 id, value,
                 category_fields (
@@ -624,7 +624,7 @@ export async function getRelatedListings(
             subcategories:categories!listings_subcategory_id_fkey ( name, slug ),
             barangays ( name, slug ),
             listing_images ( image_url, is_primary ),
-            listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
+            listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active, animation_type ) )
         `)
         .eq("is_active", true)
         .in("status", ["approved", "claimed_pending"])
@@ -701,7 +701,7 @@ export async function getListingsInBounds(
             categories!listings_category_id_fkey ( id, name, slug ),
             barangays ( id, name, slug ),
             listing_images ( image_url, sort_order, is_primary ),
-            listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active ) )
+            listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active, animation_type ) )
         `)
         .in("status", ["approved", "claimed_pending"])
         .eq("is_active", true)
@@ -787,7 +787,7 @@ export async function getListingBadgesByIds(
         .from("listing_badges")
         .select(`
             id, listing_id, is_active, expires_at,
-            badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, description, is_active )
+            badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, description, is_active, animation_type )
         `)
         .in("listing_id", listingIds)
         .eq("is_active", true);

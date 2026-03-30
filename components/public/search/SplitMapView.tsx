@@ -6,6 +6,7 @@ import Image from "next/image";
 import { MAP_CENTER } from "@/lib/constants";
 import { MapPin, List } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Badge from "@/components/shared/Badge";
 
 export interface MapListing {
     id: string;
@@ -21,7 +22,16 @@ export interface MapListing {
     phone?: string | null;
     short_description?: string| null;
     categories?: { name: string; slug: string } | null;
-    badges?: { badge: { type: string; color: string } }[];
+    badges?: { 
+        badge: { 
+            name: string;
+            type: string; 
+            color: string;
+            text_color?: string;
+            slug: string;
+            animation_type?: string | null;
+        } 
+    }[];
 }
 
 interface SplitMapViewProps {
@@ -270,15 +280,26 @@ export default function SplitMapView({ listings, onResultsUpdate, className }: S
                                             {listing.categories.name}
                                         </p>
                                     )}
-                                    <div className="mt-1 flex items-center gap-1.5">
-                                        {listing.isSponsored && (
+                                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                        {listing.badges?.map((lb, idx) => {
+                                            if (lb.badge.type === "plan") {
+                                                const variant = lb.badge.slug === "premium" ? "premium" : "featured";
+                                                return (
+                                                    <Badge 
+                                                        key={idx} 
+                                                        variant={variant}
+                                                        animationType={lb.badge.animation_type}
+                                                        className="scale-90 origin-left"
+                                                    >
+                                                        {lb.badge.name}
+                                                    </Badge>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                        {listing.isSponsored && !listing.badges?.some(b => b.badge.slug === "sponsored") && (
                                             <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
                                                 Sponsored
-                                            </span>
-                                        )}
-                                        {listing.is_featured && !listing.isSponsored && (
-                                            <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-950/40 dark:text-orange-400">
-                                                Featured
                                             </span>
                                         )}
                                     </div>

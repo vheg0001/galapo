@@ -168,7 +168,10 @@ export default function BadgeAssignModal({
                                             )}
                                         >
                                             <div
-                                                className="h-12 w-12 flex items-center justify-center rounded-2xl shadow-sm"
+                                                className={cn(
+                                                    "h-12 w-12 flex items-center justify-center rounded-2xl shadow-sm transition-all duration-300",
+                                                    badge.animation_type && badge.animation_type !== "none" && `flair-anim-${badge.animation_type}`
+                                                )}
                                                 style={{ backgroundColor: badge.color, color: badge.text_color }}
                                             >
                                                 {renderBadgeIcon(badge)}
@@ -195,7 +198,10 @@ export default function BadgeAssignModal({
                             {/* Selected Badge Header */}
                             <div className="flex flex-col items-center text-center gap-4">
                                 <div
-                                    className="h-20 w-20 flex items-center justify-center rounded-[2rem] shadow-xl animate-in zoom-in-75 duration-300"
+                                    className={cn(
+                                        "h-20 w-20 flex items-center justify-center rounded-[2rem] shadow-xl animate-in zoom-in-75 duration-300 transition-all",
+                                        selectedBadge.animation_type && selectedBadge.animation_type !== "none" && `flair-anim-${selectedBadge.animation_type}`
+                                    )}
                                     style={{ backgroundColor: selectedBadge.color, color: selectedBadge.text_color }}
                                 >
                                     <div className="scale-150">

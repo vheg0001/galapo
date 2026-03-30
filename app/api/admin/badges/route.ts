@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
             name, slug, description, icon, icon_lucide,
             color, text_color, type, priority,
             auto_expires, default_expiry_days,
-            is_filterable, is_active
+            is_filterable, is_active, animation_color
         } = body;
 
         if (!name || !slug || (!icon && !icon_lucide) || !color) {
@@ -90,6 +90,8 @@ export async function POST(request: NextRequest) {
                 default_expiry_days: auto_expires ? (default_expiry_days || 30) : null,
                 is_filterable: is_filterable ?? true,
                 is_active: is_active ?? true,
+                animation_type: body.animation_type || "none",
+                animation_color: animation_color || null,
             })
             .select()
             .single();

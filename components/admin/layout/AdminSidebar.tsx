@@ -10,7 +10,7 @@ import {
     LayoutDashboard, Building2, Tag, MapPin, Ticket, Calendar, BookOpen, FileText,
     CreditCard, Receipt, FileSpreadsheet, MonitorPlay, Search, Users, ShieldCheck,
     Settings, Bell, ClipboardList, FileDown, BarChart2, ChevronLeft, ChevronRight,
-    LogOut, ExternalLink, Award
+    LogOut, ExternalLink, Award, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +83,7 @@ export default function AdminSidebar({
                     <SidebarNavItem href="/admin/listings" label="Listings" icon={Building2} badge={pendingListings} collapsed={collapsed} />
                     <SidebarNavItem href="/admin/categories" label="Categories" icon={Tag} collapsed={collapsed} />
                     <SidebarNavItem href="/admin/barangays" label="Barangays" icon={MapPin} collapsed={collapsed} />
-                    <SidebarNavItem href="/admin/badges" label="Badges" icon={Award} collapsed={collapsed} />
+                    <SidebarNavItem href="/admin/badges" label="Flairs" icon={Sparkles} collapsed={collapsed} />
                     <SidebarNavItem href="/admin/deals" label="Deals & Offers" icon={Ticket} collapsed={collapsed} />
                     <SidebarNavItem href="/admin/events" label="Events" icon={Calendar} collapsed={collapsed} />
                     <SidebarNavItem href="/admin/blog" label="Blog Posts" icon={BookOpen} collapsed={collapsed} />

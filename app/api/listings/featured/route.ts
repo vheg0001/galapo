@@ -26,7 +26,8 @@ export async function GET(request: Request) {
                 is_featured, 
                 is_premium,
                 categories!listings_category_id_fkey ( name, slug ),
-                barangays ( name, slug )
+                barangays ( name, slug ),
+                listing_badges ( id, is_active, expires_at, badges ( id, name, slug, icon, icon_lucide, color, text_color, type, priority, is_active, animation_type ) )
             `)
             .in("status", ["approved", "claimed_pending"])
             .eq("is_active", true)

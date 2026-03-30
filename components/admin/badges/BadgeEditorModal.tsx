@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import {
     X, Sparkles, Wand2, Calculator, Info,
     Calendar, CheckCircle2, ShieldCheck,
-    Smartphone, Search, ChevronRight, Zap, Star, Loader2
+    Smartphone, Search, ChevronRight, Zap, Star, Loader2,
+    Accessibility, PawPrint, Moon, PartyPopper
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { Badge, BadgeType } from "@/lib/types";
@@ -26,8 +27,8 @@ const COMMON_LUCIDE_ICONS = [
     "Star", "Zap", "ShieldCheck", "CheckCircle2", "Award", "Medal",
     "Trophy", "Diamond", "Gem", "Flag", "MapPin", "Compass",
     "Calendar", "Clock", "Smartphone", "Heart", "Flame",
-    "Crown", "Lock", "Unlock", "UserCheck", "Store", "ShoppingBag",
-    "Utensils", "Coffee", "Briefcase", "Music", "Camera", "Monitor"
+    "Crown", "Lock", "Unlock", "UserCheck", "Accessibility", "Store", "ShoppingBag", "PawPrint",
+    "Moon", "PartyPopper", "Utensils", "Coffee", "Briefcase", "Music", "Camera", "Monitor"
 ];
 
 export default function BadgeEditorModal({
@@ -51,6 +52,8 @@ export default function BadgeEditorModal({
     const [expiryDays, setExpiryDays] = useState(30);
     const [isFilterable, setIsFilterable] = useState(true);
     const [isActive, setIsActive] = useState(true);
+    const [animationType, setAnimationType] = useState<string>("none");
+    const [animationColor, setAnimationColor] = useState<string | null>(null);
 
     const [iconTab, setIconTab] = useState<"emoji" | "lucide">("emoji");
     const [lucideSearch, setLucideSearch] = useState("");
@@ -72,6 +75,8 @@ export default function BadgeEditorModal({
             setExpiryDays(badge.default_expiry_days ?? 30);
             setIsFilterable(badge.is_filterable ?? true);
             setIsActive(badge.is_active ?? true);
+            setAnimationType(badge.animation_type || "none");
+            setAnimationColor(badge.animation_color || null);
             setIconTab(badge.icon_lucide ? "lucide" : "emoji");
         } else {
             // Reset to defaults
@@ -88,6 +93,8 @@ export default function BadgeEditorModal({
             setExpiryDays(30);
             setIsFilterable(true);
             setIsActive(true);
+            setAnimationType("none");
+            setAnimationColor(null);
             setIconTab("emoji");
         }
     }, [badge, isOpen]);
@@ -118,6 +125,16 @@ export default function BadgeEditorModal({
         ).slice(0, 48); // limit results
     }, [lucideSearch]);
 
+    // Helper to get the effective animation color (state vs fallback)
+    const getEffectiveAnimationColor = () => {
+        if (animationColor) return animationColor;
+        // Default to the badge color for all glow/color effects
+        if (["radiant", "neon", "halo", "pulse-inner", "liquid", "bevel", "refract"].includes(animationType)) {
+            return color || "#FFFFFF";
+        }
+        return null;
+    };
+
     const handleSave = async () => {
         if (!name.trim()) return toast.error("Name is required");
         if (!slug.trim()) return toast.error("Slug is required");
@@ -139,6 +156,8 @@ export default function BadgeEditorModal({
                 default_expiry_days: autoExpires ? expiryDays : null,
                 is_filterable: isFilterable,
                 is_active: isActive,
+                animation_type: animationType,
+                animation_color: animationColor,
             };
 
             const url = isEdit ? `/api/admin/badges/${badge.id}` : "/api/admin/badges";
@@ -153,7 +172,7 @@ export default function BadgeEditorModal({
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to save badge");
 
-            toast.success(isEdit ? "Badge updated" : "Badge created successfully 🏅");
+            toast.success(isEdit ? "Flair updated" : "Flair created successfully 🏅");
             onSave();
             onClose();
         } catch (error: any) {
@@ -176,10 +195,10 @@ export default function BadgeEditorModal({
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-foreground">
-                                {isEdit ? "Edit Badge" : "Create New Badge"}
+                                {isEdit ? "Edit Flair" : "Create New Flair"}
                             </h2>
                             <p className="text-xs font-medium text-muted-foreground">
-                                {isEdit ? `Modifying badge: ${badge?.name}` : "Configure a new visual highlight."}
+                                {isEdit ? `Modifying flair: ${badge?.name}` : "Configure a new visual highlight."}
                             </p>
                         </div>
                     </div>
@@ -193,7 +212,7 @@ export default function BadgeEditorModal({
 
                 {/* Body */}
                 <div className="flex-1 overflow-auto p-8 scrollbar-hide">
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
 
                         {/* Left Column — Form Fields */}
                         <div className="space-y-8">
@@ -201,7 +220,7 @@ export default function BadgeEditorModal({
                             {/* Basics Section */}
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 px-1">Badge Name</label>
+                                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 px-1">Flair Name</label>
                                     <input
                                         type="text"
                                         value={name}
@@ -218,7 +237,7 @@ export default function BadgeEditorModal({
                                             type="text"
                                             value={slug}
                                             onChange={(e) => setSlug(e.target.value)}
-                                            placeholder="recommended-badge"
+                                            placeholder="recommended-flair"
                                             className="h-12 w-full pl-11 pr-4 rounded-2xl border border-border/50 bg-background/50 font-mono text-xs focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10 transition-all outline-none"
                                         />
                                     </div>
@@ -272,7 +291,7 @@ export default function BadgeEditorModal({
                                                     className="h-8 w-full pl-8 pr-3 text-xs rounded-lg border border-border/50 bg-background focus:border-primary/50 transition-all font-medium outline-none"
                                                 />
                                             </div>
-                                            <div className="grid grid-cols-6 gap-1.5 max-h-40 overflow-auto p-1 scrollbar-hide">
+                                            <div className="grid grid-cols-6 gap-1.5 max-h-64 overflow-auto p-1 scrollbar-hide">
                                                 {filteredLucideIcons.map((iconName) => {
                                                     const Icon = (LucideIcons as any)[iconName];
                                                     return (
@@ -314,7 +333,7 @@ export default function BadgeEditorModal({
                             <div className="grid grid-cols-2 gap-8">
                                 <div className="space-y-6">
                                     <div className="space-y-4">
-                                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 px-1">Badge Type</label>
+                                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 px-1">Flair Type</label>
                                         <div className="grid grid-cols-1 gap-2">
                                             {(["admin", "plan", "system"] as const).map((t) => (
                                                 <button
@@ -344,7 +363,7 @@ export default function BadgeEditorModal({
                                                     <Calendar className="h-4 w-4 text-emerald-500" />
                                                     Auto-Expires
                                                 </div>
-                                                <p className="text-[10px] text-muted-foreground">Badge expires after set days</p>
+                                                <p className="text-[10px] text-muted-foreground">Flair expires after set days</p>
                                             </div>
                                             <button
                                                 onClick={() => setAutoExpires(!autoExpires)}
@@ -376,7 +395,58 @@ export default function BadgeEditorModal({
                                     </div>
                                 </div>
 
-                                <div className="space-y-6">
+                                    {/* Animation & Effects Selection */}
+                                    <div className="space-y-4 pt-2">
+                                        <div className="flex items-center gap-2 px-1">
+                                            <Zap className="h-4 w-4 text-amber-500" />
+                                            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60">Animation & Effects</label>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {[
+                                                { id: "none", label: "None", desc: "Static" },
+                                                { id: "shimmer", label: "Shimmer", desc: "Shiny Sweep" },
+                                                { id: "glint", label: "Glint", desc: "Corner Spark" },
+                                                { id: "refract", label: "Refract", desc: "Prismatic" },
+                                                { id: "twinkle", label: "Twinkle", desc: "Stardust" },
+                                                { id: "bevel", label: "Bevel", desc: "3D Shine" },
+                                                { id: "liquid", label: "Liquid", desc: "Iridescent" },
+                                                { id: "pulse-inner", label: "Pulse", desc: "Core Glow" },
+                                                { id: "radiant", label: "Radiant", desc: "Aura Glow" },
+                                                { id: "neon", label: "Neon", desc: "Electric" },
+                                                { id: "halo", label: "Halo", desc: "Double Pulse" },
+                                            ].map((anim) => (
+                                                <button
+                                                    key={anim.id}
+                                                    type="button"
+                                                    onClick={() => setAnimationType(anim.id)}
+                                                    className={cn(
+                                                        "flex flex-col items-center justify-center gap-1 p-2.5 rounded-2xl border transition-all active:scale-95 text-center",
+                                                        animationType === anim.id
+                                                            ? "bg-primary/10 border-primary text-primary shadow-sm"
+                                                            : "bg-background border-border/50 text-muted-foreground hover:border-border hover:bg-slate-50"
+                                                    )}
+                                                >
+                                                    <span className="text-[10px] font-bold leading-none">{anim.label}</span>
+                                                    <span className="text-[8px] opacity-60 leading-none">{anim.desc}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        
+                                        {/* Animation Color Picker — Only show for specific animations */}
+                                        {["refract", "bevel", "liquid", "pulse-inner", "radiant", "neon", "halo"].includes(animationType) && (
+                                            <div className="pt-2 animate-in fade-in slide-in-from-top-2">
+                                                <ColorPicker
+                                                    label="Animation Effect Color"
+                                                    value={getEffectiveAnimationColor() || "#FFFFFF"}
+                                                    onChange={setAnimationColor}
+                                                />
+                                                <p className="mt-2 text-[10px] text-muted-foreground px-1 italic leading-relaxed">
+                                                    Customize the color of the {animationType} effect.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between px-1">
                                             <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60">Display Priority</label>
@@ -443,16 +513,19 @@ export default function BadgeEditorModal({
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
                         {/* Right Column — Preview & Stats */}
-                        <div className="space-y-8">
+                        <div className="lg:sticky lg:top-0 space-y-8 self-start">
                             <BadgeLivePreview
                                 name={name}
                                 icon={icon}
                                 icon_lucide={iconLucide}
                                 color={color}
                                 text_color={textColor}
+                                type={type}
+                                slug={slug}
+                                animationType={animationType}
+                                animationColor={getEffectiveAnimationColor()}
                             />
 
                             <div className="p-6 rounded-2xl border border-border/50 bg-secondary/20 space-y-4">
@@ -476,11 +549,11 @@ export default function BadgeEditorModal({
                                     </div>
                                 </div>
                             </div>
-                        </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Footer */}
+            {/* Footer */}
                 <div className="flex items-center justify-end gap-3 px-8 py-6 border-t border-border/50 bg-background/50 backdrop-blur-xl">
                     <button
                         onClick={onClose}
